@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Coding Workspace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <h1><span>&#9670;</span> Agentic Coding Workspace</h1>
+    <div class="header-actions">
+      <button class="btn" onclick="loadDemo()" title="Load demo scenario">Demo</button>
+      <button class="btn btn-danger" onclick="clearAll()" title="Clear all cells">Clear</button>
+    </div>
+  </header>
+
+  <div class="demo-banner" id="demoBanner" style="display:none;">
+    <p><strong>Demo Scenario:</strong> React Todo 앱에 필터 기능 추가</p>
+    <button class="btn btn-sm" onclick="hideBanner()">Dismiss</button>
+  </div>
+
+  <div id="cells"></div>
+
+  <div class="add-cell-area">
+    <button class="add-cell-btn" onclick="addPromptCell()">+ Add Prompt Cell</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="mock-data.js"></script>
+<script src="render.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

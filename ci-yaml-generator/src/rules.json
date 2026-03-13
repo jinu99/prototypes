@@ -1,0 +1,88 @@
+{
+  "ecosystems": {
+    "node": {
+      "detectFiles": ["package.json"],
+      "language": "Node.js",
+      "parseConfig": "package.json",
+      "packageManagers": {
+        "npm": { "detectFiles": ["package-lock.json"], "install": "npm ci", "default": true },
+        "yarn": { "detectFiles": ["yarn.lock"], "install": "yarn install --frozen-lockfile" },
+        "pnpm": { "detectFiles": ["pnpm-lock.yaml"], "install": "pnpm install --frozen-lockfile" }
+      },
+      "testRunners": {
+        "jest": { "detectDeps": ["jest", "@jest/core"], "command": "npx jest --coverage" },
+        "vitest": { "detectDeps": ["vitest"], "command": "npx vitest run" },
+        "mocha": { "detectDeps": ["mocha"], "command": "npx mocha" }
+      },
+      "linters": {
+        "eslint": { "detectDeps": ["eslint"], "command": "npx eslint ." },
+        "biome": { "detectDeps": ["@biomejs/biome"], "command": "npx biome check ." }
+      },
+      "buildCommands": {
+        "detectScripts": ["build"],
+        "command": "npm run build"
+      },
+      "nodeVersions": ["18", "20", "22"]
+    },
+    "python": {
+      "detectFiles": ["pyproject.toml"],
+      "language": "Python",
+      "parseConfig": "pyproject.toml",
+      "packageManagers": {
+        "uv": { "detectFiles": ["uv.lock"], "install": "uv sync", "default": false },
+        "pip": { "detectFiles": ["requirements.txt"], "install": "pip install -r requirements.txt", "default": true },
+        "poetry": { "detectFiles": ["poetry.lock"], "install": "poetry install" }
+      },
+      "testRunners": {
+        "pytest": { "detectDeps": ["pytest"], "command": "pytest" },
+        "unittest": { "detectDeps": [], "command": "python -m unittest discover" }
+      },
+      "linters": {
+        "ruff": { "detectDeps": ["ruff"], "command": "ruff check ." },
+        "flake8": { "detectDeps": ["flake8"], "command": "flake8 ." },
+        "mypy": { "detectDeps": ["mypy"], "command": "mypy ." }
+      },
+      "buildCommands": {
+        "detectScripts": [],
+        "command": "python -m build"
+      },
+      "pythonVersions": ["3.10", "3.11", "3.12"]
+    },
+    "go": {
+      "detectFiles": ["go.mod"],
+      "language": "Go",
+      "parseConfig": "go.mod",
+      "packageManagers": {
+        "gomod": { "detectFiles": ["go.sum"], "install": "go mod download", "default": true }
+      },
+      "testRunners": {
+        "gotest": { "detectDeps": [], "command": "go test ./..." }
+      },
+      "linters": {
+        "golangci-lint": { "detectFiles": [".golangci.yml", ".golangci.yaml"], "command": "golangci-lint run" },
+        "staticcheck": { "detectDeps": [], "command": "staticcheck ./..." },
+        "govet": { "detectDeps": [], "command": "go vet ./..." }
+      },
+      "buildCommands": {
+        "detectScripts": [],
+        "command": "go build ./..."
+      },
+      "goVersions": ["1.21", "1.22", "1.23"]
+    }
+  },
+  "security": {
+    "semgrep": {
+      "name": "Semgrep SAST",
+      "command": "semgrep --config=auto --error",
+      "action": "returntocorp/semgrep-action@v1"
+    },
+    "trufflehog": {
+      "name": "TruffleHog Secret Scan",
+      "command": "trufflehog filesystem . --fail",
+      "action": "trufflesecurity/trufflehog@main",
+      "args": {
+        "extra_args": "--only-verified"
+      }
+    }
+  }
+}

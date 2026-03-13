@@ -1,0 +1,20 @@
+{
+  "name": "ci-yaml-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "bin": {
+    "ci-gen": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "js-yaml": "^4.1.1"
+  }
+}

@@ -1,0 +1,17 @@
+[project]
+name = "rag-doc-cleaner"
+version = "0.1.0"
+description = "RAG Document Quality Diagnosis and Preprocessing Tool"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pymupdf>=1.27.1",
+]
+
+[project.scripts]
+rag-doc-cleaner = "rag_doc_cleaner.cli:main"
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]

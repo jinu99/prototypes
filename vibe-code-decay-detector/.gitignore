@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+*.db
+screenshots/
+.decay-detect.db
+dist/
+*.egg-info/

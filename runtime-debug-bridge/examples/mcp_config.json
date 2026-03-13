@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "runtime-debug-bridge": {
+      "command": "uv",
+      "args": ["--directory", "/home/jinu/projects/prototypes/runtime-debug-bridge", "run", "rdb", "mcp"],
+      "env": {}
+    }
+  }
+}

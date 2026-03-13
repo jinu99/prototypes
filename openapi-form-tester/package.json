@@ -1,0 +1,26 @@
+{
+  "name": "openapi-form-tester",
+  "version": "1.0.0",
+  "description": "Test APIs with auto-generated forms from OpenAPI specs and detect response drift",
+  "main": "cli.js",
+  "bin": {
+    "openapi-form-tester": "cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js",
+    "test": "node test-e2e.js"
+  },
+  "keywords": ["openapi", "api-testing", "form-generator", "drift-detection"],
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "js-yaml": "^4.1.1",
+    "open": "^8.4.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}

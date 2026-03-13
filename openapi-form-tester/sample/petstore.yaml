@@ -1,0 +1,195 @@
+openapi: "3.0.3"
+info:
+  title: Pet Store (Demo)
+  version: "1.0.0"
+  description: A sample API for testing OpenAPI Form Tester
+
+servers:
+  - url: http://localhost:3000/mock
+
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      summary: List all pets
+      tags: [pets]
+      responses:
+        "200":
+          description: A list of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+
+    post:
+      operationId: createPet
+      summary: Create a pet
+      tags: [pets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewPet"
+      responses:
+        "201":
+          description: Created pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+
+  /pets/{petId}:
+    get:
+      operationId: getPet
+      summary: Get a pet by ID
+      tags: [pets]
+      responses:
+        "200":
+          description: A single pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Place an order
+      tags: [orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewOrder"
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /settings:
+    put:
+      operationId: updateSettings
+      summary: Update user settings
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Settings"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+components:
+  schemas:
+    Pet:
+      type: object
+      required: [id, name, species]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        species:
+          type: string
+          enum: [dog, cat, bird, fish]
+        age:
+          type: number
+        vaccinated:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    NewPet:
+      type: object
+      required: [name, species]
+      properties:
+        name:
+          type: string
+        species:
+          type: string
+          enum: [dog, cat, bird, fish]
+        age:
+          type: number
+        vaccinated:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    NewOrder:
+      type: object
+      required: [petId, quantity]
+      properties:
+        petId:
+          type: integer
+        quantity:
+          type: integer
+        express:
+          type: boolean
+        notes:
+          type: string
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            zip:
+              type: string
+
+    Order:
+      type: object
+      required: [id, petId, quantity, status]
+      properties:
+        id:
+          type: integer
+        petId:
+          type: integer
+        quantity:
+          type: integer
+        status:
+          type: string
+          enum: [pending, shipped, delivered]
+        express:
+          type: boolean
+        notes:
+          type: string
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            zip:
+              type: string
+
+    Settings:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark, auto]
+        notifications:
+          type: boolean
+        language:
+          type: string
+        maxResults:
+          type: integer

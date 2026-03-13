@@ -1,0 +1,10 @@
+[project]
+name = "log-incident-correlator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "drain3>=0.9.11",
+    "playwright>=1.58.0",
+]

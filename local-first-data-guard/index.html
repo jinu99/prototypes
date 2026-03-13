@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local-First Data Guard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e1e4e8;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: 0.3rem; }
+    .subtitle { color: #8b949e; margin-bottom: 2rem; font-size: 0.95rem; }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+    .card h3 {
+      font-size: 0.85rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.6rem;
+    }
+    .score {
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .score.safe { color: #3fb950; }
+    .score.warning { color: #d29922; }
+    .score.danger { color: #f85149; }
+    .score-detail {
+      font-size: 0.8rem;
+      color: #8b949e;
+      margin-top: 0.3rem;
+    }
+    .card.overall { border-width: 2px; }
+    .card.overall.safe { border-color: #3fb950; }
+    .card.overall.warning { border-color: #d29922; }
+    .card.overall.danger { border-color: #f85149; }
+    .details {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .details h2 { font-size: 1.1rem; margin-bottom: 0.8rem; }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.9rem;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .check { color: #3fb950; }
+    .cross { color: #f85149; }
+    .demo {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .demo h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+    .demo-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      background: #21262d;
+      color: #e1e4e8;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+    }
+    button:hover { background: #30363d; }
+    button.primary { background: #238636; border-color: #2ea043; }
+    button.primary:hover { background: #2ea043; }
+    button.danger-btn { background: #da3633; border-color: #f85149; }
+    button.danger-btn:hover { background: #f85149; }
+    button.recover { background: #1f6feb; border-color: #388bfd; }
+    button.recover:hover { background: #388bfd; }
+    .log {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+    .log-entry { padding: 0.1rem 0; }
+    .log-entry.info { color: #8b949e; }
+    .log-entry.success { color: #3fb950; }
+    .log-entry.warn { color: #d29922; }
+    .log-entry.error { color: #f85149; }
+    .log-entry .time { color: #484f58; margin-right: 0.5rem; }
+    .data-table {
+      width: 100%;
+      margin-top: 1rem;
+      border-collapse: collapse;
+    }
+    .data-table th, .data-table td {
+      padding: 0.5rem 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.85rem;
+    }
+    .data-table th {
+      color: #8b949e;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    .data-table td.truncated {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .comparison {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .comparison h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+    .browser-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .browser-col {
+      background: #0d1117;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .browser-col h3 {
+      font-size: 0.9rem;
+      margin-bottom: 0.8rem;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .bar-label { width: 80px; color: #8b949e; }
+    .bar-track {
+      flex: 1;
+      height: 20px;
+      background: #21262d;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s;
+    }
+    .bar-fill.safe { background: #3fb950; width: 100%; }
+    .bar-fill.warning { background: #d29922; width: 60%; }
+    .bar-fill.danger { background: #f85149; width: 25%; }
+    .persist-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .persist-section h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .persist-desc { color: #8b949e; font-size: 0.85rem; margin-bottom: 1rem; }
+    .strategy-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .strategy-badge.granted { background: #0d3521; color: #3fb950; }
+    .strategy-badge.denied { background: #3d1214; color: #f85149; }
+    .strategy-badge.unsupported { background: #2d1a00; color: #d29922; }
+    .strategy-info {
+      background: #0d1117;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Local-First Data Guard</h1>
+  <p class="subtitle">Browser storage durability detection &amp; cross-storage auto-recovery</p>
+
+  <div class="dashboard" id="dashboard">
+    <div class="card overall" id="card-overall">
+      <h3>Overall</h3>
+      <div class="score" id="score-overall">...</div>
+      <div class="score-detail" id="detail-overall">Detecting...</div>
+    </div>
+    <div class="card">
+      <h3>IndexedDB</h3>
+      <div class="score" id="score-idb">...</div>
+      <div class="score-detail">Primary storage</div>
+    </div>
+    <div class="card">
+      <h3>OPFS</h3>
+      <div class="score" id="score-opfs">...</div>
+      <div class="score-detail">Backup storage</div>
+    </div>
+    <div class="card">
+      <h3>Cache API</h3>
+      <div class="score" id="score-cache">...</div>
+      <div class="score-detail">Fallback storage</div>
+    </div>
+  </div>
+
+  <div class="details">
+    <h2>Detection Details</h2>
+    <div id="details-list"></div>
+  </div>
+
+  <div class="persist-section">
+    <h2>navigator.storage.persist() Strategy</h2>
+    <p class="persist-desc">Persist result determines the replication strategy</p>
+    <div class="strategy-info" id="strategy-info">Checking persist status...</div>
+  </div>
+
+  <div class="comparison">
+    <h2>Browser Durability Comparison</h2>
+    <p class="subtitle" style="margin-bottom: 1rem;">Your current browser vs. typical Safari (with ITP)</p>
+    <div class="browser-grid">
+      <div class="browser-col">
+        <h3 id="current-browser-label">Current Browser</h3>
+        <div id="current-bars"></div>
+      </div>
+      <div class="browser-col">
+        <h3>Safari (ITP enabled)</h3>
+        <div id="safari-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo">
+    <h2>Cross-Storage Replication Demo</h2>
+    <div class="demo-controls">
+      <button class="primary" id="btn-save">1. Save Test Data</button>
+      <button id="btn-show">Show Current Data</button>
+      <button class="danger-btn" id="btn-delete">2. Delete IndexedDB (Simulate Loss)</button>
+      <button class="recover" id="btn-recover">3. Auto-Recover from OPFS</button>
+      <button id="btn-clear">Clear All</button>
+    </div>
+    <table class="data-table" id="data-table">
+      <thead>
+        <tr><th>Key</th><th>Value</th><th>Source</th><th>Updated</th></tr>
+      </thead>
+      <tbody id="data-tbody"></tbody>
+    </table>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script type="module">
+    import { detectDurability, DataGuardReplicator } from './dist/data-guard.js';
+
+    // ─── Safe DOM helpers ───
+    function el(tag, attrs, children) {
+      const e = document.createElement(tag);
+      if (attrs) {
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === 'className') e.className = v;
+          else if (k === 'textContent') e.textContent = v;
+          else e.setAttribute(k, v);
+        }
+      }
+      if (children) {
+        for (const c of children) {
+          if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+          else if (c) e.appendChild(c);
+        }
+      }
+      return e;
+    }
+
+    function clearChildren(parent) {
+      while (parent.firstChild) parent.removeChild(parent.firstChild);
+    }
+
+    // ─── Logging ───
+    const logEl = document.getElementById('log');
+    function log(msg, type) {
+      type = type || 'info';
+      const t = new Date().toLocaleTimeString();
+      const div = el('div', { className: 'log-entry ' + type }, [
+        el('span', { className: 'time', textContent: t }),
+        document.createTextNode(' ' + msg)
+      ]);
+      logEl.prepend(div);
+    }
+
+    // ─── Replicator ───
+    const replicator = new DataGuardReplicator({
+      onRecovery: function(key, source) {
+        log('Recovered "' + key + '" from ' + source, 'success');
+      }
+    });
+
+    // ─── Build a bar row for comparison chart ───
+    function makeBarRow(label, level) {
+      const fill = el('div', { className: 'bar-fill ' + level });
+      const track = el('div', { className: 'bar-track' }, [fill]);
+      return el('div', { className: 'bar-row' }, [
+        el('span', { className: 'bar-label', textContent: label }),
+        track
+      ]);
+    }
+
+    // ─── Build a detail row ───
+    function makeDetailRow(label, ok, text) {
+      return el('div', { className: 'detail-row' }, [
+        el('span', { textContent: label }),
+        el('span', { className: ok ? 'check' : 'cross', textContent: text })
+      ]);
+    }
+
+    // ─── Safari static bars ───
+    (function buildSafariBars() {
+      const container = document.getElementById('safari-bars');
+      container.appendChild(makeBarRow('IndexedDB', 'danger'));
+      container.appendChild(makeBarRow('OPFS', 'warning'));
+      container.appendChild(makeBarRow('Cache API', 'danger'));
+    })();
+
+    // ─── Durability Detection ───
+    async function runDetection() {
+      try {
+        const report = await detectDurability();
+
+        // Update scores
+        function updateScore(id, level) {
+          const scoreEl = document.getElementById(id);
+          scoreEl.textContent = level;
+          scoreEl.className = 'score ' + level;
+        }
+        updateScore('score-overall', report.overall);
+        updateScore('score-idb', report.indexedDB);
+        updateScore('score-opfs', report.opfs);
+        updateScore('score-cache', report.cacheAPI);
+
+        document.getElementById('card-overall').classList.add(report.overall);
+        document.getElementById('detail-overall').textContent =
+          report.persisted ? 'Storage persistence granted' :
+          report.persisted === false ? 'Persistence denied — replication active' :
+          'Persistence status unknown';
+
+        // Details list
+        const detailsList = document.getElementById('details-list');
+        clearChildren(detailsList);
+        var d = report.details;
+        var rows = [
+          ['navigator.storage.persist()', d.persistSupported, d.persistSupported ? 'Supported' : 'Not supported'],
+          ['Persistence granted', d.persistGranted === true, d.persistGranted === true ? 'Yes' : d.persistGranted === false ? 'No' : 'N/A'],
+          ['OPFS available', d.opfsAvailable, d.opfsAvailable ? 'Available' : 'Not available'],
+          ['Safari browser', d.isSafari, d.isSafari ? 'Yes' : 'No'],
+          ['ITP active', d.isITP, d.isITP ? 'Yes (7-day purge risk)' : 'No'],
+          ['Storage quota', true, d.storageEstimate ? (d.storageEstimate.quota / 1e9).toFixed(1) + ' GB' : 'Unknown'],
+          ['Storage usage', true, d.storageEstimate ? (d.storageEstimate.usage / 1e6).toFixed(1) + ' MB' : 'Unknown'],
+        ];
+        for (var i = 0; i < rows.length; i++) {
+          detailsList.appendChild(makeDetailRow(rows[i][0], rows[i][1], rows[i][2]));
+        }
+
+        // Current browser bars
+        var currentBars = document.getElementById('current-bars');
+        clearChildren(currentBars);
+        currentBars.appendChild(makeBarRow('IndexedDB', report.indexedDB));
+        currentBars.appendChild(makeBarRow('OPFS', report.opfs));
+        currentBars.appendChild(makeBarRow('Cache API', report.cacheAPI));
+
+        // Browser label
+        var ua = navigator.userAgent;
+        var browser = /Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'Browser';
+        document.getElementById('current-browser-label').textContent = browser + ' (current)';
+
+        // Persist strategy
+        var stratEl = document.getElementById('strategy-info');
+        clearChildren(stratEl);
+        if (!d.persistSupported) {
+          stratEl.appendChild(el('span', { className: 'strategy-badge unsupported', textContent: 'UNSUPPORTED' }));
+          stratEl.appendChild(document.createElement('br'));
+          stratEl.appendChild(document.createElement('br'));
+          stratEl.appendChild(el('strong', { textContent: 'Strategy: ' }));
+          stratEl.appendChild(document.createTextNode('Aggressive cross-storage replication enabled. Without persist(), the browser may evict data under storage pressure. Data Guard replicates all writes to OPFS as backup.'));
+        } else if (d.persistGranted) {
+          stratEl.appendChild(el('span', { className: 'strategy-badge granted', textContent: 'PERSIST GRANTED' }));
+          stratEl.appendChild(document.createElement('br'));
+          stratEl.appendChild(document.createElement('br'));
+          stratEl.appendChild(el('strong', { textContent: 'Strategy: ' }));
+          stratEl.appendChild(document.createTextNode('Standard replication with persistence protection. Storage is protected from automatic eviction. Cross-storage replication serves as additional safety net.'));
+        } else {
+          stratEl.appendChild(el('span', { className: 'strategy-badge denied', textContent: 'PERSIST DENIED' }));
+          stratEl.appendChild(document.createElement('br'));
+          stratEl.appendChild(document.createElement('br'));
+          stratEl.appendChild(el('strong', { textContent: 'Strategy: ' }));
+          stratEl.appendChild(document.createTextNode('Mandatory cross-storage replication. Without persistence guarantee, the browser may delete IndexedDB data at any time. Data Guard ensures every write is replicated to OPFS for guaranteed recovery.'));
+        }
+
+        log('Durability detection complete', 'success');
+      } catch (err) {
+        log('Detection failed: ' + err.message, 'error');
+      }
+    }
+
+    // ─── Demo functions ───
+    var testRecords = [
+      { key: 'user-profile', value: '{"name":"Alice","theme":"dark"}' },
+      { key: 'draft-post', value: '{"title":"My First Post","body":"Hello world..."}' },
+      { key: 'app-settings', value: '{"lang":"ko","notifications":true}' },
+    ];
+
+    function renderTable(records, mode) {
+      var tbody = document.getElementById('data-tbody');
+      clearChildren(tbody);
+      if (records.length === 0) {
+        var td = el('td', { textContent: 'No data stored', colspan: '4' });
+        td.style.color = '#8b949e';
+        td.style.textAlign = 'center';
+        tbody.appendChild(el('tr', {}, [td]));
+        log('No records found in any storage', mode === 'idb-only' ? 'error' : 'info');
+        return;
+      }
+      for (var i = 0; i < records.length; i++) {
+        var r = records[i];
+        var source = mode === 'recovered' ? 'OPFS -> IDB (recovered)' :
+                     mode === 'idb-only' ? 'checking...' : 'IndexedDB + OPFS';
+        var date = new Date(r.updatedAt).toLocaleTimeString();
+        var tr = el('tr', {}, [
+          el('td', { textContent: r.key }),
+          el('td', { className: 'truncated', textContent: r.value }),
+          el('td', { textContent: source }),
+          el('td', { textContent: date }),
+        ]);
+        tbody.appendChild(tr);
+      }
+      log('Showing ' + records.length + ' record(s)', 'info');
+    }
+
+    document.getElementById('btn-save').addEventListener('click', async function() {
+      log('Saving test data to IndexedDB + OPFS...');
+      for (var i = 0; i < testRecords.length; i++) {
+        var r = testRecords[i];
+        await replicator.put(r.key, r.value);
+        log('Saved "' + r.key + '" to IndexedDB + OPFS', 'success');
+      }
+      renderTable(await replicator.getAll(), 'both');
+    });
+
+    document.getElementById('btn-show').addEventListener('click', async function() {
+      renderTable(await replicator.getAll(), 'check');
+    });
+
+    document.getElementById('btn-delete').addEventListener('click', async function() {
+      log('Simulating IndexedDB storage loss...', 'warn');
+      await replicator.simulateStorageLoss();
+      log('IndexedDB cleared! Data is gone from primary storage.', 'error');
+      renderTable(await replicator.getAll(), 'idb-only');
+    });
+
+    document.getElementById('btn-recover').addEventListener('click', async function() {
+      log('Attempting auto-recovery from OPFS backup...');
+      var recovered = await replicator.recoverAll();
+      if (recovered.length > 0) {
+        log('Recovered ' + recovered.length + ' record(s) from OPFS!', 'success');
+      } else {
+        log('No records to recover (primary intact or backup empty)', 'warn');
+      }
+      renderTable(await replicator.getAll(), 'recovered');
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', async function() {
+      await replicator.clearAll();
+      log('All storage cleared', 'info');
+      clearChildren(document.getElementById('data-tbody'));
+    });
+
+    // ─── Init ───
+    runDetection();
+  </script>
+</body>
+</html>

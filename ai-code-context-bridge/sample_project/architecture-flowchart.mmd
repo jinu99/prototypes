@@ -1,0 +1,37 @@
+flowchart TB
+    subgraph Frontend
+        WebApp[Web Application]
+        MobileApp[Mobile App]
+    end
+
+    subgraph Backend
+        API[API Gateway]
+        OrderSvc[Order Service]
+        ProductSvc[Product Service]
+        UserSvc[User Service]
+    end
+
+    subgraph Data
+        OrderDB[(Order DB)]
+        ProductDB[(Product DB)]
+        UserDB[(User DB)]
+        Cache[Redis Cache]
+    end
+
+    subgraph External
+        PaymentAPI[Payment Provider]
+        EmailSvc[Email Service]
+    end
+
+    WebApp --> API
+    MobileApp --> API
+    API --> OrderSvc
+    API --> ProductSvc
+    API --> UserSvc
+    OrderSvc --> OrderDB
+    OrderSvc --> PaymentAPI
+    OrderSvc --> ProductSvc
+    ProductSvc --> ProductDB
+    ProductSvc --> Cache
+    UserSvc --> UserDB
+    UserSvc --> EmailSvc

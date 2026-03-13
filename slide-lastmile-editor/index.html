@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slide Last-Mile Editor</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+
+  .toolbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: #16213e; border-bottom: 1px solid #0f3460; }
+  .toolbar h1 { font-size: 14px; font-weight: 600; color: #e94560; }
+  .toolbar button { padding: 6px 14px; border: 1px solid #0f3460; border-radius: 4px; background: #16213e; color: #e0e0e0; cursor: pointer; font-size: 12px; transition: background 0.2s; }
+  .toolbar button:hover { background: #0f3460; }
+  .toolbar button.active { background: #e94560; border-color: #e94560; color: #fff; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .status { font-size: 11px; color: #888; }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  .panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .panel-header { padding: 6px 12px; background: #16213e; border-bottom: 1px solid #0f3460; font-size: 12px; font-weight: 600; color: #aaa; display: flex; align-items: center; gap: 8px; }
+  .panel-body { flex: 1; overflow: auto; padding: 16px; }
+
+  .slide-container { background: #fff; color: #333; border-radius: 4px; overflow: hidden; position: relative; }
+  .slide-container section { padding: 40px; min-height: 400px; border-bottom: 2px solid #e0e0e0; position: relative; }
+  .slide-container section:last-child { border-bottom: none; }
+
+  /* Editable block hover/focus */
+  .slide-container [data-source-line] { position: relative; transition: outline 0.15s; cursor: text; border-radius: 2px; }
+  .slide-container [data-source-line]:hover { outline: 2px dashed #4a9eff55; outline-offset: 2px; }
+  .slide-container [data-source-line]:focus { outline: 2px solid #4a9eff; outline-offset: 2px; background: #4a9eff0a; }
+
+  /* Draggable indicator */
+  .slide-container [data-source-line].draggable { cursor: grab; }
+  .slide-container [data-source-line].dragging { opacity: 0.6; cursor: grabbing; }
+  .drag-handle { display: none; position: absolute; left: -24px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; cursor: grab; color: #999; font-size: 14px; line-height: 18px; text-align: center; }
+  .slide-container [data-source-line]:hover > .drag-handle { display: block; }
+
+  /* Markdown source panel */
+  .source-panel { border-left: 1px solid #0f3460; max-width: 45%; min-width: 300px; }
+  .source-panel textarea { width: 100%; height: 100%; background: #0d1117; color: #c9d1d9; border: none; padding: 16px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.6; resize: none; outline: none; }
+
+  /* Diff panel */
+  .diff-panel { border-left: 1px solid #0f3460; max-width: 45%; min-width: 300px; display: none; }
+  .diff-panel.visible { display: flex; }
+  .diff-content { padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+  .diff-added { background: #1a3a1a; color: #4ade80; }
+  .diff-removed { background: #3a1a1a; color: #f87171; text-decoration: line-through; }
+  .diff-unchanged { color: #666; }
+
+  /* Slide number badge */
+  .slide-number { position: absolute; top: 8px; right: 12px; background: #e94560; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; z-index: 10; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Slide Last-Mile Editor</h1>
+  <div class="spacer"></div>
+  <button id="btn-source" class="active" onclick="togglePanel('source')">Source</button>
+  <button id="btn-diff" onclick="togglePanel('diff')">Diff</button>
+  <button id="btn-save" onclick="saveMarkdown()">Save</button>
+  <button id="btn-reset-diff" onclick="resetDiff()">Reset Diff</button>
+  <span class="status" id="status">Ready</span>
+</div>
+
+<div class="main">
+  <!-- Slide preview panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>Preview</span>
+      <span style="color:#666; font-size:11px">(click to edit, drag handle to reposition)</span>
+    </div>
+    <div class="panel-body" id="slide-preview"></div>
+  </div>
+
+  <!-- Source panel -->
+  <div class="panel source-panel" id="source-panel">
+    <div class="panel-header">Markdown Source</div>
+    <div class="panel-body" style="padding:0">
+      <textarea id="source-editor" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <!-- Diff panel -->
+  <div class="panel diff-panel" id="diff-panel">
+    <div class="panel-header">Diff</div>
+    <div class="panel-body">
+      <div class="diff-content" id="diff-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const slidePreview = document.getElementById('slide-preview');
+const sourceEditor = document.getElementById('source-editor');
+const statusEl = document.getElementById('status');
+let currentMarkdown = '';
+let isDragging = false;
+let dragTarget = null;
+let dragStartY = 0;
+let dragOriginalMarginTop = 0;
+
+// ── Load slide ──
+async function loadSlide() {
+  setStatus('Loading...');
+  const res = await fetch('/api/slide');
+  const data = await res.json();
+  currentMarkdown = data.markdown;
+  sourceEditor.value = data.markdown;
+  renderPreview(data.html, data.css);
+  setStatus('Loaded');
+}
+
+// ── Render preview using safe DOM methods ──
+function renderPreview(html, css) {
+  // Parse server-rendered Marp HTML using DOMParser (trusted server content)
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const sections = doc.querySelectorAll('section');
+
+  // Clear and rebuild preview
+  while (slidePreview.firstChild) slidePreview.removeChild(slidePreview.firstChild);
+
+  // Add Marp styles
+  const styleEl = document.createElement('style');
+  styleEl.textContent = css;
+  slidePreview.appendChild(styleEl);
+
+  const container = document.createElement('div');
+  container.className = 'slide-container';
+
+  sections.forEach((section, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+
+    const badge = document.createElement('span');
+    badge.className = 'slide-number';
+    badge.textContent = String(i + 1);
+    wrapper.appendChild(badge);
+
+    wrapper.appendChild(document.adoptNode(section));
+    container.appendChild(wrapper);
+  });
+
+  slidePreview.appendChild(container);
+  setupEditableElements();
+}
+
+// ── Setup editable elements ──
+function setupEditableElements() {
+  const elements = slidePreview.querySelectorAll('[data-source-line]');
+  elements.forEach(el => {
+    if (el.tagName === 'UL' || el.tagName === 'OL') return;
+
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('draggable');
+
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '\u2807';
+    handle.setAttribute('contenteditable', 'false');
+    handle.addEventListener('mousedown', startDrag);
+    el.style.position = 'relative';
+    el.insertBefore(handle, el.firstChild);
+
+    el.addEventListener('blur', handleEdit);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        el.blur();
+      }
+    });
+  });
+}
+
+// ── Handle inline edit ──
+async function handleEdit(e) {
+  const el = e.target.closest('[data-source-line]');
+  if (!el) return;
+
+  const sourceLine = parseInt(el.getAttribute('data-source-line'));
+  const sourceEnd = parseInt(el.getAttribute('data-source-end'));
+
+  const lines = currentMarkdown.split('\n');
+  const originalBlock = lines.slice(sourceLine, sourceEnd).join('\n');
+
+  const tag = el.tagName.toLowerCase();
+  const textContent = getCleanText(el);
+  let newText = '';
+
+  if (tag === 'h1') newText = '# ' + textContent;
+  else if (tag === 'h2') newText = '## ' + textContent;
+  else if (tag === 'h3') newText = '### ' + textContent;
+  else if (tag === 'li') {
+    const origLine = lines[sourceLine] || '';
+    const match = origLine.match(/^(\s*[-*+]|\s*\d+\.)\s*/);
+    newText = match ? match[0] + textContent : '- ' + textContent;
+  }
+  else if (tag === 'blockquote') newText = '> ' + textContent;
+  else if (tag === 'p') newText = textContent;
+  else newText = textContent;
+
+  if (newText.trim() === originalBlock.trim()) return;
+
+  setStatus('Saving edit...');
+  try {
+    const res = await fetch('/api/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceLine, sourceEnd, newText })
+    });
+    const data = await res.json();
+    currentMarkdown = data.markdown;
+    sourceEditor.value = data.markdown;
+    renderPreview(data.html, data.css);
+    setStatus('Edit saved');
+  } catch (err) {
+    setStatus('Error: ' + err.message);
+  }
+}
+
+// ── Get clean text (excluding drag handle) ──
+function getCleanText(el) {
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('.drag-handle').forEach(h => h.remove());
+  return clone.textContent.trim();
+}
+
+// ── Drag to reposition ──
+function startDrag(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const el = e.target.closest('[data-source-line]');
+  if (!el) return;
+
+  isDragging = true;
+  dragTarget = el;
+  dragStartY = e.clientY;
+  dragOriginalMarginTop = parseInt(getComputedStyle(el).marginTop) || 0;
+  el.classList.add('dragging');
+  el.setAttribute('contenteditable', 'false');
+
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+}
+
+function onDrag(e) {
+  if (!isDragging || !dragTarget) return;
+  const dy = e.clientY - dragStartY;
+  dragTarget.style.marginTop = (dragOriginalMarginTop + dy) + 'px';
+}
+
+async function endDrag(e) {
+  if (!isDragging || !dragTarget) return;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', endDrag);
+
+  const el = dragTarget;
+  isDragging = false;
+  dragTarget = null;
+  el.classList.remove('dragging');
+  el.setAttribute('contenteditable', 'true');
+
+  const newMarginTop = parseInt(el.style.marginTop) || 0;
+  if (newMarginTop === dragOriginalMarginTop) return;
+
+  const sourceLine = el.getAttribute('data-source-line');
+  const sourceEnd = el.getAttribute('data-source-end');
+  const styleStr = 'margin-top: ' + newMarginTop + 'px';
+
+  setStatus('Saving position...');
+  try {
+    const res = await fetch('/api/style', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceLine, sourceEnd, styleStr })
+    });
+    const data = await res.json();
+    currentMarkdown = data.markdown;
+    sourceEditor.value = data.markdown;
+    setStatus('Position saved');
+  } catch (err) {
+    setStatus('Error: ' + err.message);
+  }
+}
+
+// ── Source editor → save ──
+async function saveMarkdown() {
+  setStatus('Saving...');
+  try {
+    const res = await fetch('/api/slide', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ markdown: sourceEditor.value })
+    });
+    const data = await res.json();
+    currentMarkdown = data.markdown;
+    renderPreview(data.html, data.css);
+    setStatus('Saved');
+  } catch (err) {
+    setStatus('Error: ' + err.message);
+  }
+}
+
+let saveTimeout;
+sourceEditor.addEventListener('input', () => {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveMarkdown, 800);
+});
+
+// ── Diff ──
+async function loadDiff() {
+  const res = await fetch('/api/diff');
+  const data = await res.json();
+  const diffEl = document.getElementById('diff-content');
+
+  while (diffEl.firstChild) diffEl.removeChild(diffEl.firstChild);
+
+  if (!data.changes || data.changes.length === 0) {
+    const span = document.createElement('span');
+    span.className = 'diff-unchanged';
+    span.textContent = 'No changes';
+    diffEl.appendChild(span);
+    return;
+  }
+
+  data.changes.forEach(part => {
+    const cls = part.added ? 'diff-added' : part.removed ? 'diff-removed' : 'diff-unchanged';
+    const prefix = part.added ? '+ ' : part.removed ? '- ' : '  ';
+    const lines = part.value.split('\n');
+    lines.forEach((line, i) => {
+      if (i === lines.length - 1 && line === '') return;
+      const div = document.createElement('div');
+      div.className = cls;
+      div.textContent = prefix + line;
+      diffEl.appendChild(div);
+    });
+  });
+}
+
+async function resetDiff() {
+  await fetch('/api/diff/reset', { method: 'POST' });
+  loadDiff();
+  setStatus('Diff baseline reset');
+}
+
+// ── Panel toggle ──
+function togglePanel(panel) {
+  const sourcePanel = document.getElementById('source-panel');
+  const diffPanel = document.getElementById('diff-panel');
+  const btnSource = document.getElementById('btn-source');
+  const btnDiff = document.getElementById('btn-diff');
+
+  if (panel === 'source') {
+    const isVisible = sourcePanel.style.display !== 'none';
+    sourcePanel.style.display = isVisible ? 'none' : 'flex';
+    btnSource.classList.toggle('active', !isVisible);
+  } else if (panel === 'diff') {
+    const isVisible = diffPanel.classList.contains('visible');
+    diffPanel.classList.toggle('visible', !isVisible);
+    btnDiff.classList.toggle('active', !isVisible);
+    if (!isVisible) loadDiff();
+  }
+}
+
+// ── Helpers ──
+function setStatus(msg) {
+  statusEl.textContent = msg;
+  setTimeout(() => { if (statusEl.textContent === msg) statusEl.textContent = 'Ready'; }, 3000);
+}
+
+// ── Init ──
+loadSlide();
+</script>
+</body>
+</html>

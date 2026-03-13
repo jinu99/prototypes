@@ -1,0 +1,15 @@
+[project]
+name = "embedding-migration-guard"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.5",
+    "click>=8.3.1",
+    "numpy>=2.4.3",
+    "sentence-transformers>=5.2.3",
+]
+
+[project.scripts]
+emg = "emg.cli:main"

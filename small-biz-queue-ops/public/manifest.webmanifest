@@ -1,0 +1,10 @@
+{
+  "name": "Small Biz Queue",
+  "short_name": "Queue",
+  "description": "소규모 매장 대기열 관리",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#2563eb",
+  "icons": []
+}

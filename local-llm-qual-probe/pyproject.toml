@@ -1,0 +1,14 @@
+[project]
+name = "llm-qual-probe"
+version = "0.1.0"
+description = "Probe local LLM quality: structured output, multi-turn stability, token efficiency"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=2.26.0",
+    "pyyaml>=6.0.3",
+    "rich>=14.3.3",
+]
+
+[project.scripts]
+llm-qual-probe = "llm_qual_probe.cli:main"

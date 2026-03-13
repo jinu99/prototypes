@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenAPI Form Tester</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>OpenAPI Form Tester</h1>
+  <span class="api-title" id="apiTitle">Loading...</span>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">Endpoints</div>
+    <div class="endpoint-list" id="endpointList"></div>
+  </aside>
+
+  <main class="main" id="mainPanel">
+    <div class="empty-state">Select an endpoint to begin testing</div>
+  </main>
+</div>
+
+<script src="dom-utils.js"></script>
+<script src="form-builder.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KDS — Small Biz Queue</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+  <nav class="nav">
+    <a href="/">홈</a>
+    <a href="/admin">매장 관리</a>
+    <a href="/kds" class="active">KDS</a>
+  </nav>
+  <div class="container-wide">
+    <div class="header">
+      <h1>🖥️ KDS — Kitchen Display</h1>
+      <p>대기 상태 카드 뷰</p>
+    </div>
+
+    <div class="kds-grid" id="kds-grid"></div>
+  </div>
+
+  <script>
+    function statusLabel(s) {
+      return { waiting: '⏳ 대기', called: '📢 호출', seated: '✅ 착석', completed: '완료' }[s] || s;
+    }
+
+    function elapsed(dateStr) {
+      if (!dateStr) return '';
+      const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+      if (diff < 1) return '방금 등록';
+      return diff + '분 경과';
+    }
+
+    function renderKDS(items) {
+      const grid = document.getElementById('kds-grid');
+      grid.replaceChildren();
+
+      const active = items.filter(i => i.status !== 'completed');
+      if (!active.length) {
+        const p = document.createElement('p');
+        p.style.cssText = 'text-align:center;color:var(--gray-500);padding:40px;grid-column:1/-1';
+        p.textContent = '대기자가 없습니다';
+        grid.appendChild(p);
+        return;
+      }
+
+      active.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'kds-card status-' + item.status;
+
+        const name = document.createElement('div');
+        name.className = 'kds-name';
+        name.textContent = item.name;
+
+        const meta = document.createElement('div');
+        meta.className = 'kds-meta';
+        meta.textContent = item.party_size + '명 · ' + statusLabel(item.status);
+
+        const time = document.createElement('div');
+        time.className = 'kds-time';
+        time.textContent = elapsed(item.created_at);
+
+        if (item.position) {
+          const pos = document.createElement('div');
+          pos.style.cssText = 'font-size:.8rem;color:var(--primary);font-weight:600;margin-top:6px';
+          pos.textContent = '순번 #' + item.position;
+          card.appendChild(name);
+          card.appendChild(meta);
+          card.appendChild(pos);
+          card.appendChild(time);
+        } else {
+          card.appendChild(name);
+          card.appendChild(meta);
+          card.appendChild(time);
+        }
+
+        grid.appendChild(card);
+      });
+    }
+
+    // SSE
+    const es = new EventSource('/api/events');
+    es.addEventListener('queue-update', e => {
+      renderKDS(JSON.parse(e.data));
+    });
+
+    // Initial
+    fetch('/api/queue').then(r => r.json()).then(renderKDS);
+  </script>
+</body>
+</html>

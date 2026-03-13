@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매장 관리 — Small Biz Queue</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+  <nav class="nav">
+    <a href="/">홈</a>
+    <a href="/admin" class="active">매장 관리</a>
+    <a href="/kds">KDS</a>
+  </nav>
+  <div class="container-wide">
+    <div class="header">
+      <h1>📋 매장 관리</h1>
+      <p>대기자 목록 관리 및 상태 변경</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="active" onclick="switchTab('active')">대기/호출/착석</button>
+      <button class="tab" data-tab="completed" onclick="switchTab('completed')">완료</button>
+    </div>
+
+    <div id="queue-list"></div>
+    <div id="completed-list" style="display:none"></div>
+  </div>
+
+  <script>
+    let currentTab = 'active';
+    let allItems = [];
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+      });
+      document.getElementById('queue-list').style.display = tab === 'active' ? '' : 'none';
+      document.getElementById('completed-list').style.display = tab === 'completed' ? '' : 'none';
+    }
+
+    function nextStatus(current) {
+      const flow = { waiting: 'called', called: 'seated', seated: 'completed' };
+      return flow[current] || null;
+    }
+
+    function nextStatusLabel(current) {
+      const labels = { waiting: '호출', called: '착석', seated: '완료' };
+      return labels[current] || null;
+    }
+
+    function nextBtnClass(current) {
+      const classes = { waiting: 'btn-warning', called: 'btn-success', seated: 'btn-danger' };
+      return classes[current] || 'btn-primary';
+    }
+
+    function statusLabel(s) {
+      return { waiting: '대기', called: '호출', seated: '착석', completed: '완료' }[s] || s;
+    }
+
+    function timeAgo(dateStr) {
+      if (!dateStr) return '';
+      const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+      if (diff < 1) return '방금';
+      return diff + '분 전';
+    }
+
+    async function changeStatus(id, newStatus) {
+      await fetch('/api/queue/' + id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+    }
+
+    function renderQueue(items) {
+      allItems = items;
+      const activeEl = document.getElementById('queue-list');
+      const active = items.filter(i => i.status !== 'completed');
+
+      activeEl.replaceChildren();
+      if (!active.length) {
+        const p = document.createElement('p');
+        p.style.cssText = 'text-align:center;color:var(--gray-500);padding:40px';
+        p.textContent = '대기자가 없습니다';
+        activeEl.appendChild(p);
+      } else {
+        active.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'card';
+          row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px';
+
+          const info = document.createElement('div');
+          info.style.flex = '1';
+
+          const nameLine = document.createElement('div');
+          const nameSpan = document.createElement('strong');
+          nameSpan.textContent = item.name;
+          const sizeSpan = document.createElement('span');
+          sizeSpan.style.cssText = 'color:var(--gray-500);margin-left:8px;font-size:.9rem';
+          sizeSpan.textContent = item.party_size + '명';
+          nameLine.appendChild(nameSpan);
+          nameLine.appendChild(sizeSpan);
+
+          const metaLine = document.createElement('div');
+          metaLine.style.cssText = 'font-size:.82rem;color:var(--gray-500);margin-top:4px';
+          metaLine.textContent = '등록: ' + timeAgo(item.created_at);
+          if (item.position) {
+            metaLine.textContent += ' · 순번: ' + item.position;
+          }
+
+          info.appendChild(nameLine);
+          info.appendChild(metaLine);
+
+          const actions = document.createElement('div');
+          actions.style.cssText = 'display:flex;gap:6px;align-items:center';
+
+          const badge = document.createElement('span');
+          badge.className = 'badge badge-' + item.status;
+          badge.textContent = statusLabel(item.status);
+          actions.appendChild(badge);
+
+          const next = nextStatus(item.status);
+          if (next) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm ' + nextBtnClass(item.status);
+            btn.textContent = nextStatusLabel(item.status);
+            btn.addEventListener('click', () => changeStatus(item.id, next));
+            actions.appendChild(btn);
+          }
+
+          row.appendChild(info);
+          row.appendChild(actions);
+          activeEl.appendChild(row);
+        });
+      }
+    }
+
+    function loadCompleted() {
+      fetch('/api/queue/all').then(r => r.json()).then(items => {
+        const completed = items.filter(i => i.status === 'completed');
+        const completedEl = document.getElementById('completed-list');
+        completedEl.replaceChildren();
+        if (!completed.length) {
+          const p = document.createElement('p');
+          p.style.cssText = 'text-align:center;color:var(--gray-500);padding:40px';
+          p.textContent = '완료된 항목이 없습니다';
+          completedEl.appendChild(p);
+        } else {
+          completed.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'card';
+            row.style.opacity = '0.6';
+            const nameLine = document.createElement('div');
+            const nameSpan = document.createElement('strong');
+            nameSpan.textContent = item.name;
+            const sizeSpan = document.createElement('span');
+            sizeSpan.style.cssText = 'color:var(--gray-500);margin-left:8px;font-size:.9rem';
+            sizeSpan.textContent = item.party_size + '명';
+            const badge = document.createElement('span');
+            badge.className = 'badge badge-completed';
+            badge.style.marginLeft = '8px';
+            badge.textContent = '완료';
+            nameLine.appendChild(nameSpan);
+            nameLine.appendChild(sizeSpan);
+            nameLine.appendChild(badge);
+            row.appendChild(nameLine);
+            completedEl.appendChild(row);
+          });
+        }
+      });
+    }
+
+    // SSE
+    const es = new EventSource('/api/events');
+    es.addEventListener('queue-update', e => {
+      renderQueue(JSON.parse(e.data));
+      loadCompleted();
+    });
+
+    // Initial load
+    fetch('/api/queue').then(r => r.json()).then(renderQueue);
+    loadCompleted();
+  </script>
+</body>
+</html>

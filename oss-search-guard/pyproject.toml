@@ -1,0 +1,17 @@
+[project]
+name = "oss-search-guard"
+version = "0.1.0"
+description = "Detect impersonation sites in search results for open-source projects"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ddgs>=9.11.2",
+    "httpx>=0.28.1",
+]
+
+[project.scripts]
+oss-search-guard = "oss_search_guard.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

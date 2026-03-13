@@ -1,0 +1,23 @@
+{
+  "name": "local-first-data-guard",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --format=esm --outfile=dist/data-guard.js",
+    "test": "node test-core.mjs && node test-criteria.mjs",
+    "serve": "python3 -m http.server 8765"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "esbuild": "^0.27.3",
+    "fake-indexeddb": "^6.2.5",
+    "playwright": "^1.58.2",
+    "puppeteer": "^24.39.0",
+    "serve": "^14.2.6",
+    "typescript": "^5.9.3"
+  }
+}

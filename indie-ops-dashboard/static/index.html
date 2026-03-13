@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indie Ops Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e4ed;
+    --text-dim: #8b8fa3;
+    --accent: #6c5ce7;
+    --green: #00b894;
+    --red: #e17055;
+    --orange: #fdcb6e;
+    --blue: #74b9ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    gap: 0;
+  }
+  header {
+    grid-column: 1 / -1;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header .meta { color: var(--text-dim); font-size: 13px; }
+  main {
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  aside {
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card h2 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .chart-container { position: relative; height: 220px; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+  .stat .sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .cost-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+  .cost-box {
+    text-align: center;
+    padding: 16px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+  }
+  .cost-box .price { font-size: 32px; font-weight: 700; }
+  .cost-box .tier { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .cost-arrow {
+    font-size: 24px;
+    color: var(--green);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .cost-arrow .savings { font-size: 14px; font-weight: 600; }
+  .recommendation {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 184, 148, 0.08);
+    border: 1px solid rgba(0, 184, 148, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .daily-bar {
+    display: flex;
+    align-items: end;
+    gap: 4px;
+    height: 80px;
+    margin-top: 8px;
+  }
+  .daily-bar .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .daily-bar .bar {
+    width: 100%;
+    max-width: 40px;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s;
+  }
+  .daily-bar .bar-label { font-size: 10px; color: var(--text-dim); }
+
+  aside h3 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .uptime-list, .heartbeat-list { list-style: none; }
+  .uptime-list li, .heartbeat-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .uptime-list li:last-child, .heartbeat-list li:last-child { border-bottom: none; }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .status-dot.up { background: var(--green); }
+  .status-dot.down { background: var(--red); }
+  .status-dot.stale { background: var(--orange); }
+  .response-time { color: var(--text-dim); font-size: 12px; }
+  .time-ago { color: var(--text-dim); font-size: 11px; }
+
+  .btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn:hover { opacity: 0.85; }
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    color: var(--text-dim);
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <header>
+    <h1>Indie Ops Dashboard</h1>
+    <div class="meta">
+      <span id="last-update">Loading...</span>
+      <button class="btn" onclick="refreshAll()" style="margin-left: 12px;">Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="label">Avg CPU</div>
+        <div class="value" id="stat-cpu">—</div>
+        <div class="sub">last 24h</div>
+      </div>
+      <div class="stat">
+        <div class="label">Avg Memory</div>
+        <div class="value" id="stat-mem">—</div>
+        <div class="sub">last 24h</div>
+      </div>
+      <div class="stat">
+        <div class="label">Active Hours</div>
+        <div class="value" id="stat-active">—</div>
+        <div class="sub">avg per day</div>
+      </div>
+      <div class="stat">
+        <div class="label">Potential Savings</div>
+        <div class="value" id="stat-savings" style="color: var(--green);">—</div>
+        <div class="sub">per month</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>System Metrics — Last 24h</h2>
+      <div class="chart-container">
+        <canvas id="metricsChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Active / Idle Segments</h2>
+      <div id="segment-bar" style="height: 32px; border-radius: 6px; overflow: hidden; display: flex;"></div>
+      <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+        <span id="segment-start" style="font-size: 11px; color: var(--text-dim);"></span>
+        <div style="display: flex; gap: 16px; font-size: 11px;">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green);margin-right:4px;vertical-align:middle;"></span>Active</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2a2d3a;margin-right:4px;vertical-align:middle;"></span>Idle</span>
+        </div>
+        <span id="segment-end" style="font-size: 11px; color: var(--text-dim);"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Daily Active Hours</h2>
+      <div class="daily-bar" id="daily-bars"></div>
+    </div>
+
+    <div class="card">
+      <h2>Cost Comparison</h2>
+      <div class="cost-grid" id="cost-grid">
+        <div class="loading">Loading analysis...</div>
+      </div>
+      <div class="recommendation" id="recommendation" style="display:none;"></div>
+    </div>
+  </main>
+
+  <aside>
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Uptime Checks</h3>
+        <button class="btn" onclick="runUptimeCheck()">Check Now</button>
+      </div>
+      <ul class="uptime-list" id="uptime-list">
+        <li class="loading">Loading...</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Cron Heartbeats</h3>
+      <ul class="heartbeat-list" id="heartbeat-list">
+        <li class="loading">Loading...</li>
+      </ul>
+      <div style="margin-top: 8px;">
+        <button class="btn" onclick="sendTestHeartbeat()">Send Test Beat</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+let metricsChart = null;
+
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else if (k === 'className') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of children) {
+    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    else if (c) e.appendChild(c);
+  }
+  return e;
+}
+
+function clearChildren(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+function formatTime(ts) {
+  return new Date(ts * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() / 1000 - ts;
+  if (diff < 60) return Math.floor(diff) + 's ago';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+async function fetchMetrics() {
+  const res = await fetch('/api/metrics?hours=24');
+  const data = await res.json();
+  renderMetricsChart(data.metrics);
+  updateStatAverages(data.metrics);
+}
+
+function updateStatAverages(metrics) {
+  if (!metrics.length) return;
+  const avgCpu = metrics.reduce((s, m) => s + m.cpu_percent, 0) / metrics.length;
+  const avgMem = metrics.reduce((s, m) => s + m.memory_percent, 0) / metrics.length;
+  document.getElementById('stat-cpu').textContent = avgCpu.toFixed(1) + '%';
+  document.getElementById('stat-mem').textContent = avgMem.toFixed(1) + '%';
+}
+
+function renderMetricsChart(metrics) {
+  const ctx = document.getElementById('metricsChart').getContext('2d');
+  const labels = metrics.map(m => new Date(m.ts * 1000));
+  const cpuData = metrics.map(m => m.cpu_percent);
+  const memData = metrics.map(m => m.memory_percent);
+
+  if (metricsChart) metricsChart.destroy();
+  metricsChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'CPU %',
+          data: cpuData,
+          borderColor: 'rgba(0,184,148,0.9)',
+          backgroundColor: 'rgba(0,184,148,0.1)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        },
+        {
+          label: 'Memory %',
+          data: memData,
+          borderColor: 'rgba(116,185,255,0.9)',
+          backgroundColor: 'rgba(116,185,255,0.05)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8b8fa3', font: { size: 11 } } },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          titleColor: '#e1e4ed',
+          bodyColor: '#e1e4ed',
+          borderColor: '#2a2d3a',
+          borderWidth: 1,
+        },
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8b8fa3', font: { size: 10 } },
+        },
+        y: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8b8fa3', font: { size: 10 }, callback: v => v + '%' },
+        },
+      },
+    },
+  });
+}
+
+async function fetchAnalysis() {
+  const res = await fetch('/api/analysis?hours=24');
+  const data = await res.json();
+  renderSegments(data.classification.segments);
+  renderDailyBars(data.classification.daily_hours);
+  renderCostComparison(data.cost_comparison);
+
+  const hours = data.cost_comparison.avg_active_hours_per_day;
+  if (hours !== undefined) document.getElementById('stat-active').textContent = hours + 'h';
+  const savings = data.cost_comparison.savings;
+  if (savings) document.getElementById('stat-savings').textContent = '$' + savings.monthly;
+}
+
+function renderSegments(segments) {
+  const bar = document.getElementById('segment-bar');
+  clearChildren(bar);
+  if (!segments.length) { bar.appendChild(el('div', { className: 'loading' }, 'No data')); return; }
+
+  const totalDuration = segments[segments.length - 1].end - segments[0].start;
+  for (const seg of segments) {
+    const pct = (seg.end - seg.start) / totalDuration * 100;
+    bar.appendChild(el('div', {
+      title: seg.state + ': ' + formatTime(seg.start) + ' — ' + formatTime(seg.end),
+      style: {
+        width: pct + '%',
+        height: '100%',
+        background: seg.state === 'active' ? 'var(--green)' : '#2a2d3a',
+      },
+    }));
+  }
+  document.getElementById('segment-start').textContent = formatTime(segments[0].start);
+  document.getElementById('segment-end').textContent = formatTime(segments[segments.length - 1].end);
+}
+
+function renderDailyBars(dailyHours) {
+  const container = document.getElementById('daily-bars');
+  clearChildren(container);
+  const entries = Object.entries(dailyHours).sort();
+  if (!entries.length) { container.appendChild(el('div', { className: 'loading' }, 'No data')); return; }
+
+  for (const [day, hours] of entries) {
+    const col = el('div', { className: 'bar-col' },
+      el('div', { className: 'bar-label', style: { color: 'var(--green)' } }, hours + 'h'),
+      el('div', { className: 'bar', style: {
+        height: (hours / 24 * 100) + '%',
+        background: 'linear-gradient(180deg, var(--green), var(--accent))',
+      } }),
+      el('div', { className: 'bar-label' }, day.slice(5)),
+    );
+    container.appendChild(col);
+  }
+}
+
+function renderCostComparison(cost) {
+  const grid = document.getElementById('cost-grid');
+  const rec = document.getElementById('recommendation');
+  clearChildren(grid);
+
+  if (!cost.ec2 || !cost.ec2.monthly_cost) {
+    grid.appendChild(el('div', { className: 'loading' }, 'Insufficient data'));
+    return;
+  }
+
+  // EC2 box
+  const ec2Box = el('div', { className: 'cost-box' },
+    el('div', { className: 'price', style: { color: 'var(--red)' } }, '$' + cost.ec2.monthly_cost),
+    el('div', { className: 'tier' }, cost.ec2.label),
+    el('div', { className: 'tier', style: { marginTop: '4px' } }, '24/7 running'),
+  );
+
+  // Arrow
+  const arrow = el('div', { className: 'cost-arrow' },
+    document.createTextNode('\u2192'),
+    el('div', { className: 'savings', style: { color: 'var(--green)' } }, '-' + cost.savings.percent + '%'),
+  );
+
+  // Lambda box
+  const lambdaBox = el('div', { className: 'cost-box' },
+    el('div', { className: 'price', style: { color: 'var(--green)' } }, '$' + cost.lambda.monthly_cost),
+    el('div', { className: 'tier' }, cost.lambda.label),
+    el('div', { className: 'tier', style: { marginTop: '4px' } }, cost.lambda.monthly_requests.toLocaleString() + ' req/mo'),
+  );
+
+  grid.appendChild(ec2Box);
+  grid.appendChild(arrow);
+  grid.appendChild(lambdaBox);
+
+  if (cost.savings.recommendation) {
+    rec.style.display = 'block';
+    rec.textContent = cost.savings.recommendation;
+  }
+}
+
+async function fetchUptime() {
+  const res = await fetch('/api/uptime');
+  const data = await res.json();
+  const list = document.getElementById('uptime-list');
+  clearChildren(list);
+
+  if (!data.checks.length) { list.appendChild(el('li', null, 'No checks yet')); return; }
+
+  for (const c of data.checks.slice(0, 10)) {
+    let hostname;
+    try { hostname = new URL(c.url).hostname; } catch { hostname = c.url; }
+
+    const left = el('span', null,
+      el('span', { className: 'status-dot ' + c.status }),
+      document.createTextNode(hostname),
+    );
+    const rightParts = [];
+    if (c.status === 'up') {
+      rightParts.push(el('span', { className: 'response-time' }, Math.round(c.response_ms) + 'ms'));
+    } else {
+      rightParts.push(el('span', { style: { color: 'var(--red)' } }, 'DOWN'));
+    }
+    rightParts.push(document.createTextNode(' '));
+    rightParts.push(el('span', { className: 'time-ago' }, timeAgo(c.ts)));
+    const right = el('span', null, ...rightParts);
+
+    list.appendChild(el('li', null, left, right));
+  }
+}
+
+async function fetchHeartbeats() {
+  const res = await fetch('/api/heartbeats');
+  const data = await res.json();
+  const list = document.getElementById('heartbeat-list');
+  clearChildren(list);
+
+  if (!data.heartbeats.length) { list.appendChild(el('li', null, 'No heartbeats')); return; }
+
+  const now = Date.now() / 1000;
+  for (const h of data.heartbeats) {
+    const stale = (now - h.last_ts) > 3600 * 2;
+    const left = el('span', null,
+      el('span', { className: 'status-dot ' + (stale ? 'stale' : 'up') }),
+      document.createTextNode(h.job_name),
+    );
+    const right = el('span', null,
+      el('span', { className: 'time-ago' }, timeAgo(h.last_ts)),
+      document.createTextNode(' '),
+      el('span', { className: 'response-time' }, '(' + h.total_beats + 'x)'),
+    );
+    list.appendChild(el('li', null, left, right));
+  }
+}
+
+async function runUptimeCheck() {
+  await fetch('/api/uptime/check', { method: 'POST' });
+  await fetchUptime();
+}
+
+async function sendTestHeartbeat() {
+  await fetch('/api/heartbeat/test-job', { method: 'POST' });
+  await fetchHeartbeats();
+}
+
+async function refreshAll() {
+  document.getElementById('last-update').textContent = 'Refreshing...';
+  await Promise.all([fetchMetrics(), fetchAnalysis(), fetchUptime(), fetchHeartbeats()]);
+  document.getElementById('last-update').textContent = 'Updated: ' + new Date().toLocaleTimeString('ko-KR');
+}
+
+refreshAll();
+</script>
+</body>
+</html>

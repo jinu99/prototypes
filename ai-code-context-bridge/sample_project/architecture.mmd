@@ -1,0 +1,22 @@
+C4Context
+    title E-Commerce Platform Architecture
+
+    Person(customer, "Customer", "A user who shops online")
+    Person(admin, "Admin", "Platform administrator")
+
+    System(api_gateway, "API Gateway", "Node.js/Express", "Routes requests, handles auth")
+    System(order_service, "Order Service", "Python/FastAPI", "Manages orders, payments")
+    System(product_service, "Product Service", "Python/FastAPI", "Product catalog, inventory")
+    System(user_service, "User Service", "Python/FastAPI", "User accounts, profiles")
+    System_Ext(payment_ext, "Payment Provider", "Stripe", "External payment processing")
+    System(notification_service, "Notification Service", "Python/Celery", "Email, push notifications")
+
+    Rel(customer, api_gateway, "Uses", "HTTPS")
+    Rel(admin, api_gateway, "Manages", "HTTPS")
+    Rel(api_gateway, order_service, "Routes orders", "REST/JSON")
+    Rel(api_gateway, product_service, "Routes product queries", "REST/JSON")
+    Rel(api_gateway, user_service, "Routes auth", "REST/JSON")
+    Rel(order_service, product_service, "Checks inventory", "REST/JSON")
+    Rel(order_service, payment_ext, "Processes payment", "REST/JSON")
+    Rel(order_service, notification_service, "Sends confirmation", "async/queue")
+    Rel(user_service, notification_service, "Sends welcome email", "async/queue")

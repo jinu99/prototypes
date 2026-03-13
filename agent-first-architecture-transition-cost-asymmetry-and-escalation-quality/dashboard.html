@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>에스컬레이션 품질 시뮬레이터</title>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a26;
+  --border: #2a2a3a;
+  --text: #e0e0ee;
+  --text-dim: #8888aa;
+  --accent: #6c8cff;
+  --accent2: #a07cff;
+  --green: #4ade80;
+  --red: #f87171;
+  --orange: #fbbf24;
+  --workflow: #ff6b6b;
+  --agent: #6c8cff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Pretendard', -apple-system, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+}
+header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+header p { color: var(--text-dim); font-size: 0.95rem; }
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+.metric-card .label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.metric-card .value { font-size: 2.2rem; font-weight: 700; }
+.metric-card .sub { font-size: 0.85rem; color: var(--text-dim); margin-top: 0.25rem; }
+.value.workflow { color: var(--workflow); }
+.value.agent { color: var(--agent); }
+.value.delta { color: var(--green); }
+.comparison-section { margin-bottom: 3rem; }
+.comparison-section h2 { font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--text-dim); }
+.bar-chart { display: flex; flex-direction: column; gap: 1rem; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+.bar-label { font-size: 0.85rem; color: var(--text-dim); text-align: right; padding-right: 1rem; }
+.bar-wrapper {
+  height: 32px;
+  background: var(--surface2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.8s ease;
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+  min-width: 2.5rem;
+}
+.bar-fill.workflow { background: var(--workflow); }
+.bar-fill.agent { background: var(--agent); }
+.scenarios-section h2 { font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--text-dim); }
+.scenario-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.scenario-header {
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: background 0.2s;
+}
+.scenario-header:hover { background: var(--surface2); }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.badge.simple { background: #1a3a1a; color: var(--green); }
+.badge.complex { background: #3a2a0a; color: var(--orange); }
+.badge.edge { background: #3a1a1a; color: var(--red); }
+.scenario-title { flex: 1; font-weight: 500; }
+.scenario-verdict { display: flex; gap: 0.5rem; }
+.verdict-chip {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.verdict-chip.correct { background: #1a3a1a; color: var(--green); }
+.verdict-chip.wrong { background: #3a1a1a; color: var(--red); }
+.chevron { color: var(--text-dim); transition: transform 0.3s; font-size: 1.2rem; }
+.scenario-card.open .chevron { transform: rotate(90deg); }
+.scenario-detail {
+  display: none;
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.scenario-card.open .scenario-detail { display: block; }
+.detail-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+.detail-row .dl { color: var(--text-dim); }
+.moments-timeline { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
+.moment {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  flex: 1;
+  min-width: 140px;
+  font-size: 0.8rem;
+}
+.moment .moment-name { font-weight: 600; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.3rem; }
+.moment .moment-conf { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.moment .moment-factors { color: var(--text-dim); font-size: 0.75rem; line-height: 1.4; }
+.moment.proceed { border-color: #2a4a2a; }
+.moment.flag { border-color: #4a3a0a; }
+.moment.escalate { border-color: #4a1a1a; }
+.moment.proceed .moment-conf { color: var(--green); }
+.moment.flag .moment-conf { color: var(--orange); }
+.moment.escalate .moment-conf { color: var(--red); }
+.engine-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.engine-box { background: var(--surface2); border-radius: 8px; padding: 1rem; }
+.engine-box h4 { font-size: 0.85rem; margin-bottom: 0.5rem; }
+.engine-box h4.workflow-label { color: var(--workflow); }
+.engine-box h4.agent-label { color: var(--agent); }
+.engine-box .steps { font-size: 0.8rem; color: var(--text-dim); }
+.engine-box .steps div { padding: 0.2rem 0; }
+footer { text-align: center; padding: 2rem; color: var(--text-dim); font-size: 0.8rem; }
+.sensitivity-section { margin-bottom: 3rem; }
+.sensitivity-section h2 { font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--text-dim); }
+.sensitivity-chart {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+.sens-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 60px 60px 60px;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+}
+.sens-row.header { color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 0.3rem; }
+.sens-bar-wrap { height: 24px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.sens-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 0.5rem; font-size: 0.75rem; color: white; font-weight: 600; transition: width 0.6s ease; }
+.sens-bar.optimal { background: var(--green); }
+.sens-bar.good { background: var(--accent); }
+.sens-bar.fair { background: var(--orange); }
+.sens-bar.poor { background: var(--red); }
+.sens-highlight { background: rgba(74, 222, 128, 0.08); border-radius: 4px; }
+.transition-section { margin-bottom: 3rem; }
+.transition-section h2 { font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--text-dim); }
+.transition-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.transition-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+.transition-card h3 { font-size: 1rem; margin-bottom: 1rem; }
+.transition-card h3.w-title { color: var(--workflow); }
+.transition-card h3.a-title { color: var(--agent); }
+.timeline-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+}
+.timeline-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.timeline-dot.done { background: var(--green); }
+.timeline-dot.warn { background: var(--orange); }
+.timeline-dot.fail { background: var(--red); }
+.timeline-weeks { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>에스컬레이션 품질 시뮬레이터</h1>
+    <p>Workflow(규칙 기반) vs Agent(confidence 기반) — 5가지 판단 순간 비교</p>
+  </header>
+  <div class="metrics-grid" id="metrics-grid"></div>
+  <div class="comparison-section">
+    <h2>에스컬레이션 품질 비교</h2>
+    <div class="bar-chart" id="bar-chart"></div>
+  </div>
+  <div class="sensitivity-section">
+    <h2>임계값 민감도 분석</h2>
+    <div class="sensitivity-chart" id="sensitivity-chart"></div>
+  </div>
+
+  <div class="transition-section">
+    <h2>전환 비용 비대칭성</h2>
+    <div class="transition-grid" id="transition-grid"></div>
+  </div>
+
+  <div class="scenarios-section">
+    <h2>시나리오별 상세 분석</h2>
+    <div id="scenario-list"></div>
+  </div>
+</div>
+<footer>Agent-First Architecture — Transition Cost Asymmetry and Escalation Quality</footer>
+
+<script>
+// All data comes from our own simulation output (no user input).
+// HTML-escape as defense-in-depth.
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') e.className = v;
+      else if (k === 'style') e.style.cssText = v;
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v);
+    }
+  }
+  if (typeof children === 'string') e.textContent = children;
+  else if (Array.isArray(children)) children.forEach(c => { if (c) e.appendChild(c); });
+  else if (children instanceof Node) e.appendChild(children);
+  return e;
+}
+
+async function loadData() {
+  const resp = await fetch('/output/results.json');
+  const DATA = await resp.json();
+  renderMetrics(DATA);
+  renderBarChart(DATA);
+  renderSensitivity(DATA);
+  renderTransitionCost();
+  renderScenarios(DATA);
+}
+
+function renderMetrics(DATA) {
+  const m = DATA.metrics;
+  const grid = document.getElementById('metrics-grid');
+  const cards = [
+    { label: 'Workflow 정확도', value: Math.round(m.workflow_accuracy * 100) + '%', cls: 'workflow', sub: m.workflow_correct + '/' + m.total + ' 정확' },
+    { label: 'Agent 정확도', value: Math.round(m.agent_accuracy * 100) + '%', cls: 'agent', sub: m.agent_correct + '/' + m.total + ' 정확' },
+    { label: '정확도 차이', value: '+' + Math.round(m.accuracy_delta * 100) + '%p', cls: 'delta', sub: 'Agent 우위' },
+    { label: 'Workflow 놓친 에스컬레이션', value: String(m.workflow_false_negatives), cls: 'workflow', sub: '불필요 에스컬레이션: ' + m.workflow_false_positives },
+    { label: 'Agent 놓친 에스컬레이션', value: String(m.agent_false_negatives), cls: 'agent', sub: '불필요 에스컬레이션: ' + m.agent_false_positives },
+  ];
+  cards.forEach(c => {
+    const card = el('div', { class: 'metric-card' }, [
+      el('div', { class: 'label' }, c.label),
+      el('div', { class: 'value ' + c.cls }, c.value),
+      el('div', { class: 'sub' }, c.sub),
+    ]);
+    grid.appendChild(card);
+  });
+}
+
+function renderBarChart(DATA) {
+  const m = DATA.metrics;
+  const chart = document.getElementById('bar-chart');
+
+  // Legend
+  const legend = el('div', { class: 'bar-row', style: 'margin-bottom: 0.5rem' }, [
+    el('div'),
+    el('div', { style: 'text-align:center;font-size:0.8rem;color:var(--workflow);font-weight:600' }, 'Workflow'),
+    el('div', { style: 'text-align:center;font-size:0.8rem;color:var(--agent);font-weight:600' }, 'Agent'),
+  ]);
+  chart.appendChild(legend);
+
+  const rows = [
+    { label: '정확도', w: m.workflow_accuracy * 100, a: m.agent_accuracy * 100 },
+    { label: '놓친 에스컬레이션', w: m.workflow_fn_rate * 100, a: m.agent_fn_rate * 100 },
+    { label: '불필요 에스컬레이션', w: m.workflow_fp_rate * 100, a: m.agent_fp_rate * 100 },
+  ];
+  rows.forEach(r => {
+    const wFill = el('div', { class: 'bar-fill workflow', style: 'width:' + Math.max(r.w, 3) + '%' }, Math.round(r.w) + '%');
+    const aFill = el('div', { class: 'bar-fill agent', style: 'width:' + Math.max(r.a, 3) + '%' }, Math.round(r.a) + '%');
+    const row = el('div', { class: 'bar-row' }, [
+      el('div', { class: 'bar-label' }, r.label),
+      el('div', { class: 'bar-wrapper' }, [wFill]),
+      el('div', { class: 'bar-wrapper' }, [aFill]),
+    ]);
+    chart.appendChild(row);
+  });
+}
+
+function renderSensitivity(DATA) {
+  const chart = document.getElementById('sensitivity-chart');
+  if (!DATA.sensitivity) {
+    chart.appendChild(el('div', { style: 'color:var(--text-dim)' }, '민감도 데이터 없음. main.py를 다시 실행하세요.'));
+    return;
+  }
+
+  // Header
+  const header = el('div', { class: 'sens-row header' }, [
+    el('div', null, '임계값'),
+    el('div', null, '정확도'),
+    el('div', { style: 'text-align:center' }, '놓침'),
+    el('div', { style: 'text-align:center' }, '과잉'),
+    el('div', { style: 'text-align:center' }, '평가'),
+  ]);
+  chart.appendChild(header);
+
+  DATA.sensitivity.forEach(row => {
+    const acc = row.accuracy;
+    const cls = acc >= 1.0 ? 'optimal' : acc >= 0.9 ? 'good' : acc >= 0.7 ? 'fair' : 'poor';
+    const grade = acc >= 1.0 ? '최적' : acc >= 0.9 ? '양호' : acc >= 0.7 ? '보통' : '부적합';
+    const isOptimal = row.threshold === 0.65;
+
+    const sensRow = el('div', { class: 'sens-row' + (isOptimal ? ' sens-highlight' : '') }, [
+      el('div', null, row.threshold.toFixed(2)),
+      el('div', { class: 'sens-bar-wrap' }, [
+        el('div', { class: 'sens-bar ' + cls, style: 'width:' + Math.max(acc * 100, 5) + '%' },
+          Math.round(acc * 100) + '%'),
+      ]),
+      el('div', { style: 'text-align:center' }, String(row.false_negatives)),
+      el('div', { style: 'text-align:center' }, String(row.false_positives)),
+      el('div', { style: 'text-align:center;color:var(--' + (cls === 'optimal' ? 'green' : cls === 'good' ? 'accent' : cls === 'fair' ? 'orange' : 'red') + ')' }, grade),
+    ]);
+    chart.appendChild(sensRow);
+  });
+}
+
+function renderTransitionCost() {
+  const grid = document.getElementById('transition-grid');
+
+  // Workflow path
+  const wCard = el('div', { class: 'transition-card' });
+  wCard.appendChild(el('h3', { class: 'w-title' }, 'Workflow-First 경로'));
+  const wTimeline = [
+    { dot: 'done', text: '1. Workflow로 빠르게 구현', weeks: '+2주' },
+    { dot: 'done', text: '2. 규칙 기반 에스컬레이션 하드코딩', weeks: '+1주' },
+    { dot: 'warn', text: '3. 엣지 케이스 발견 → 규칙 추가', weeks: '+2주' },
+    { dot: 'warn', text: '4. 플랫폼 통합 필요 → Agent 인터페이스 불가', weeks: '+0주 (차단됨)' },
+    { dot: 'fail', text: '5. 전체 재작성: Agent 아키텍처로 전환', weeks: '+6~8주' },
+    { dot: 'done', text: '총 소요', weeks: '11~13주' },
+  ];
+  wTimeline.forEach(item => {
+    const ti = el('div', { class: 'timeline-item' }, [
+      el('div', { class: 'timeline-dot ' + item.dot }),
+      el('div', null, [
+        el('div', null, item.text),
+        el('div', { class: 'timeline-weeks' }, item.weeks),
+      ]),
+    ]);
+    wCard.appendChild(ti);
+  });
+  grid.appendChild(wCard);
+
+  // Agent-First path
+  const aCard = el('div', { class: 'transition-card' });
+  aCard.appendChild(el('h3', { class: 'a-title' }, 'Agent-First 경로'));
+  const aTimeline = [
+    { dot: 'warn', text: '1. Agent 아키텍처 설계 (초기 투자)', weeks: '+3~4주' },
+    { dot: 'done', text: '2. Confidence 기반 에스컬레이션 구현', weeks: '+1주' },
+    { dot: 'done', text: '3. 엣지 케이스 → 맥락 학습으로 흡수', weeks: '+0~1주' },
+    { dot: 'done', text: '4. 플랫폼 통합 → 이미 인터페이스 준수', weeks: '+1주' },
+    { dot: 'done', text: '총 소요', weeks: '5~7주' },
+  ];
+  aTimeline.forEach(item => {
+    const ti = el('div', { class: 'timeline-item' }, [
+      el('div', { class: 'timeline-dot ' + item.dot }),
+      el('div', null, [
+        el('div', null, item.text),
+        el('div', { class: 'timeline-weeks' }, item.weeks),
+      ]),
+    ]);
+    aCard.appendChild(ti);
+  });
+  grid.appendChild(aCard);
+}
+
+function renderScenarios(DATA) {
+  const list = document.getElementById('scenario-list');
+
+  DATA.scenarios.forEach((s, i) => {
+    const comp = DATA.comparisons[i];
+    const wr = DATA.workflow_results[i];
+    const ar = DATA.agent_results[i];
+
+    const card = el('div', { class: 'scenario-card' });
+
+    // Header
+    const badgeLabel = s.complexity === 'simple' ? '단순' : s.complexity === 'complex' ? '복합' : '엣지';
+    const header = el('div', { class: 'scenario-header', onclick: function() { card.classList.toggle('open'); } }, [
+      el('span', { class: 'badge ' + s.complexity }, badgeLabel),
+      el('span', { class: 'scenario-title' }, '[' + s.id + '] ' + s.title),
+      el('div', { class: 'scenario-verdict' }, [
+        el('span', { class: 'verdict-chip ' + (comp.workflow_correct ? 'correct' : 'wrong') }, comp.workflow_correct ? 'W ✓' : 'W ✗'),
+        el('span', { class: 'verdict-chip ' + (comp.agent_correct ? 'correct' : 'wrong') }, comp.agent_correct ? 'A ✓' : 'A ✗'),
+      ]),
+      el('span', { class: 'chevron' }, '\u203A'),
+    ]);
+    card.appendChild(header);
+
+    // Detail
+    const detail = el('div', { class: 'scenario-detail' });
+
+    // Info rows
+    const gt = s.should_escalate ? '에스컬레이션 필요 (' + s.escalation_reason + ')' : '자동 처리 가능';
+    const attrs = '애매함: ' + s.ambiguity + ' / 감정: ' + s.emotional_intensity + ' / 다중카테고리: ' + (s.multi_category ? '예' : '아니오');
+    [
+      ['메시지', s.customer_message],
+      ['정답', gt],
+      ['속성', attrs],
+    ].forEach(([label, value]) => {
+      const row = el('div', { class: 'detail-row' }, [
+        el('span', { class: 'dl' }, label),
+        el('span', null, value),
+      ]);
+      detail.appendChild(row);
+    });
+
+    // Decision moments
+    const momentsTitle = el('h4', { style: 'margin-top:1rem;color:var(--agent)' }, 'Agent — 5가지 판단 순간');
+    detail.appendChild(momentsTitle);
+
+    const timeline = el('div', { class: 'moments-timeline' });
+    ar.decision_moments.forEach(m => {
+      const icon = m.decision === 'proceed' ? '✓' : m.decision === 'flag' ? '⚠' : '✕';
+      const moment = el('div', { class: 'moment ' + m.decision }, [
+        el('div', { class: 'moment-name' }, icon + ' ' + m.name),
+        el('div', { class: 'moment-conf' }, Math.round(m.confidence * 100) + '%'),
+      ]);
+      const factorsDiv = el('div', { class: 'moment-factors' });
+      m.factors.forEach(f => {
+        const line = el('div', null, f);
+        factorsDiv.appendChild(line);
+      });
+      moment.appendChild(factorsDiv);
+      timeline.appendChild(moment);
+    });
+    detail.appendChild(timeline);
+
+    // Engine compare
+    const compare = el('div', { class: 'engine-compare' });
+
+    // Workflow box
+    const wBox = el('div', { class: 'engine-box' });
+    wBox.appendChild(el('h4', { class: 'workflow-label' }, 'Workflow 처리 과정'));
+    const wSteps = el('div', { class: 'steps' });
+    wr.steps.forEach(st => {
+      wSteps.appendChild(el('div', null, '\u2022 ' + st.name + ': ' + st.rule_applied + ' \u2192 ' + st.result));
+    });
+    wBox.appendChild(wSteps);
+    wBox.appendChild(el('div', { style: 'margin-top:0.5rem;font-size:0.85rem' },
+      '결과: ' + (wr.escalated ? '에스컬레이션' : '자동 처리') + ' \u2192 ' + wr.escalation_target));
+    compare.appendChild(wBox);
+
+    // Agent box
+    const aBox = el('div', { class: 'engine-box' });
+    aBox.appendChild(el('h4', { class: 'agent-label' }, 'Agent 처리 결과'));
+    const aSteps = el('div', { class: 'steps' });
+    aSteps.appendChild(el('div', null, '종합 confidence: ' + Math.round(ar.overall_confidence * 100) + '%'));
+    aSteps.appendChild(el('div', null, '추론: ' + ar.reasoning));
+    aBox.appendChild(aSteps);
+    aBox.appendChild(el('div', { style: 'margin-top:0.5rem;font-size:0.85rem' },
+      '결과: ' + (ar.escalated ? '에스컬레이션' : '자동 처리') + ' \u2192 ' + ar.escalation_target));
+    compare.appendChild(aBox);
+
+    detail.appendChild(compare);
+    card.appendChild(detail);
+    list.appendChild(card);
+  });
+}
+
+loadData();
+</script>
+</body>
+</html>

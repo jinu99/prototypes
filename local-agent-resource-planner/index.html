@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Agent VRAM Resource Planner</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+    --text: #e1e4ed; --muted: #8b8fa3; --accent: #6c8aff;
+    --green: #4ade80; --yellow: #fbbf24; --red: #f87171;
+    --orange: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 20px; color: var(--accent); margin-bottom: 4px; }
+  h2 { font-size: 16px; color: var(--text); margin: 20px 0 10px; }
+  h3 { font-size: 14px; color: var(--muted); margin: 12px 0 6px; }
+  .subtitle { color: var(--muted); font-size: 12px; margin-bottom: 20px; }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 8px 16px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.2s; font-size: 13px; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  select, input { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 13px; }
+  select:focus, input:focus { outline: none; border-color: var(--accent); }
+  button { padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 13px; transition: opacity 0.2s; }
+  button:hover { opacity: 0.85; }
+  .form-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+  .form-row > div { flex: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 500; }
+  td { padding: 8px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: rgba(108, 138, 255, 0.05); }
+  .vram-bar { height: 28px; background: var(--bg); border-radius: 4px; overflow: hidden; display: flex; margin: 8px 0; }
+  .segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; white-space: nowrap; overflow: hidden; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 6px 0; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+  .badge-ok { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+  .badge-warn { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .badge-fail { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .model-list { display: flex; flex-direction: column; gap: 6px; }
+  .model-item { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat-box { background: var(--bg); border-radius: 6px; padding: 12px; text-align: center; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .stat-value { font-size: 18px; font-weight: 600; }
+  .moe-table td:nth-child(n+2), .moe-table th:nth-child(n+2) { text-align: right; }
+  .note { font-size: 12px; color: var(--muted); font-style: italic; padding: 8px; background: rgba(108,138,255,0.05); border-radius: 4px; margin-top: 8px; }
+  .grid-results { max-height: 400px; overflow-y: auto; }
+  .grid-results::-webkit-scrollbar { width: 6px; }
+  .grid-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Local Agent VRAM Resource Planner</h1>
+  <p class="subtitle">GGUF metadata-based multi-model VRAM prediction &amp; resource planning</p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="single">Single Model</div>
+    <div class="tab" data-tab="multi">Multi-Model</div>
+    <div class="tab" data-tab="grid">Grid Search</div>
+    <div class="tab" data-tab="validate">llama.cpp Validation</div>
+    <div class="tab" data-tab="upload">GGUF Upload</div>
+  </div>
+
+  <div id="tab-single" class="tab-content active">
+    <div class="card">
+      <div class="form-row">
+        <div><label>Model</label><select id="single-model"></select></div>
+        <div><label>Context Length</label>
+          <select id="single-ctx">
+            <option value="512">512</option><option value="1024">1024</option>
+            <option value="2048">2048</option><option value="4096" selected>4096</option>
+            <option value="8192">8192</option><option value="16384">16384</option>
+            <option value="32768">32768</option>
+          </select>
+        </div>
+        <div><button onclick="estimateSingle()">Estimate</button></div>
+      </div>
+    </div>
+    <div id="single-result"></div>
+    <div id="single-model-info" class="card" style="display:none">
+      <h3>Model Metadata</h3>
+      <div id="single-metadata"></div>
+    </div>
+  </div>
+
+  <div id="tab-multi" class="tab-content">
+    <div class="card">
+      <h3>Select Models to Run Simultaneously</h3>
+      <div id="multi-model-list" class="model-list"></div>
+      <div class="form-row" style="margin-top:12px">
+        <div><label>VRAM Budget (MB)</label><input type="number" id="multi-budget" value="24576" placeholder="e.g. 24576 for 24GB"></div>
+        <div><button onclick="estimateMulti()">Plan Multi-Model</button></div>
+      </div>
+    </div>
+    <div id="multi-result"></div>
+  </div>
+
+  <div id="tab-grid" class="tab-content">
+    <div class="card">
+      <div class="form-row">
+        <div><label>VRAM Budget (MB)</label><input type="number" id="grid-budget" value="8192" placeholder="e.g. 8192 for 8GB"></div>
+        <div><button onclick="runGridSearch()">Search Feasible Combos</button></div>
+      </div>
+      <div class="note">Searches all model x quantization (Q4_0~F16) x context (512~32K) combinations within the VRAM budget.</div>
+    </div>
+    <div id="grid-result"></div>
+  </div>
+
+  <div id="tab-validate" class="tab-content">
+    <div class="card">
+      <p style="margin-bottom:10px">Compare formula-based estimates against llama.cpp community reference values.</p>
+      <button onclick="runValidation()">Run Validation</button>
+    </div>
+    <div id="validate-result"></div>
+  </div>
+
+  <div id="tab-upload" class="tab-content">
+    <div class="card">
+      <label>Upload GGUF File</label>
+      <input type="file" id="gguf-file" accept=".gguf" style="margin-bottom:10px">
+      <div class="form-row">
+        <div><label>Context Length</label><input type="number" id="upload-ctx" value="4096"></div>
+        <div><button onclick="uploadGGUF()">Parse &amp; Estimate</button></div>
+      </div>
+      <div class="note">Parses real GGUF file metadata to estimate VRAM. Only reads the header.</div>
+    </div>
+    <div id="upload-result"></div>
+  </div>
+</div>
+
+<script>
+// All DOM manipulation uses safe methods (textContent, createElement, etc.)
+// Data comes exclusively from our own API server
+
+let modelsCache = null;
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+function fmt(n) { return n != null ? Math.round(n).toLocaleString() : '\u2014'; }
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
+    if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else if (k === 'className') e.className = v;
+    else if (k === 'textContent') e.textContent = v;
+    else e.setAttribute(k, v);
+  });
+  if (children) {
+    if (typeof children === 'string') e.textContent = children;
+    else if (Array.isArray(children)) children.forEach(c => { if (c) e.appendChild(c); });
+    else e.appendChild(children);
+  }
+  return e;
+}
+
+function clearEl(id) { const e = document.getElementById(id); while (e.firstChild) e.removeChild(e.firstChild); return e; }
+
+function buildStatGrid(stats) {
+  const grid = el('div', {className: 'stat-grid'});
+  stats.forEach(({label, value, color}) => {
+    const box = el('div', {className: 'stat-box'});
+    box.appendChild(el('div', {className: 'stat-label'}, label));
+    const valEl = el('div', {className: 'stat-value'}, value);
+    if (color) valEl.style.color = color;
+    box.appendChild(valEl);
+    grid.appendChild(box);
+  });
+  return grid;
+}
+
+function buildVramBar(est, total) {
+  const bar = el('div', {className: 'vram-bar'});
+  const parts = [
+    {pct: est.weights_mb / total * 100, bg: '#6c8aff', label: fmt(est.weights_mb)},
+    {pct: est.kv_cache_mb / total * 100, bg: '#a78bfa', label: fmt(est.kv_cache_mb)},
+    {pct: est.activation_mb / total * 100, bg: '#f59e0b', label: ''},
+    {pct: est.overhead_mb / total * 100, bg: '#64748b', label: ''},
+  ];
+  parts.forEach(p => {
+    const seg = el('div', {className: 'segment'});
+    seg.style.width = p.pct.toFixed(1) + '%';
+    seg.style.background = p.bg;
+    if (p.pct > 10) seg.textContent = p.label;
+    bar.appendChild(seg);
+  });
+  return bar;
+}
+
+function buildLegend(items) {
+  const legend = el('div', {className: 'legend'});
+  items.forEach(({color, text}) => {
+    const item = el('div', {className: 'legend-item'});
+    const dot = el('div', {className: 'legend-dot'});
+    dot.style.background = color;
+    item.appendChild(dot);
+    item.appendChild(document.createTextNode(' ' + text));
+    legend.appendChild(item);
+  });
+  return legend;
+}
+
+function buildTable(headers, rows) {
+  const table = el('table');
+  const thead = el('tr');
+  headers.forEach(h => thead.appendChild(el('th', null, h)));
+  table.appendChild(thead);
+  rows.forEach(row => {
+    const tr = el('tr');
+    row.forEach((cell, i) => {
+      const td = el('td');
+      if (typeof cell === 'object' && cell.nodeType) td.appendChild(cell);
+      else if (typeof cell === 'object' && cell.bold) { const b = el('strong', null, cell.text); td.appendChild(b); }
+      else { td.textContent = String(cell); if (row._styles && row._styles[i]) Object.assign(td.style, row._styles[i]); }
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+  return table;
+}
+
+function buildMoeTable(offloading, modelName) {
+  const card = el('div', {className: 'card'});
+  card.appendChild(el('h3', null, 'MoE Expert Offloading \u2014 ' + modelName));
+  const rows = offloading.map(o => [o.label, fmt(o.vram_mb) + ' MB', fmt(o.ram_mb) + ' MB', o.note]);
+  const table = buildTable(['Configuration', 'VRAM', 'RAM', 'Note'], rows);
+  table.className = 'moe-table';
+  card.appendChild(table);
+  return card;
+}
+
+function badge(text, type) {
+  const b = el('span', {className: 'badge badge-' + type}, text);
+  return b;
+}
+
+async function loadModels() {
+  const res = await fetch('/api/models');
+  const data = await res.json();
+  modelsCache = data.models;
+
+  const sel = document.getElementById('single-model');
+  data.models.forEach(m => {
+    const opt = el('option', {value: m.key}, m.name + ' (' + m.file_type + ', ' + m.bits_per_weight + ' bpw)');
+    sel.appendChild(opt);
+  });
+
+  const list = document.getElementById('multi-model-list');
+  data.models.forEach(m => {
+    const item = el('div', {className: 'model-item'});
+    const cb = el('input', {type: 'checkbox', id: 'multi-' + m.key, value: m.key});
+    item.appendChild(cb);
+    const lbl = el('label', {for: 'multi-' + m.key});
+    lbl.style.flex = '1';
+    lbl.style.cursor = 'pointer';
+    lbl.style.color = 'var(--text)';
+    lbl.style.fontSize = '13px';
+    lbl.style.margin = '0';
+    lbl.textContent = m.name + ' ';
+    if (m.expert_count > 0) lbl.appendChild(badge('MoE', 'warn'));
+    item.appendChild(lbl);
+    const ctxSel = el('select', {id: 'multi-ctx-' + m.key});
+    ctxSel.style.width = '100px';
+    [512,1024,2048,4096,8192,16384,32768].forEach(v => {
+      const o = el('option', {value: String(v)}, String(v));
+      if (v === 4096) o.selected = true;
+      ctxSel.appendChild(o);
+    });
+    item.appendChild(ctxSel);
+    list.appendChild(item);
+  });
+}
+
+async function estimateSingle() {
+  const model = document.getElementById('single-model').value;
+  const ctx = document.getElementById('single-ctx').value;
+  const res = await fetch('/api/estimate?model=' + model + '&context=' + ctx);
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+
+  const est = data.estimate;
+  const info = data.model_info;
+  const container = clearEl('single-result');
+
+  const card = el('div', {className: 'card'});
+  card.appendChild(buildStatGrid([
+    {label: 'Total VRAM', value: fmt(est.total_mb) + ' MB', color: 'var(--accent)'},
+    {label: 'Weights', value: fmt(est.weights_mb) + ' MB'},
+    {label: 'KV Cache', value: fmt(est.kv_cache_mb) + ' MB'},
+    {label: 'Activation', value: fmt(est.activation_mb) + ' MB'},
+    {label: 'Overhead', value: fmt(est.overhead_mb) + ' MB'},
+    {label: 'Context', value: String(est.context_length)},
+  ]));
+  card.appendChild(buildVramBar(est, est.total_mb));
+  card.appendChild(buildLegend([
+    {color: '#6c8aff', text: 'Weights'}, {color: '#a78bfa', text: 'KV Cache'},
+    {color: '#f59e0b', text: 'Activation'}, {color: '#64748b', text: 'Overhead'},
+  ]));
+  container.appendChild(card);
+
+  if (data.moe_offloading && data.moe_offloading.length > 0) {
+    container.appendChild(buildMoeTable(data.moe_offloading, est.model_name));
+  }
+
+  const metaDiv = clearEl('single-metadata');
+  const metaCard = document.getElementById('single-model-info');
+  metaCard.style.display = 'block';
+  const metaRows = [
+    ['Architecture', info.architecture], ['Layers', info.block_count],
+    ['Hidden Dim', info.embedding_length], ['Attention Heads', info.head_count],
+    ['KV Heads (GQA)', info.head_count_kv], ['FFN Length', info.feed_forward_length],
+    ['Experts', (info.expert_count || 'N/A') + (info.expert_used_count ? ' (active: ' + info.expert_used_count + ')' : '')],
+    ['Vocab Size', info.vocab_size ? info.vocab_size.toLocaleString() : 'N/A'],
+    ['Quantization', info.file_type + ' (' + info.bits_per_weight + ' bpw)'],
+  ];
+  metaDiv.appendChild(buildTable(['Property', 'Value'], metaRows));
+}
+
+async function estimateMulti() {
+  const cbs = document.querySelectorAll('#multi-model-list input[type=checkbox]:checked');
+  if (cbs.length < 1) { alert('Select at least one model'); return; }
+
+  const models = [];
+  cbs.forEach(cb => {
+    const ctx = document.getElementById('multi-ctx-' + cb.value).value;
+    models.push({ model_key: cb.value, context_length: parseInt(ctx) });
+  });
+
+  const budget = parseFloat(document.getElementById('multi-budget').value) || null;
+  const res = await fetch('/api/multi', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ models, vram_budget_mb: budget })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+
+  const container = clearEl('multi-result');
+  const card = el('div', {className: 'card'});
+
+  const statsArr = [
+    {label: 'Total VRAM Required', value: fmt(data.total_vram_mb) + ' MB', color: data.feasible !== false ? 'var(--green)' : 'var(--red)'},
+    {label: 'CUDA Context', value: fmt(data.cuda_context_mb) + ' MB'},
+  ];
+  if (budget) {
+    statsArr.push({label: 'Budget', value: fmt(budget) + ' MB'});
+    statsArr.push({label: 'Headroom', value: (data.headroom_mb >= 0 ? '+' : '') + fmt(data.headroom_mb) + ' MB', color: data.headroom_mb >= 0 ? 'var(--green)' : 'var(--red)'});
+  }
+  card.appendChild(buildStatGrid(statsArr));
+
+  if (budget) {
+    const colors = ['#6c8aff', '#a78bfa', '#f59e0b', '#4ade80', '#fb923c'];
+    const bar = el('div', {className: 'vram-bar'});
+    bar.style.marginTop = '12px';
+    const total = data.models.reduce((s, m) => s + m.total_mb, 0);
+    data.models.forEach((m, i) => {
+      const pct = (m.total_mb / budget * 100).toFixed(1);
+      const seg = el('div', {className: 'segment'});
+      seg.style.background = colors[i % colors.length];
+      seg.style.width = pct + '%';
+      if (parseFloat(pct) > 8) seg.textContent = m.model_name.split(' ')[0];
+      bar.appendChild(seg);
+    });
+    card.appendChild(bar);
+    card.appendChild(buildLegend(data.models.map((m, i) => ({
+      color: colors[i % colors.length],
+      text: m.model_name + ' (' + fmt(m.total_mb) + ' MB)'
+    }))));
+
+    if (data.feasible) card.appendChild(badge('FEASIBLE', 'ok'));
+    else card.appendChild(badge('EXCEEDS BUDGET', 'fail'));
+  }
+
+  card.appendChild(el('h3', {style: {marginTop: '16px'}}, 'Per-Model Breakdown'));
+  const tableRows = data.models.map(m => [
+    m.model_name, fmt(m.weights_mb), fmt(m.kv_cache_mb),
+    fmt(m.activation_mb), fmt(m.overhead_mb), {bold: true, text: fmt(m.total_mb)}
+  ]);
+  card.appendChild(buildTable(['Model', 'Weights', 'KV Cache', 'Activation', 'Overhead', 'Total'], tableRows));
+  container.appendChild(card);
+
+  if (data.moe_details) {
+    data.moe_details.forEach(d => {
+      container.appendChild(buildMoeTable(d.offloading_options, d.model_name));
+    });
+  }
+}
+
+async function runGridSearch() {
+  const budget = parseFloat(document.getElementById('grid-budget').value);
+  if (!budget) { alert('Enter VRAM budget'); return; }
+
+  const res = await fetch('/api/grid?budget=' + budget);
+  const data = await res.json();
+  const container = clearEl('grid-result');
+
+  if (!data.combinations || data.combinations.length === 0) {
+    const card = el('div', {className: 'card'}, 'No feasible combinations found within the given VRAM budget.');
+    container.appendChild(card);
+    return;
+  }
+
+  const card = el('div', {className: 'card'});
+  const summary = el('p', {style: {marginBottom: '10px'}});
+  const countB = el('strong', null, String(data.combinations.length));
+  const budgetB = el('strong', null, fmt(budget) + ' MB');
+  summary.appendChild(countB);
+  summary.appendChild(document.createTextNode(' feasible combinations found within '));
+  summary.appendChild(budgetB);
+  card.appendChild(summary);
+
+  const wrapper = el('div', {className: 'grid-results'});
+  const tableRows = data.combinations.map(c => {
+    const pct = (c.total_mb / budget * 100).toFixed(0);
+    const barOuter = el('div', {style: {display: 'flex', alignItems: 'center', gap: '6px'}});
+    const barBg = el('div', {style: {width: '60px', height: '6px', background: 'var(--bg)', borderRadius: '3px', overflow: 'hidden'}});
+    const barFill = el('div', {style: {width: pct + '%', height: '100%', background: parseInt(pct) > 90 ? 'var(--yellow)' : 'var(--accent)'}});
+    barBg.appendChild(barFill);
+    barOuter.appendChild(barBg);
+    const pctText = el('span', {style: {fontSize: '11px', color: 'var(--muted)'}}, pct + '%');
+    barOuter.appendChild(pctText);
+    return [c.model_name, c.quantization, c.context_length.toLocaleString(), fmt(c.weights_mb), fmt(c.kv_cache_mb), {bold: true, text: fmt(c.total_mb)}, barOuter];
+  });
+  const table = buildTable(['Model', 'Quantization', 'Context', 'Weights', 'KV Cache', 'Total VRAM', 'Usage'], tableRows);
+  wrapper.appendChild(table);
+  card.appendChild(wrapper);
+  container.appendChild(card);
+}
+
+async function runValidation() {
+  const res = await fetch('/api/validate');
+  const data = await res.json();
+  const container = clearEl('validate-result');
+  const card = el('div', {className: 'card'});
+
+  const tableRows = data.validations.map(v => {
+    const errTd = el('span', null, v.error_percent + '%');
+    errTd.style.color = v.error_percent <= 20 ? 'var(--green)' : 'var(--red)';
+    const statusBadge = v.within_20pct ? badge('PASS', 'ok') : badge('FAIL', 'fail');
+    return [v.model, v.quantization, v.context_length, fmt(v.estimated_mb) + ' MB', fmt(v.reference_mb) + ' MB', errTd, statusBadge];
+  });
+  card.appendChild(buildTable(['Model', 'Quant', 'Context', 'Estimated', 'Reference', 'Error', 'Status'], tableRows));
+  container.appendChild(card);
+}
+
+async function uploadGGUF() {
+  const fileInput = document.getElementById('gguf-file');
+  if (!fileInput.files.length) { alert('Select a GGUF file'); return; }
+
+  const file = fileInput.files[0];
+  const ctx = document.getElementById('upload-ctx').value;
+  const res = await fetch('/api/upload-gguf?context=' + ctx, { method: 'POST', body: file });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+
+  const est = data.estimate;
+  const info = data.model_info;
+  const container = clearEl('upload-result');
+
+  const card = el('div', {className: 'card'});
+  card.appendChild(el('h3', null, info.name + ' (' + info.filename + ')'));
+  card.appendChild(buildStatGrid([
+    {label: 'Total VRAM', value: fmt(est.total_mb) + ' MB', color: 'var(--accent)'},
+    {label: 'Weights', value: fmt(est.weights_mb) + ' MB'},
+    {label: 'KV Cache', value: fmt(est.kv_cache_mb) + ' MB'},
+    {label: 'Architecture', value: info.architecture},
+    {label: 'Layers', value: String(info.block_count)},
+    {label: 'Hidden Dim', value: String(info.embedding_length)},
+  ]));
+  card.appendChild(buildVramBar(est, est.total_mb));
+  card.appendChild(buildLegend([
+    {color: '#6c8aff', text: 'Weights'}, {color: '#a78bfa', text: 'KV Cache'},
+    {color: '#f59e0b', text: 'Activation'}, {color: '#64748b', text: 'Overhead'},
+  ]));
+  container.appendChild(card);
+
+  if (data.moe_offloading && data.moe_offloading.length > 0) {
+    container.appendChild(buildMoeTable(data.moe_offloading, info.name));
+  }
+
+  if (info.raw_metadata && Object.keys(info.raw_metadata).length > 0) {
+    const metaCard = el('div', {className: 'card'});
+    metaCard.appendChild(el('h3', null, 'Raw GGUF Metadata'));
+    const rows = Object.entries(info.raw_metadata).map(([k, v]) => [k, String(v)]);
+    metaCard.appendChild(buildTable(['Key', 'Value'], rows));
+    container.appendChild(metaCard);
+  }
+}
+
+loadModels();
+</script>
+</body>
+</html>

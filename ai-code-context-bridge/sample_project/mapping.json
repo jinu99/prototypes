@@ -1,0 +1,47 @@
+{
+  "project_root": ".",
+  "rules": [
+    {
+      "pattern": "services/api-gateway/**",
+      "service": "api_gateway",
+      "layer": "backend",
+      "description": "API Gateway — request routing, authentication, rate limiting"
+    },
+    {
+      "pattern": "services/order-service/**",
+      "service": "order_service",
+      "layer": "backend",
+      "description": "Order Service — order lifecycle, payment orchestration"
+    },
+    {
+      "pattern": "services/product-service/**",
+      "service": "product_service",
+      "layer": "backend",
+      "description": "Product Service — catalog management, inventory tracking"
+    },
+    {
+      "pattern": "services/user-service/**",
+      "service": "user_service",
+      "layer": "backend",
+      "description": "User Service — authentication, user profiles"
+    },
+    {
+      "pattern": "services/notification-service/**",
+      "service": "notification_service",
+      "layer": "backend",
+      "description": "Notification Service — email, push notifications"
+    },
+    {
+      "pattern": "frontend/web/**",
+      "service": "api_gateway",
+      "layer": "frontend",
+      "description": "Web frontend — consumes API Gateway"
+    },
+    {
+      "pattern": "infra/**",
+      "service": "api_gateway",
+      "layer": "infrastructure",
+      "description": "Infrastructure configuration — deployment, CI/CD"
+    }
+  ]
+}

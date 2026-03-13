@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+*.egg-info/
+
+# Build artifacts
+dist/
+build/
+.next/
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime data
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Secrets (safety net)
+.env
+.env.*
+*.pem
+*.key
+credentials.json

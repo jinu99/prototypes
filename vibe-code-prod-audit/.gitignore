@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+dist/
+build/
+screenshots/
+sample_project/generated/
+sample_project_good/generated/
+.python-version

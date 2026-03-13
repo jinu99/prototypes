@@ -1,0 +1,12 @@
+[project]
+name = "agent-token-waste-analyzer"
+version = "0.1.0"
+description = "Analyze Claude Code sessions for token waste patterns"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "rich>=14.3.3",
+]
+
+[dependency-groups]
+dev = []

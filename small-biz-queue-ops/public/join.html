@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대기 등록 — Small Biz Queue</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📋 대기 등록</h1>
+      <p>이름과 인원수를 입력해주세요</p>
+    </div>
+
+    <!-- Registration form -->
+    <div class="card" id="form-section">
+      <form id="join-form">
+        <div class="form-group">
+          <label for="name">이름</label>
+          <input type="text" id="name" placeholder="홍길동" required maxlength="50" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="party_size">인원수</label>
+          <input type="number" id="party_size" value="2" min="1" max="50" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">대기 등록</button>
+      </form>
+      <p id="form-error" style="color:var(--danger);text-align:center;margin-top:10px;display:none"></p>
+    </div>
+
+    <!-- Waiting status (shown after registration) -->
+    <div id="wait-section" style="display:none">
+      <div class="card">
+        <div id="status-msg"></div>
+        <div class="wait-display" id="wait-display">
+          <div class="wait-number" id="wait-position">-</div>
+          <div class="wait-label">내 앞 대기</div>
+          <div class="wait-time" id="wait-time">예상 대기 시간 계산 중...</div>
+        </div>
+        <p style="text-align:center;font-size:.85rem;color:var(--gray-500)" id="wait-name"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let myId = null;
+
+    document.getElementById('join-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('form-error');
+      errEl.style.display = 'none';
+
+      const name = document.getElementById('name').value.trim();
+      const party_size = parseInt(document.getElementById('party_size').value) || 1;
+
+      try {
+        const res = await fetch('/api/queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, party_size })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.error || '등록 실패';
+          errEl.style.display = 'block';
+          return;
+        }
+        myId = data.id;
+        document.getElementById('form-section').style.display = 'none';
+        document.getElementById('wait-section').style.display = 'block';
+        document.getElementById('wait-name').textContent = name + ' · ' + party_size + '명';
+        updateWaitDisplay(data);
+      } catch (err) {
+        errEl.textContent = '네트워크 오류';
+        errEl.style.display = 'block';
+      }
+    });
+
+    function updateWaitDisplay(entry) {
+      const posEl = document.getElementById('wait-position');
+      const timeEl = document.getElementById('wait-time');
+      const msgEl = document.getElementById('status-msg');
+      const displayEl = document.getElementById('wait-display');
+
+      if (entry.status === 'called') {
+        msgEl.className = 'status-called-msg';
+        msgEl.textContent = '🔔 호출되었습니다! 입장해주세요!';
+        displayEl.style.display = 'none';
+      } else if (entry.status === 'seated') {
+        msgEl.className = 'card';
+        msgEl.style.cssText = 'text-align:center;padding:20px;color:var(--success);font-weight:700;font-size:1.1rem';
+        msgEl.textContent = '✅ 착석 완료';
+        displayEl.style.display = 'none';
+      } else if (entry.status === 'completed') {
+        msgEl.className = 'card';
+        msgEl.style.cssText = 'text-align:center;padding:20px;color:var(--gray-500)';
+        msgEl.textContent = '이용이 완료되었습니다. 감사합니다!';
+        displayEl.style.display = 'none';
+      } else {
+        msgEl.className = '';
+        msgEl.textContent = '';
+        msgEl.removeAttribute('style');
+        displayEl.style.display = 'block';
+        posEl.textContent = entry.position != null ? entry.position : '-';
+        if (entry.estimated_wait != null) {
+          timeEl.textContent = entry.estimated_wait === 0
+            ? '곧 호출됩니다!'
+            : '예상 대기: 약 ' + entry.estimated_wait + '분';
+        }
+      }
+    }
+
+    // SSE for real-time updates
+    const es = new EventSource('/api/events');
+    es.addEventListener('queue-update', e => {
+      if (!myId) return;
+      const items = JSON.parse(e.data);
+      const mine = items.find(i => i.id === myId);
+      if (mine) updateWaitDisplay(mine);
+    });
+  </script>
+</body>
+</html>

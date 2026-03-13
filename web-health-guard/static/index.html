@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Health Guard</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #232733;
+      --border: #2e3345;
+      --text: #e1e4ed;
+      --text2: #8b90a0;
+      --green: #22c55e;
+      --green-bg: #22c55e18;
+      --red: #ef4444;
+      --red-bg: #ef444418;
+      --yellow: #eab308;
+      --yellow-bg: #eab30818;
+      --blue: #3b82f6;
+      --blue-bg: #3b82f618;
+      --accent: #818cf8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .header {
+      padding: 2rem 2rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
+    .header h1 span { color: var(--accent); }
+    .header p { color: var(--text2); font-size: 0.8rem; margin-top: 0.3rem; }
+    .search-bar {
+      display: flex; gap: 0.5rem; max-width: 640px; margin: 1.5rem auto; padding: 0 1rem;
+    }
+    .search-bar input {
+      flex: 1; padding: 0.7rem 1rem; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.85rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .search-bar input:focus { border-color: var(--accent); }
+    .search-bar input::placeholder { color: var(--text2); }
+    .search-bar button {
+      padding: 0.7rem 1.5rem; background: var(--accent); color: #fff; border: none;
+      border-radius: 6px; font-family: inherit; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+    }
+    .search-bar button:hover { opacity: 0.9; }
+    .search-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .loading { text-align: center; padding: 3rem; color: var(--text2); }
+    .loading .spinner {
+      display: inline-block; width: 24px; height: 24px;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg {
+      max-width: 640px; margin: 1rem auto; padding: 0.8rem 1rem;
+      background: var(--red-bg); border: 1px solid var(--red); border-radius: 6px;
+      color: var(--red); font-size: 0.8rem; display: none;
+    }
+    .dashboard { display: none; max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem 2rem; }
+    .dashboard.visible { display: block; }
+    .summary-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .stat-card {
+      flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem;
+    }
+    .stat-card .label { font-size: 0.7rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .value { font-size: 1.5rem; font-weight: 700; margin-top: 0.3rem; }
+    .stat-card .value.pass { color: var(--green); }
+    .stat-card .value.fail { color: var(--red); }
+    .stat-card .value.warn { color: var(--yellow); }
+    .section {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 1rem; overflow: hidden;
+    }
+    .section-header {
+      padding: 0.8rem 1rem; font-size: 0.85rem; font-weight: 600;
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .badge {
+      font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 600;
+    }
+    .badge-pass { background: var(--green-bg); color: var(--green); }
+    .badge-fail { background: var(--red-bg); color: var(--red); }
+    .badge-warn { background: var(--yellow-bg); color: var(--yellow); }
+    .check-list { list-style: none; }
+    .check-item {
+      padding: 0.6rem 1rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.8rem; line-height: 1.5;
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-icon { flex-shrink: 0; font-size: 0.85rem; margin-top: 0.1rem; }
+    .check-icon.pass { color: var(--green); }
+    .check-icon.fail { color: var(--red); }
+    .check-name { font-weight: 600; color: var(--text); min-width: 130px; }
+    .check-detail { color: var(--text2); }
+    .crawler-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem; padding: 0.8rem 1rem;
+    }
+    .crawler-card {
+      padding: 0.6rem 0.8rem; border-radius: 6px; font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+    .crawler-card.blocked { background: var(--green-bg); border-color: var(--green); }
+    .crawler-card.open { background: var(--red-bg); border-color: var(--red); }
+    .crawler-name { font-weight: 600; }
+    .crawler-org { color: var(--text2); font-size: 0.65rem; }
+    .crawler-status { margin-top: 0.3rem; }
+    .crawler-status.blocked { color: var(--green); }
+    .crawler-status.open { color: var(--red); }
+    .snippet-box {
+      margin: 0.8rem 1rem 1rem; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+    }
+    .snippet-header {
+      padding: 0.5rem 0.8rem; background: var(--surface2); font-size: 0.7rem;
+      color: var(--text2); display: flex; justify-content: space-between; align-items: center;
+    }
+    .snippet-header button {
+      background: var(--accent); border: none; color: #fff; padding: 0.2rem 0.6rem;
+      border-radius: 4px; font-size: 0.65rem; cursor: pointer; font-family: inherit;
+    }
+    .snippet-code {
+      padding: 0.8rem; font-size: 0.75rem; line-height: 1.6;
+      white-space: pre-wrap; color: var(--green); max-height: 300px; overflow-y: auto;
+    }
+    .phantom-list { list-style: none; }
+    .phantom-item { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+    .phantom-item:last-child { border-bottom: none; }
+    .phantom-url { color: var(--yellow); font-weight: 600; word-break: break-all; }
+    .phantom-risk { color: var(--text2); font-size: 0.75rem; margin-top: 0.2rem; }
+    .phantom-source {
+      display: inline-block; font-size: 0.6rem; padding: 0.1rem 0.4rem;
+      border-radius: 4px; margin-left: 0.5rem;
+    }
+    .phantom-source.text_pattern { background: var(--yellow-bg); color: var(--yellow); }
+    .phantom-source.sitemap_only { background: var(--blue-bg); color: var(--blue); }
+    .remediation-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 0.8rem; padding: 0.8rem 1rem;
+    }
+    .remedy-card {
+      padding: 0.8rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
+    }
+    .remedy-title { font-weight: 600; font-size: 0.8rem; color: var(--accent); margin-bottom: 0.3rem; }
+    .remedy-desc { font-size: 0.7rem; color: var(--text2); line-height: 1.5; }
+    .remedy-example {
+      margin-top: 0.4rem; background: var(--surface2); padding: 0.4rem 0.6rem;
+      border-radius: 4px; font-size: 0.65rem; color: var(--green); white-space: pre-wrap;
+    }
+    .empty-state { padding: 2rem 1rem; text-align: center; color: var(--text2); font-size: 0.8rem; }
+    @media (max-width: 600px) {
+      .summary-bar { flex-direction: column; }
+      .crawler-grid { grid-template-columns: 1fr; }
+      .remediation-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>&gt;</span> Web Health Guard</h1>
+  <p>Technical SEO &middot; AI Crawler Defense &middot; Phantom URL Detection</p>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="urlInput" placeholder="https://example.com" autofocus>
+  <button id="scanBtn">Scan</button>
+</div>
+
+<div id="error" class="error-msg"></div>
+<div id="loading" class="loading" style="display:none">
+  <div class="spinner"></div>
+  <div>Scanning...</div>
+</div>
+
+<div id="dashboard" class="dashboard"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const urlInput = $('urlInput');
+const scanBtn = $('scanBtn');
+const loading = $('loading');
+const errorDiv = $('error');
+const dashboard = $('dashboard');
+
+scanBtn.addEventListener('click', startScan);
+urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') startScan(); });
+
+/* ── Safe DOM helpers ───────────────────────── */
+function el(tag, attrs, ...children) {
+  const node = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'className') node.className = v;
+      else if (k === 'style' && typeof v === 'object')
+        Object.assign(node.style, v);
+      else node.setAttribute(k, v);
+    }
+  }
+  for (const c of children) {
+    if (typeof c === 'string') node.appendChild(document.createTextNode(c));
+    else if (c) node.appendChild(c);
+  }
+  return node;
+}
+
+function badge(text, type) {
+  return el('span', {className: `badge badge-${type}`}, text);
+}
+
+/* ── Main scan flow ──────────────────────────── */
+async function startScan() {
+  const url = urlInput.value.trim();
+  if (!url) return;
+
+  loading.style.display = 'block';
+  errorDiv.style.display = 'none';
+  dashboard.classList.remove('visible');
+  scanBtn.disabled = true;
+
+  try {
+    const resp = await fetch(`/api/scan?url=${encodeURIComponent(url)}`);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Scan failed');
+    renderDashboard(data);
+  } catch (err) {
+    errorDiv.textContent = err.message;
+    errorDiv.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+    scanBtn.disabled = false;
+  }
+}
+
+/* ── Dashboard renderer (safe DOM only) ──────── */
+function renderDashboard(data) {
+  dashboard.textContent = '';
+
+  const seoPass = data.seo.filter(c => c.passed).length;
+  const seoFail = data.seo.length - seoPass;
+  const blocked = data.robots.crawlers.filter(c => c.blocked).length;
+  const open = data.robots.crawlers.length - blocked;
+  const phantomCount = data.phantom.phantoms.length + data.phantom.orphan_sitemap_urls.length;
+
+  /* Summary bar */
+  const summaryBar = el('div', {className: 'summary-bar'},
+    statCard('SEO Passed', `${seoPass} / ${data.seo.length}`, 'pass'),
+    statCard('SEO Issues', String(seoFail), seoFail > 0 ? 'fail' : 'pass'),
+    statCard('AI Crawlers Blocked', `${blocked} / ${data.robots.crawlers.length}`, blocked > 0 ? 'pass' : 'fail'),
+    statCard('Phantom URLs', String(phantomCount), phantomCount > 0 ? 'warn' : 'pass'),
+  );
+  dashboard.appendChild(summaryBar);
+
+  /* SEO section */
+  dashboard.appendChild(buildSeoSection(data.seo, seoPass, seoFail));
+
+  /* Robots section */
+  dashboard.appendChild(buildRobotsSection(data.robots, blocked, open));
+
+  /* Phantom section */
+  dashboard.appendChild(buildPhantomSection(data.phantom, phantomCount));
+
+  dashboard.classList.add('visible');
+}
+
+function statCard(label, value, cls) {
+  return el('div', {className: 'stat-card'},
+    el('div', {className: 'label'}, label),
+    el('div', {className: `value ${cls}`}, value),
+  );
+}
+
+/* ── SEO section ─────────────────────────────── */
+function buildSeoSection(seo, pass, fail) {
+  const header = el('div', {className: 'section-header'},
+    document.createTextNode('Technical SEO Checklist '),
+    badge(`${pass} pass`, 'pass'),
+  );
+  if (fail > 0) header.appendChild(badge(`${fail} fail`, 'fail'));
+
+  const list = el('ul', {className: 'check-list'});
+  for (const c of seo) {
+    list.appendChild(el('li', {className: 'check-item'},
+      el('span', {className: `check-icon ${c.passed ? 'pass' : 'fail'}`}, c.passed ? '✓' : '✗'),
+      el('span', {className: 'check-name'}, c.name),
+      el('span', {className: 'check-detail'}, c.detail),
+    ));
+  }
+
+  return el('div', {className: 'section'}, header, list);
+}
+
+/* ── Robots section ──────────────────────────── */
+function buildRobotsSection(robots, blocked, open) {
+  const header = el('div', {className: 'section-header'},
+    document.createTextNode('AI Crawler Defense '),
+    badge(`${blocked} blocked`, blocked > 0 ? 'pass' : 'fail'),
+  );
+  if (open > 0) header.appendChild(badge(`${open} open`, 'fail'));
+
+  const section = el('div', {className: 'section'}, header);
+
+  if (!robots.found) {
+    section.appendChild(el('div', {className: 'empty-state'}, 'No robots.txt found — all crawlers have access'));
+  }
+
+  const grid = el('div', {className: 'crawler-grid'});
+  for (const c of robots.crawlers) {
+    const cls = c.blocked ? 'blocked' : 'open';
+    grid.appendChild(el('div', {className: `crawler-card ${cls}`},
+      el('div', {className: 'crawler-name'}, c.name),
+      el('div', {className: 'crawler-org'}, c.org),
+      el('div', {className: `crawler-status ${cls}`}, c.blocked ? '● Blocked' : '○ Not blocked'),
+    ));
+  }
+  section.appendChild(grid);
+
+  if (robots.block_snippet) {
+    const snippetCode = el('div', {className: 'snippet-code'}, robots.block_snippet);
+    const copyBtn = el('button', null, 'Copy');
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(robots.block_snippet).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+      });
+    });
+
+    const snippetBox = el('div', {className: 'snippet-box'},
+      el('div', {className: 'snippet-header'},
+        el('span', null, 'Suggested robots.txt rules'),
+        copyBtn,
+      ),
+      snippetCode,
+    );
+    section.appendChild(snippetBox);
+  }
+
+  return section;
+}
+
+/* ── Phantom section ─────────────────────────── */
+function buildPhantomSection(phantom, phantomCount) {
+  const header = el('div', {className: 'section-header'},
+    document.createTextNode('Phantom URL Detection '),
+    badge(`${phantomCount} found`, phantomCount > 0 ? 'warn' : 'pass'),
+  );
+  const section = el('div', {className: 'section'}, header);
+
+  if (phantomCount === 0) {
+    section.appendChild(el('div', {className: 'empty-state'}, 'No phantom URLs detected'));
+  }
+
+  if (phantom.phantoms.length > 0) {
+    section.appendChild(buildPhantomList(phantom.phantoms));
+  }
+
+  if (phantom.orphan_sitemap_urls.length > 0) {
+    const orphanHeader = el('div', {className: 'section-header', style: {borderTop: '1px solid var(--border)'}},
+      document.createTextNode('Orphan Sitemap URLs '),
+      badge(String(phantom.orphan_sitemap_urls.length), 'warn'),
+    );
+    section.appendChild(orphanHeader);
+    section.appendChild(buildPhantomList(phantom.orphan_sitemap_urls));
+  }
+
+  /* Remediation guide */
+  const remHeader = el('div', {className: 'section-header', style: {borderTop: '1px solid var(--border)'}},
+    document.createTextNode('Remediation Guide'),
+  );
+  section.appendChild(remHeader);
+
+  const remGrid = el('div', {className: 'remediation-grid'});
+  for (const r of Object.values(phantom.remediation)) {
+    const card = el('div', {className: 'remedy-card'},
+      el('div', {className: 'remedy-title'}, r.title),
+      el('div', {className: 'remedy-desc'}, r.desc),
+    );
+    if (r.example) card.appendChild(el('div', {className: 'remedy-example'}, r.example));
+    remGrid.appendChild(card);
+  }
+  section.appendChild(remGrid);
+
+  return section;
+}
+
+function buildPhantomList(items) {
+  const list = el('ul', {className: 'phantom-list'});
+  for (const p of items) {
+    const sourceLabel = p.source.replace('_', ' ');
+    list.appendChild(el('li', {className: 'phantom-item'},
+      el('div', null,
+        el('span', {className: 'phantom-url'}, p.url),
+        el('span', {className: `phantom-source ${p.source}`}, sourceLabel),
+      ),
+      el('div', {className: 'phantom-risk'}, p.risk),
+    ));
+  }
+  return list;
+}
+</script>
+
+</body>
+</html>

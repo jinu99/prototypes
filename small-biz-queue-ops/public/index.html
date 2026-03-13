@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대기열 관리 — Small Biz Queue</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="active">홈</a>
+    <a href="/admin">매장 관리</a>
+    <a href="/kds">KDS</a>
+  </nav>
+  <div class="container">
+    <div class="header">
+      <h1>🏪 대기열 관리</h1>
+      <p>QR 코드로 간편하게 대기 등록</p>
+    </div>
+
+    <div class="card qr-section" id="qr-card">
+      <h2>고객 대기 등록 QR</h2>
+      <img id="qr-img" alt="QR Code" width="200" height="200">
+      <p style="font-size:.85rem;color:var(--gray-500)">고객이 이 QR을 스캔하면 대기 등록 페이지로 이동합니다</p>
+    </div>
+
+    <div class="card">
+      <h2>현재 대기 현황</h2>
+      <div id="home-queue"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadQR() {
+      const url = location.origin + '/join';
+      const res = await fetch('/api/qrcode?url=' + encodeURIComponent(url));
+      const data = await res.json();
+      document.getElementById('qr-img').src = data.qr;
+    }
+
+    function renderHomeQueue(items) {
+      const el = document.getElementById('home-queue');
+      el.replaceChildren();
+      const active = items.filter(i => i.status !== 'completed');
+      if (!active.length) {
+        const p = document.createElement('p');
+        p.style.cssText = 'text-align:center;color:var(--gray-500);padding:20px';
+        p.textContent = '대기자가 없습니다';
+        el.appendChild(p);
+        return;
+      }
+      active.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'queue-item';
+
+        const info = document.createElement('div');
+        info.className = 'queue-info';
+
+        const name = document.createElement('span');
+        name.className = 'queue-name';
+        name.textContent = item.name;
+        const meta = document.createElement('span');
+        meta.className = 'queue-meta';
+        meta.textContent = item.party_size + '명';
+
+        info.appendChild(name);
+        info.appendChild(document.createTextNode(' '));
+        info.appendChild(meta);
+
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-' + item.status;
+        badge.textContent = statusLabel(item.status);
+
+        row.appendChild(info);
+        row.appendChild(badge);
+        el.appendChild(row);
+      });
+    }
+
+    function statusLabel(s) {
+      return { waiting: '대기', called: '호출', seated: '착석', completed: '완료' }[s] || s;
+    }
+
+    // SSE
+    const es = new EventSource('/api/events');
+    es.addEventListener('queue-update', e => {
+      renderHomeQueue(JSON.parse(e.data));
+    });
+
+    // Initial load
+    loadQR();
+    fetch('/api/queue').then(r => r.json()).then(renderHomeQueue);
+  </script>
+</body>
+</html>

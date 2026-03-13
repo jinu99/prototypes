@@ -1,0 +1,69 @@
+{
+  "framework": "fastapi",
+  "version": "1.0",
+  "checks": [
+    {
+      "id": "has_routes",
+      "name": "Route Definitions",
+      "category": "structure",
+      "description": "Project defines at least one API route",
+      "weight": 10
+    },
+    {
+      "id": "has_healthcheck",
+      "name": "Health Check Endpoint",
+      "category": "reliability",
+      "description": "A /health or /healthz endpoint exists for monitoring",
+      "weight": 20
+    },
+    {
+      "id": "has_tests",
+      "name": "Test Files",
+      "category": "quality",
+      "description": "Test files exist (test_*.py or *_test.py)",
+      "weight": 20
+    },
+    {
+      "id": "has_error_handling",
+      "name": "Error Handling",
+      "category": "reliability",
+      "description": "Exception handlers or try/except blocks in route handlers",
+      "weight": 15
+    },
+    {
+      "id": "has_env_management",
+      "name": "Environment Variable Management",
+      "category": "security",
+      "description": "Uses os.environ, dotenv, or Pydantic BaseSettings for config",
+      "weight": 15
+    },
+    {
+      "id": "has_middleware",
+      "name": "Middleware",
+      "category": "structure",
+      "description": "At least one middleware configured (CORS, logging, etc.)",
+      "weight": 5
+    },
+    {
+      "id": "has_cors",
+      "name": "CORS Configuration",
+      "category": "security",
+      "description": "CORSMiddleware is configured",
+      "weight": 5
+    },
+    {
+      "id": "has_dockerfile",
+      "name": "Dockerfile",
+      "category": "deployment",
+      "description": "Dockerfile exists for containerized deployment",
+      "weight": 5
+    },
+    {
+      "id": "has_dependency_file",
+      "name": "Dependency Management",
+      "category": "structure",
+      "description": "requirements.txt or pyproject.toml exists",
+      "weight": 5
+    }
+  ]
+}

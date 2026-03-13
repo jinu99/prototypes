@@ -1,0 +1,16 @@
+[project]
+name = "consistency"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.3.1",
+    "sentence-transformers>=5.2.3",
+]
+
+[tool.setuptools.packages.find]
+include = ["consistency*"]
+
+[project.scripts]
+consistency = "consistency.cli:main"

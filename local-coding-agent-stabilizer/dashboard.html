@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Stabilizer Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+    --text: #e1e4ed; --muted: #8b8fa3; --accent: #6c8aff;
+    --danger: #ff5c5c; --success: #4ade80; --warn: #fbbf24;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 1.1rem; font-weight: 600; }
+  header h1 span { color: var(--accent); }
+  .stats { display: flex; gap: 2rem; }
+  .stat { text-align: center; }
+  .stat-val { font-size: 1.5rem; font-weight: 700; }
+  .stat-val.danger { color: var(--danger); }
+  .stat-val.success { color: var(--success); }
+  .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  main { padding: 1.5rem 2rem; display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; height: calc(100vh - 80px); }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+  .panel-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 0.5rem; }
+  .session-item { padding: 0.6rem 0.8rem; border-radius: 6px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
+  .session-item:hover { background: rgba(108, 138, 255, 0.1); }
+  .session-item.active { background: rgba(108, 138, 255, 0.15); border-left: 3px solid var(--accent); }
+  .session-id { font-size: 0.85rem; font-weight: 600; }
+  .session-meta { font-size: 0.7rem; color: var(--muted); margin-top: 2px; display: flex; gap: 1rem; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600; }
+  .badge-active { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+  .badge-halted { background: rgba(255, 92, 92, 0.15); color: var(--danger); }
+  .badge-completed { background: rgba(139, 143, 163, 0.15); color: var(--muted); }
+  .tool-call { padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 4px; font-size: 0.8rem; border-left: 3px solid var(--border); }
+  .tool-call.blocked { border-left-color: var(--danger); background: rgba(255, 92, 92, 0.06); }
+  .tool-name { font-weight: 600; color: var(--accent); }
+  .tool-name.blocked { color: var(--danger); }
+  .tool-time { font-size: 0.65rem; color: var(--muted); float: right; }
+  .tool-args { font-size: 0.7rem; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .block-reason { font-size: 0.75rem; color: var(--danger); margin-top: 3px; font-weight: 500; }
+  .tabs { display: flex; gap: 0; }
+  .tab { padding: 0.5rem 1rem; cursor: pointer; font-size: 0.75rem; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 0.85rem; }
+  .refresh-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 3px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.7rem; }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ <span>Agent Stabilizer</span> Dashboard</h1>
+  <div class="stats">
+    <div class="stat"><div class="stat-val success" id="stat-sessions">-</div><div class="stat-label">Sessions</div></div>
+    <div class="stat"><div class="stat-val" id="stat-calls">-</div><div class="stat-label">Tool Calls</div></div>
+    <div class="stat"><div class="stat-val danger" id="stat-blocked">-</div><div class="stat-label">Blocked</div></div>
+  </div>
+</header>
+<main>
+  <div class="panel">
+    <div class="panel-header">Sessions <button class="refresh-btn" onclick="refresh()">Refresh</button></div>
+    <div class="panel-body" id="sessions-list">
+      <div class="empty">No sessions yet</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <div class="tabs">
+        <div class="tab active" data-tab="calls" onclick="switchTab(this)">Tool Calls</div>
+        <div class="tab" data-tab="blocked" onclick="switchTab(this)">Blocked Only</div>
+      </div>
+    </div>
+    <div class="panel-body" id="detail-panel">
+      <div class="empty">Select a session or view all</div>
+    </div>
+  </div>
+</main>
+<script>
+let currentSession = null;
+let currentTab = 'calls';
+
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  return r.json();
+}
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  return new Date(ts * 1000).toLocaleTimeString();
+}
+
+function escText(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function truncate(s, n) { return s.length > n ? s.slice(0, n) + '...' : s; }
+
+function createEl(tag, attrs, children) {
+  const el = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') el.className = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v);
+    }
+  }
+  if (typeof children === 'string') el.textContent = children;
+  else if (Array.isArray(children)) children.forEach(c => { if (c) el.appendChild(c); });
+  return el;
+}
+
+function createBadge(status) {
+  const cls = status === 'active' ? 'badge-active' : status.startsWith('halted') ? 'badge-halted' : 'badge-completed';
+  return createEl('span', {class: 'badge ' + cls}, status);
+}
+
+function buildSessionItem(s) {
+  const item = createEl('div', {
+    class: 'session-item' + (currentSession === s.id ? ' active' : ''),
+    onclick: () => selectSession(s.id),
+  });
+  const idRow = createEl('div', {class: 'session-id'});
+  idRow.appendChild(document.createTextNode(s.id + ' '));
+  idRow.appendChild(createBadge(s.status));
+  item.appendChild(idRow);
+
+  const meta = createEl('div', {class: 'session-meta'});
+  meta.appendChild(createEl('span', null, fmtTime(s.started_at)));
+  meta.appendChild(createEl('span', null, s.total_calls + ' calls'));
+  if (s.blocked_calls > 0) {
+    const bc = createEl('span', null, s.blocked_calls + ' blocked');
+    bc.style.color = 'var(--danger)';
+    meta.appendChild(bc);
+  }
+  item.appendChild(meta);
+  return item;
+}
+
+function buildToolCallItem(c) {
+  const blocked = c.blocked === 1;
+  const item = createEl('div', {class: 'tool-call' + (blocked ? ' blocked' : '')});
+
+  const timeEl = createEl('span', {class: 'tool-time'}, fmtTime(c.timestamp));
+  item.appendChild(timeEl);
+
+  const nameEl = createEl('span', {class: 'tool-name' + (blocked ? ' blocked' : '')},
+    (blocked ? '🚫 ' : '') + c.tool_name);
+  item.appendChild(nameEl);
+
+  const sid = createEl('span', {class: 'badge'}, c.session_id);
+  sid.style.marginLeft = '4px';
+  sid.style.fontSize = '0.6rem';
+  sid.style.color = 'var(--muted)';
+  item.appendChild(sid);
+
+  if (c.arguments) {
+    const argsEl = createEl('div', {class: 'tool-args'}, truncate(c.arguments, 120));
+    item.appendChild(argsEl);
+  }
+  if (c.block_reason) {
+    const reasonEl = createEl('div', {class: 'block-reason'}, 'Warning: ' + c.block_reason);
+    item.appendChild(reasonEl);
+  }
+  return item;
+}
+
+async function refresh() {
+  const [stats, sessions] = await Promise.all([
+    fetchJSON('/api/stats'),
+    fetchJSON('/api/sessions'),
+  ]);
+  document.getElementById('stat-sessions').textContent = stats.total_sessions;
+  document.getElementById('stat-calls').textContent = stats.total_tool_calls;
+  document.getElementById('stat-blocked').textContent = stats.total_blocked;
+
+  const list = document.getElementById('sessions-list');
+  list.replaceChildren();
+  if (sessions.length === 0) {
+    list.appendChild(createEl('div', {class: 'empty'}, 'No sessions yet. Send requests through the proxy to see activity.'));
+    return;
+  }
+  sessions.forEach(s => list.appendChild(buildSessionItem(s)));
+  loadDetails();
+}
+
+function selectSession(id) {
+  currentSession = currentSession === id ? null : id;
+  refresh();
+}
+
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentTab = el.dataset.tab;
+  loadDetails();
+}
+
+async function loadDetails() {
+  const panel = document.getElementById('detail-panel');
+  let calls;
+  if (currentTab === 'blocked') {
+    calls = await fetchJSON('/api/blocked');
+  } else {
+    const url = currentSession ? '/api/tool-calls?session_id=' + encodeURIComponent(currentSession) : '/api/tool-calls';
+    calls = await fetchJSON(url);
+  }
+  panel.replaceChildren();
+  if (calls.length === 0) {
+    panel.appendChild(createEl('div', {class: 'empty'}, 'No data'));
+    return;
+  }
+  calls.forEach(c => panel.appendChild(buildToolCallItem(c)));
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

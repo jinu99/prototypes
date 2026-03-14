@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: sql-guard
+        name: SQL Anti-Pattern Guard
+        entry: uv run sql-guard --strict
+        language: system
+        types: [sql]
+        pass_filenames: true

@@ -2,6 +2,118 @@
 
 > PDF 문서의 OCR 노이즈(워터마크, 반복 헤더/푸터, 아티팩트)를 자동 감지·제거하여 RAG 파이프라인에 투입할 정제 텍스트를 생성합니다.
 
+## Architecture
+
+```
+┌─────────────────┐
+│   PDF 파일      │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  extractor.py  (PyMuPDF)                            │
+│  PDF → TextBlock (텍스트 + 좌표 + 폰트 + 색상)     │
+│  출력: DocumentData { pages: [PageData] }           │
+└────────┬────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  detector.py  (노이즈 감지 엔진)                    │
+│                                                     │
+│  ┌───────────────┐ ┌──────────────┐ ┌────────────┐  │
+│  │ Watermark     │ │ Header/Footer│ │ OCR        │  │
+│  │ 큰폰트+중앙  │ │ 상단/하단    │ │ Artifact   │  │
+│  │ +다수페이지   │ │ +패턴매칭    │ │ regex 감지 │  │
+│  └───────┬───────┘ └──────┬───────┘ └─────┬──────┘  │
+│          └────────┬───────┘               │         │
+│                   ▼                       │         │
+│           DiagnosisReport ◄───────────────┘         │
+└────────┬────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  cleaner.py  (노이즈 제거)                          │
+│  DocumentData + DiagnosisReport                     │
+│  → 블록 단위 필터링 → CleanResult                   │
+│    (정제 텍스트 + per-page diff 리포트)              │
+└────────┬────────────────────────────────────────────┘
+         │
+         ├──────────────────────┐
+         ▼                      ▼
+┌─────────────────┐   ┌──────────────────────────┐
+│  정제 텍스트    │   │  chunker.py              │
+│  (.txt 출력)    │   │  paragraph 기반 분할     │
+└─────────────────┘   │  → ChunkStats            │
+                      │  (크기분포, 중복률)       │
+                      └──────────────────────────┘
+
+         ▲ CLI (cli.py) 가 전체 파이프라인을 오케스트레이션
+         │
+┌────────┴────────────────────────────────────┐
+│  rag-doc-cleaner diagnose  → JSON 리포트    │
+│  rag-doc-cleaner clean     → 정제 텍스트    │
+│  rag-doc-cleaner stats     → 청킹 통계      │
+└─────────────────────────────────────────────┘
+```
+
+## Demo
+
+```bash
+# 1. 샘플 PDF 생성
+$ uv run python generate_samples.py
+Generated: samples/report_with_watermark.pdf
+Generated: samples/scanned_with_artifacts.pdf
+Generated: samples/clean_report.pdf
+
+# 2. 노이즈 진단 — 워터마크·헤더/푸터·아티팩트를 JSON으로 출력
+$ uv run rag-doc-cleaner diagnose samples/report_with_watermark.pdf
+Diagnosing: samples/report_with_watermark.pdf
+{
+  "summary": {
+    "total_pages": 4,
+    "total_blocks": 24,
+    "watermarks_found": 1,
+    "headers_footers_found": 2,
+    "ocr_artifacts_found": 0
+  },
+  "watermarks": [
+    { "text": "DRAFT", "pages": [1,2,3,4], "avg_font_size": 72.0 }
+  ],
+  ...
+}
+
+# 3. 정제 — 노이즈 제거 후 깨끗한 텍스트 출력
+$ uv run rag-doc-cleaner clean samples/report_with_watermark.pdf
+Cleaning: samples/report_with_watermark.pdf
+
+--- Changes ---
+  Page 1:
+    - [watermark] DRAFT
+    - [header_footer] Acme Corp · Annual Report 2025
+    - [header_footer] Confidential · Do Not Distribute · Page 1
+    → 15.7% reduction (504 → 425 chars)
+
+Total items removed: 12
+
+--- Cleaned Text ---
+Executive Summary
+This report outlines the strategic direction and financial performance...
+
+# 4. 정제 텍스트를 파일로 저장
+$ uv run rag-doc-cleaner clean samples/report_with_watermark.pdf -o cleaned.txt
+Cleaned text saved to: cleaned.txt
+
+# 5. 청킹 통계 확인
+$ uv run rag-doc-cleaner stats samples/report_with_watermark.pdf
+{
+  "total_chunks": 4,
+  "avg_size": 370.2,
+  "size_distribution": { "0-100": 0, "101-250": 0, "251-500": 4, ... },
+  "duplicate_count": 0,
+  "duplicate_rate": 0.0
+}
+```
+
 ## 실행 방법
 
 ```bash

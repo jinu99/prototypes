@@ -176,8 +176,9 @@ Community Sources                 Pipeline (cron-automated)                    O
 | Prototype | Description | Stack |
 |-----------|-------------|-------|
 | [docs](./docs) | (설명 없음) | Other |
+| [local-feed-relevance-engine](./local-feed-relevance-engine) | 로컬 임베딩(all-MiniLM-L6-v2)으로 RSS 피드 기사의 관심도를 스코어링하고, 읽기/스킵 피드백으로 개인화하는 엔진 | Python |
 | [lora-streaming-merge](./lora-streaming-merge) | 16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI | Python |
 
 ---
 
-**Total: 43 prototypes** | Auto-updated by prototype-pipeline
+**Total: 44 prototypes** | Auto-updated by prototype-pipeline

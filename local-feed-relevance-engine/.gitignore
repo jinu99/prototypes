@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+*.db
+screenshots/
+.python-version
+node_modules/

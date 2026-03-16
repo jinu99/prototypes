@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Feed Relevance Engine</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+    --text: #e1e4ed; --text2: #8b8fa3; --accent: #6c8cff;
+    --green: #4ade80; --red: #f87171; --yellow: #fbbf24;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text);
+    max-width: 900px; margin: 0 auto; padding: 20px;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .subtitle { color: var(--text2); font-size: 0.85rem; margin-bottom: 20px; }
+  .stats {
+    display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; min-width: 100px;
+  }
+  .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.75rem; color: var(--text2); }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-bottom: 16px;
+  }
+  .panel h2 { font-size: 1rem; margin-bottom: 12px; }
+  input[type="text"], input[type="file"] {
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px; border-radius: 6px;
+    width: 100%; font-size: 0.9rem;
+  }
+  button {
+    background: var(--accent); color: #fff; border: none;
+    padding: 8px 16px; border-radius: 6px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-sm { padding: 4px 10px; font-size: 0.8rem; border-radius: 4px; }
+  .btn-read { background: var(--green); color: #000; }
+  .btn-skip { background: var(--red); color: #fff; }
+  .btn-outline {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .article-list { display: flex; flex-direction: column; gap: 8px; }
+  .article {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; display: flex;
+    align-items: flex-start; gap: 12px;
+  }
+  .article.read { opacity: 0.5; }
+  .score-badge {
+    min-width: 48px; text-align: center; font-weight: 700;
+    font-size: 1.1rem; padding: 6px 8px; border-radius: 6px;
+    line-height: 1;
+  }
+  .score-high { background: #166534; color: var(--green); }
+  .score-mid { background: #713f12; color: var(--yellow); }
+  .score-low { background: #7f1d1d44; color: var(--text2); }
+  .article-body { flex: 1; min-width: 0; }
+  .article-title {
+    font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .article-title a { color: var(--text); text-decoration: none; }
+  .article-title a:hover { color: var(--accent); }
+  .article-meta { font-size: 0.75rem; color: var(--text2); margin-bottom: 6px; }
+  .article-summary {
+    font-size: 0.8rem; color: var(--text2); line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .article-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .feedback-badge {
+    font-size: 0.7rem; padding: 2px 6px; border-radius: 3px;
+    font-weight: 600;
+  }
+  .fb-read { background: #166534; color: var(--green); }
+  .fb-skip { background: #7f1d1d; color: var(--red); }
+  .loading { text-align: center; color: var(--text2); padding: 40px; }
+  .msg { padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; }
+  .msg-ok { background: #16653444; color: var(--green); }
+  .msg-err { background: #7f1d1d44; color: var(--red); }
+  .keywords-list {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
+  }
+  .keyword-tag {
+    background: var(--accent)22; color: var(--accent);
+    padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;
+  }
+  #drop-zone {
+    border: 2px dashed var(--border); border-radius: 8px;
+    padding: 24px; text-align: center; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  #drop-zone.hover { border-color: var(--accent); }
+  #drop-zone p { color: var(--text2); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+  <h1>Local Feed Relevance Engine</h1>
+  <p class="subtitle">RSS 피드를 로컬 임베딩으로 스코어링하여 관심 기사를 필터링합니다</p>
+
+  <div class="stats" id="stats">
+    <div class="stat"><div class="stat-value" id="s-feeds">-</div><div class="stat-label">Feeds</div></div>
+    <div class="stat"><div class="stat-value" id="s-articles">-</div><div class="stat-label">Articles</div></div>
+    <div class="stat"><div class="stat-value" id="s-feedbacks">-</div><div class="stat-label">Feedbacks</div></div>
+    <div class="stat"><div class="stat-value" id="s-avg">-</div><div class="stat-label">Avg Score</div></div>
+  </div>
+
+  <div id="msg-area"></div>
+
+  <div class="panel">
+    <h2>1. OPML 업로드</h2>
+    <div id="drop-zone">
+      <p>OPML 파일을 드래그하거나 클릭하여 업로드</p>
+      <input type="file" id="opml-input" accept=".opml,.xml" style="display:none">
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>2. 관심 키워드 설정</h2>
+    <div class="row">
+      <input type="text" id="keywords-input" placeholder="예: machine learning, rust, distributed systems (쉼표로 구분)">
+      <button id="keywords-btn" onclick="setKeywords()">적용</button>
+    </div>
+    <div class="keywords-list" id="current-keywords"></div>
+  </div>
+
+  <div class="panel">
+    <h2>피드 기사 <span id="article-count" style="color:var(--text2);font-weight:400;font-size:0.85rem"></span></h2>
+    <div class="article-list" id="article-list">
+      <div class="loading">OPML 파일을 업로드하고 키워드를 설정하세요</div>
+    </div>
+    <div style="text-align:center;margin-top:12px">
+      <button class="btn-outline" id="load-more-btn" onclick="loadMore()" style="display:none">더 보기</button>
+    </div>
+  </div>
+
+<script>
+const API = '';
+let offset = 0;
+const LIMIT = 50;
+
+// --- Helpers: safe DOM creation ---
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'className') e.className = v;
+      else if (k === 'textContent') e.textContent = v;
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+      else e.setAttribute(k, v);
+    }
+  }
+  if (children) {
+    for (const c of Array.isArray(children) ? children : [children]) {
+      if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+      else if (c) e.appendChild(c);
+    }
+  }
+  return e;
+}
+
+// --- Stats ---
+async function loadStats() {
+  try {
+    const r = await fetch(API + '/api/stats');
+    const d = await r.json();
+    document.getElementById('s-feeds').textContent = d.feeds;
+    document.getElementById('s-articles').textContent = d.articles;
+    document.getElementById('s-feedbacks').textContent = d.feedbacks;
+    document.getElementById('s-avg').textContent = d.avg_score;
+  } catch(e) {}
+}
+
+// --- Messages ---
+function showMsg(text, ok) {
+  if (ok === undefined) ok = true;
+  const area = document.getElementById('msg-area');
+  const div = el('div', { className: 'msg ' + (ok ? 'msg-ok' : 'msg-err'), textContent: text });
+  area.prepend(div);
+  setTimeout(function() { div.remove(); }, 5000);
+}
+
+// --- OPML Upload ---
+var dropZone = document.getElementById('drop-zone');
+var opmlInput = document.getElementById('opml-input');
+
+dropZone.addEventListener('click', function() { opmlInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('hover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('hover'); });
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault(); dropZone.classList.remove('hover');
+  if (e.dataTransfer.files.length) uploadOPML(e.dataTransfer.files[0]);
+});
+opmlInput.addEventListener('change', function(e) {
+  if (e.target.files.length) uploadOPML(e.target.files[0]);
+});
+
+async function uploadOPML(file) {
+  showMsg('OPML 파싱 및 피드 수집 중... (시간이 좀 걸릴 수 있습니다)');
+  var fd = new FormData();
+  fd.append('file', file);
+  try {
+    var r = await fetch(API + '/api/opml', { method: 'POST', body: fd });
+    var d = await r.json();
+    if (r.ok) {
+      showMsg(d.feeds_processed + '개 피드에서 ' + d.total_new_articles + '개 기사 수집 완료');
+      loadArticles(true);
+      loadStats();
+    } else {
+      showMsg(d.detail || 'OPML 업로드 실패', false);
+    }
+  } catch(e) {
+    showMsg('OPML 업로드 중 오류: ' + e.message, false);
+  }
+}
+
+// --- Keywords ---
+async function setKeywords() {
+  var input = document.getElementById('keywords-input');
+  var keywords = input.value.split(',').map(function(k) { return k.trim(); }).filter(Boolean);
+  if (!keywords.length) { showMsg('키워드를 입력하세요', false); return; }
+
+  var btn = document.getElementById('keywords-btn');
+  btn.disabled = true; btn.textContent = '처리중...';
+  try {
+    var r = await fetch(API + '/api/keywords', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keywords: keywords }),
+    });
+    var d = await r.json();
+    if (r.ok) {
+      showMsg('관심 키워드 설정 완료. ' + d.articles_scored + '개 기사 스코어링됨');
+      renderKeywords(keywords);
+      loadArticles(true);
+      loadStats();
+    } else {
+      showMsg(d.detail || '키워드 설정 실패', false);
+    }
+  } catch(e) {
+    showMsg('키워드 설정 오류: ' + e.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = '적용';
+  }
+}
+
+function renderKeywords(keywords) {
+  var container = document.getElementById('current-keywords');
+  container.textContent = '';
+  keywords.forEach(function(k) {
+    container.appendChild(el('span', { className: 'keyword-tag', textContent: k }));
+  });
+}
+
+// --- Articles ---
+async function loadArticles(reset) {
+  if (reset) { offset = 0; }
+  try {
+    var r = await fetch(API + '/api/articles?limit=' + LIMIT + '&offset=' + offset);
+    var d = await r.json();
+    var list = document.getElementById('article-list');
+    if (reset) list.textContent = '';
+
+    if (!d.articles.length && offset === 0) {
+      list.appendChild(el('div', { className: 'loading', textContent: '기사가 없습니다. OPML 파일을 업로드하세요.' }));
+      document.getElementById('load-more-btn').style.display = 'none';
+      return;
+    }
+
+    d.articles.forEach(function(a) { list.appendChild(renderArticle(a)); });
+    offset += d.articles.length;
+    document.getElementById('article-count').textContent = '(' + offset + '/' + d.total + ')';
+
+    if (d.keywords && d.keywords.length) renderKeywords(d.keywords);
+
+    var btn = document.getElementById('load-more-btn');
+    btn.style.display = offset < d.total ? 'inline-block' : 'none';
+  } catch(e) {
+    showMsg('기사 로드 실패: ' + e.message, false);
+  }
+}
+
+function loadMore() { loadArticles(false); }
+
+function stripHtmlTags(s) {
+  // Safe: parse then extract text only
+  var tmp = document.createElement('div');
+  tmp.textContent = s;
+  return tmp.textContent;
+}
+
+function renderArticle(a) {
+  var score = a.relevance_score || 0;
+  var scoreClass = score >= 65 ? 'score-high' : score >= 40 ? 'score-mid' : 'score-low';
+
+  var summaryText = '';
+  if (a.summary) {
+    // Strip HTML tags safely by using a temporary element
+    var tmp = document.createElement('div');
+    tmp.textContent = a.summary;
+    summaryText = tmp.textContent.substring(0, 200);
+  }
+
+  // Build title element
+  var titleEl = el('div', { className: 'article-title' });
+  if (a.link) {
+    var linkEl = el('a', { href: a.link, target: '_blank', textContent: a.title || 'Untitled' });
+    titleEl.appendChild(linkEl);
+  } else {
+    titleEl.textContent = a.title || 'Untitled';
+  }
+
+  // Build meta
+  var metaText = a.feed_title || '';
+  if (a.published) metaText += ' · ' + a.published;
+
+  // Build actions
+  var actionsEl = el('div', { className: 'article-actions' });
+  if (a.feedback) {
+    actionsEl.appendChild(el('span', {
+      className: 'feedback-badge ' + (a.feedback === 'read' ? 'fb-read' : 'fb-skip'),
+      textContent: a.feedback,
+    }));
+  } else {
+    var readBtn = el('button', {
+      className: 'btn-sm btn-read',
+      textContent: 'Read',
+      onClick: function() { feedback(a.id, 'read'); },
+    });
+    var skipBtn = el('button', {
+      className: 'btn-sm btn-skip',
+      textContent: 'Skip',
+      onClick: function() { feedback(a.id, 'skip'); },
+    });
+    actionsEl.appendChild(readBtn);
+    actionsEl.appendChild(skipBtn);
+  }
+
+  // Build body
+  var bodyChildren = [
+    titleEl,
+    el('div', { className: 'article-meta', textContent: metaText }),
+  ];
+  if (summaryText) {
+    bodyChildren.push(el('div', { className: 'article-summary', textContent: summaryText }));
+  }
+  var bodyEl = el('div', { className: 'article-body' }, bodyChildren);
+
+  var div = el('div', {
+    className: 'article' + (a.feedback ? ' read' : ''),
+    id: 'article-' + a.id,
+  }, [
+    el('div', { className: 'score-badge ' + scoreClass, textContent: String(Math.round(score)) }),
+    bodyEl,
+    actionsEl,
+  ]);
+
+  return div;
+}
+
+async function feedback(articleId, fb) {
+  try {
+    var r = await fetch(API + '/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ article_id: articleId, feedback: fb }),
+    });
+    var d = await r.json();
+    if (r.ok) {
+      showMsg('피드백 반영 (#' + d.feedback_count + '). ' + d.articles_rescored + '개 기사 재스코어링');
+      loadArticles(true);
+      loadStats();
+    } else {
+      showMsg(d.detail || '피드백 실패', false);
+    }
+  } catch(e) {
+    showMsg('피드백 오류: ' + e.message, false);
+  }
+}
+
+// Init
+loadStats();
+loadArticles(true);
+</script>
+</body>
+</html>

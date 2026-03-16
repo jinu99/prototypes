@@ -2,6 +2,121 @@
 
 > 홈 네트워크의 IoT 기기를 자동 발견하고 DNS 트래픽 분석으로 클라우드 의존도를 정량화하여, 실행 가능한 로컬 대안을 제시하는 진단 도구
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          cli.py (진입점)                            │
+│              scan │ capture │ report │ run (전체 워크플로우)          │
+└──────┬──────────────┬──────────────┬────────────────────────────────┘
+       │              │              │
+       ▼              ▼              ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────────────────────────┐
+│ scanner.py   │ │dns_capture.py│ │          analyzer.py             │
+│              │ │              │ │                                  │
+│ ARP Scan     │ │ Passive DNS  │ │ ┌────────────────────────────┐  │
+│  (scapy)     │ │  Sniffing    │ │ │  Cloud Dependency Score    │  │
+│ mDNS 탐색    │ │  (scapy)     │ │ │  ┌──────────────────────┐  │  │
+│ SSDP 탐색    │ │              │ │ │  │ Query 빈도    (0-40) │  │  │
+└──────┬───────┘ └──────┬───────┘ │ │  │ EP 다양성     (0-30) │  │  │
+       │                │         │ │  │ Cloud 비율    (0-30) │  │  │
+       ▼                ▼         │ │  └──────────────────────┘  │  │
+┌──────────────┐ ┌──────────────┐ │ └────────────────────────────┘  │
+│ oui_db.py    │ │   data/      │ └──────────────┬─────────────────┘
+│ MAC → 제조사  │ │ devices.json │                │
+│ (70+ OUI)    │ │ dns_profiles │ ┌──────────────┴─────────────────┐
+└──────────────┘ │   .json      │ │     alternatives_db.py         │
+                 └──────────────┘ │  19개 제조사 → 로컬 대안 매핑    │
+                                  └──────────────┬─────────────────┘
+                                                 │
+                                                 ▼
+                                  ┌──────────────────────────────────┐
+                                  │          report.py               │
+                                  │                                  │
+                                  │  CLI Report ─── 터미널 테이블 출력 │
+                                  │  HTML Report ── dark-theme 단일   │
+                                  │                 파일 리포트        │
+                                  └──────────────────────────────────┘
+```
+
+**데이터 흐름:**
+1. **Scan** → ARP/mDNS/SSDP로 네트워크 기기 발견 → `data/devices.json` 저장
+2. **Capture** → Passive DNS 스니핑으로 각 기기의 클라우드 통신 기록 → `data/dns_profiles.json` 저장
+3. **Analyze** → DNS 쿼리 빈도 + 엔드포인트 다양성 + 클라우드 비율로 0-100 의존도 점수 산출
+4. **Report** → CLI 테이블 + 단일 파일 HTML 리포트 생성 (로컬 대안 포함)
+
+## Demo
+
+```bash
+# 데모 모드 전체 워크플로우 실행 (root 불필요)
+$ uv run python cli.py run --demo
+
+==================================================
+  IoT Cloud Dependency Scanner
+  Full Workflow: scan → capture → report
+==================================================
+
+--- Step 1/3: Network Scan ---
+[DEMO] Using simulated device data...
+[DEMO] Generated 8 demo devices
+
+  Discovered Devices:
+  ------------------------------------------------------------
+  echo-dot-kitchen              Amazon          AA:BB:CC:11:22:33
+  nest-hub-living               Google          DD:EE:FF:44:55:66
+  hue-bridge                    Philips         11:22:33:AA:BB:CC
+  ...
+
+--- Step 2/3: DNS Capture ---
+[DEMO] Using simulated DNS data...
+[DEMO] Generated DNS profiles for 8 devices
+
+--- Step 3/3: Analysis & Report ---
+
+======================================================================
+  IoT CLOUD DEPENDENCY REPORT
+======================================================================
+
+  Devices: 8  |  Avg Score: 52.3
+  Critical: 2  |  High: 3
+----------------------------------------------------------------------
+
+  [!!!] echo-dot-kitchen
+       Manufacturer: Amazon  |  IP: 192.168.1.101
+       Score: 87.5/100 (Critical)
+       Queries: 342  |  Rate: 68.40/min  |  Cloud EPs: 6
+       Cloud: amazonaws.com (AWS), alexa.com (Amazon Alexa)
+       Alternatives: Home Assistant, Mycroft AI
+
+  [ !! ] nest-hub-living
+       Manufacturer: Google  |  IP: 192.168.1.102
+       Score: 72.1/100 (High)
+       Queries: 215  |  Rate: 43.00/min  |  Cloud EPs: 4
+       Cloud: googleapis.com (Google Cloud), nest.com (Google Nest)
+       Alternatives: Home Assistant, Hubitat
+
+  [  . ] hue-bridge
+       Manufacturer: Philips  |  IP: 192.168.1.103
+       Score: 18.3/100 (Low)
+       Queries: 24  |  Rate: 4.80/min  |  Cloud EPs: 1
+       Alternatives: Zigbee2MQTT, deCONZ
+
+======================================================================
+
+[*] HTML report saved to: report.html
+[*] Workflow complete!
+```
+
+```bash
+# 개별 단계 실행
+$ uv run python cli.py scan --demo       # 기기 탐색만
+$ uv run python cli.py capture --demo    # DNS 캡처만
+$ uv run python cli.py report            # 저장된 데이터로 리포트 생성
+
+# 실제 네트워크 스캔 (root 필요)
+$ sudo uv run python cli.py run -i eth0 -n 192.168.1.0/24
+```
+
 ## 실행 방법
 
 ```bash

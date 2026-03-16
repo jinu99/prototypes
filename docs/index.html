@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype Catalog</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #3b82f6;
+    --border: #334155;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 24px 32px;
+    text-align: center;
+  }
+
+  .header h1 {
+    font-size: 2.4em;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .header h1 span {
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 1.05em;
+    margin-bottom: 4px;
+  }
+
+  .header .count {
+    color: var(--text-dim);
+    font-size: 0.9em;
+    opacity: 0.7;
+  }
+
+  .pipeline {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .pipeline .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.82em;
+    color: var(--text-dim);
+  }
+
+  .pipeline .arrow {
+    color: var(--text-dim);
+    opacity: 0.4;
+    align-self: center;
+    font-size: 0.9em;
+  }
+
+  .controls {
+    max-width: 1200px;
+    margin: 24px auto 0;
+    padding: 0 24px;
+  }
+
+  .search-box {
+    width: 100%;
+    padding: 12px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-box:focus {
+    border-color: var(--accent);
+  }
+
+  .search-box::placeholder {
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.82em;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .result-count {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-top: 16px;
+    padding: 0 4px;
+  }
+
+  .grid {
+    max-width: 1200px;
+    margin: 20px auto 60px;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--cat-color, var(--accent));
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .card:hover {
+    background: var(--surface-hover);
+    border-color: #475569;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .card:hover::before {
+    opacity: 1;
+  }
+
+  .card.hidden {
+    display: none;
+  }
+
+  .card-title {
+    font-size: 1.05em;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .card-desc {
+    color: var(--text-dim);
+    font-size: 0.88em;
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.72em;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .badge-cat {
+    color: white;
+  }
+
+  .badge-stack {
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  .badge-status {
+    margin-left: auto;
+    font-size: 0.75em;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-dim);
+    font-size: 0.82em;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.6em; }
+    .grid { grid-template-columns: 1fr; padding: 0 16px; }
+    .controls { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1><span>Prototype Catalog</span></h1>
+  <p class="subtitle">커뮤니티 pain point 기반 자동 프로토타이핑 파이프라인 산출물</p>
+  <p class="count">39 prototypes</p>
+  <div class="pipeline">
+    <span class="step">Crawl</span><span class="arrow">&rarr;</span>
+    <span class="step">Analyze</span><span class="arrow">&rarr;</span>
+    <span class="step">Ideate</span><span class="arrow">&rarr;</span>
+    <span class="step">Select</span><span class="arrow">&rarr;</span>
+    <span class="step">Spawn</span>
+  </div>
+</header>
+
+<div class="controls">
+  <input type="text" class="search-box" placeholder="Search prototypes..." id="search" autocomplete="off">
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-cat="">All (39)</button>
+      <button class="filter-btn" data-cat="AI Agent &amp; LLM Infra">AI Agent &amp; LLM Infra (8)</button>
+      <button class="filter-btn" data-cat="AI Code Quality &amp; DevTools">AI Code Quality &amp; DevTools (6)</button>
+      <button class="filter-btn" data-cat="LLM Ops &amp; Debugging">LLM Ops &amp; Debugging (6)</button>
+      <button class="filter-btn" data-cat="CI/CD &amp; Infrastructure">CI/CD &amp; Infrastructure (4)</button>
+      <button class="filter-btn" data-cat="Web &amp; SEO">Web &amp; SEO (3)</button>
+      <button class="filter-btn" data-cat="Document &amp; Content">Document &amp; Content (5)</button>
+      <button class="filter-btn" data-cat="Indie / Small Biz">Indie / Small Biz (4)</button>
+      <button class="filter-btn" data-cat="IoT &amp; Data">IoT &amp; Data (3)</button>
+  </div>
+  <div class="result-count" id="result-count"></div>
+</div>
+
+<div class="grid" id="grid">
+    <a class="card" href="slides/agent-first-architecture-transition-cost-asymmetry-and-escalation-quality.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="agent-first-architecture-transition-cost-asymmetry-and-escalation-quality" data-title="에스컬레이션 품질 시뮬레이터: Workflow vs Agent" data-desc="Agent의 confidence 기반 에스컬레이션이 Workflow의 규칙 기반 에스컬레이션보다 품질이 높다는 가설을 시뮬레이션으로 검증한다." data-stack="Python">
+      <div class="card-title">에스컬레이션 품질 시뮬레이터: Workflow vs Agent</div>
+      <div class="card-desc">Agent의 confidence 기반 에스컬레이션이 Workflow의 규칙 기반 에스컬레이션보다 품질이 높다는 가설을 시뮬레이션으로 검증한다.</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/agent-token-waste-analyzer.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="agent-token-waste-analyzer" data-title="Agent Token Waste Analyzer" data-desc="Claude Code 세션 로그를 분석하여 토큰 낭비 패턴을 식별하고 최적화 제안을 제공하는 터미널 대시보드 CLI" data-stack="Python">
+      <div class="card-title">Agent Token Waste Analyzer</div>
+      <div class="card-desc">Claude Code 세션 로그를 분석하여 토큰 낭비 패턴을 식별하고 최적화 제안을 제공하는 터미널 대시보드 CLI</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/agentic-coding-workspace.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="agentic-coding-workspace" data-title="Agentic Coding Workspace" data-desc="셀 기반 인터페이스에서 AI 에이전트 플랜을 사전 검토·수정하고 셀 단위로 재실행하는 코딩 워크스페이스 프로토타입" data-stack="Node.js">
+      <div class="card-title">Agentic Coding Workspace</div>
+      <div class="card-desc">셀 기반 인터페이스에서 AI 에이전트 플랜을 사전 검토·수정하고 셀 단위로 재실행하는 코딩 워크스페이스 프로토타입</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/ai-agent-secret-scrubber.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="ai-agent-secret-scrubber" data-title="AI Agent Secret Scrubber" data-desc="AI 에이전트 출력 스트림에서 시크릿을 실시간 탐지·마스킹하는 쉘 래퍼" data-stack="Python">
+      <div class="card-title">AI Agent Secret Scrubber</div>
+      <div class="card-desc">AI 에이전트 출력 스트림에서 시크릿을 실시간 탐지·마스킹하는 쉘 래퍼</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/ai-code-change-tracker.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="ai-code-change-tracker" data-title="AI Code Change Impact Tracker" data-desc="tree-sitter AST 파싱 + git diff 분석으로 코드 변경의 downstream 영향 범위를 추적하고, spec 문서와의 괴리를 자동 탐지하는 CLI 도구" data-stack="Python">
+      <div class="card-title">AI Code Change Impact Tracker</div>
+      <div class="card-desc">tree-sitter AST 파싱 + git diff 분석으로 코드 변경의 downstream 영향 범위를 추적하고, spec 문서와의 괴리를 자동 탐지하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/ai-code-context-bridge.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="ai-code-context-bridge" data-title="AI Code Context Bridge" data-desc="Mermaid 아키텍처 다이어그램을 파싱하여 AI 코딩 에이전트에게 파일별 구조화된 컨텍스트를 제공하는 MCP 서버 &amp; CLI" data-stack="Python">
+      <div class="card-title">AI Code Context Bridge</div>
+      <div class="card-desc">Mermaid 아키텍처 다이어그램을 파싱하여 AI 코딩 에이전트에게 파일별 구조화된 컨텍스트를 제공하는 MCP 서버 &amp; CLI</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/ai-code-perf-verifier.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="ai-code-perf-verifier" data-title="AI Code Perf Verifier" data-desc="Git diff에서 변경된 Python 함수를 자동 식별하고, 변경 전/후 성능을 비교하여 머지 전 성능 회귀를 탐지하는 CLI 도구" data-stack="Python">
+      <div class="card-title">AI Code Perf Verifier</div>
+      <div class="card-desc">Git diff에서 변경된 Python 함수를 자동 식별하고, 변경 전/후 성능을 비교하여 머지 전 성능 회귀를 탐지하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/ci-yaml-generator.html" style="--cat-color:#059669" data-cat="CI/CD &amp; Infrastructure" data-slug="ci-yaml-generator" data-title="CI/CD YAML 자동 생성기" data-desc="프로젝트 디렉토리를 스캔하여 GitHub Actions CI 워크플로우 YAML을 자동 생성하는 CLI 도구" data-stack="Node.js">
+      <div class="card-title">CI/CD YAML 자동 생성기</div>
+      <div class="card-desc">프로젝트 디렉토리를 스캔하여 GitHub Actions CI 워크플로우 YAML을 자동 생성하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#059669">CI/CD &amp; Infrastructure</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/community-keyword-monitor.html" style="--cat-color:#db2777" data-cat="Indie / Small Biz" data-slug="community-keyword-monitor" data-title="Community Keyword Monitor" data-desc="멀티플랫폼 커뮤니티(Reddit, RSS)에서 키워드를 모니터링하고 통합 타임라인으로 확인하는 대시보드" data-stack="Python">
+      <div class="card-title">Community Keyword Monitor</div>
+      <div class="card-desc">멀티플랫폼 커뮤니티(Reddit, RSS)에서 키워드를 모니터링하고 통합 타임라인으로 확인하는 대시보드</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#db2777">Indie / Small Biz</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/deploy-soak-monitor.html" style="--cat-color:#059669" data-cat="CI/CD &amp; Infrastructure" data-slug="deploy-soak-monitor" data-title="Deploy Soak Monitor" data-desc="배포 후 자동 soak 윈도우 모니터링 — pod 상태/로그 실시간 감시로 이상 징후를 잡아내는 CLI 도구" data-stack="Python">
+      <div class="card-title">Deploy Soak Monitor</div>
+      <div class="card-desc">배포 후 자동 soak 윈도우 모니터링 — pod 상태/로그 실시간 감시로 이상 징후를 잡아내는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#059669">CI/CD &amp; Infrastructure</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/doc-freshness-monitor.html" style="--cat-color:#dc2626" data-cat="Document &amp; Content" data-slug="doc-freshness-monitor" data-title="Doc Freshness Monitor" data-desc="코드 심볼 참조 기반으로 문서의 staleness를 감지하는 CLI 도구" data-stack="Python">
+      <div class="card-title">Doc Freshness Monitor</div>
+      <div class="card-desc">코드 심볼 참조 기반으로 문서의 staleness를 감지하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#dc2626">Document &amp; Content</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/doc-structure-converter.html" style="--cat-color:#dc2626" data-cat="Document &amp; Content" data-slug="doc-structure-converter" data-title="doc-structure-converter" data-desc="Structure-aware Markdown to PDF converter that prevents tables and code blocks from splitting across page boundaries." data-stack="Node.js">
+      <div class="card-title">doc-structure-converter</div>
+      <div class="card-desc">Structure-aware Markdown to PDF converter that prevents tables and code blocks from splitting across page boundaries.</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#dc2626">Document &amp; Content</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/embedding-migration-guard.html" style="--cat-color:#0891b2" data-cat="LLM Ops &amp; Debugging" data-slug="embedding-migration-guard" data-title="Embedding Migration Guard" data-desc="CLI 도구로 임베딩 모델 교체 전 recall@k 드롭을 예측하여, 전체 재인덱싱 없이 마이그레이션 의사결정을 내릴 수 있게 합니다." data-stack="Python">
+      <div class="card-title">Embedding Migration Guard</div>
+      <div class="card-desc">CLI 도구로 임베딩 모델 교체 전 recall@k 드롭을 예측하여, 전체 재인덱싱 없이 마이그레이션 의사결정을 내릴 수 있게 합니다.</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#0891b2">LLM Ops &amp; Debugging</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/indie-launch-kit.html" style="--cat-color:#dc2626" data-cat="Document &amp; Content" data-slug="indie-launch-kit" data-title="Indie Launch Kit" data-desc="README.md 하나로 랜딩페이지, 체인지로그, 런치 포스트를 CLI 한 줄에 생성" data-stack="Node.js">
+      <div class="card-title">Indie Launch Kit</div>
+      <div class="card-desc">README.md 하나로 랜딩페이지, 체인지로그, 런치 포스트를 CLI 한 줄에 생성</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#dc2626">Document &amp; Content</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/indie-ops-dashboard.html" style="--cat-color:#db2777" data-cat="Indie / Small Biz" data-slug="indie-ops-dashboard" data-title="Indie Ops Dashboard" data-desc="솔로 개발자를 위한 경량 인프라 운영 대시보드 — 서버 리소스 패턴 분석 + 비용 최적화 인사이트" data-stack="Python">
+      <div class="card-title">Indie Ops Dashboard</div>
+      <div class="card-desc">솔로 개발자를 위한 경량 인프라 운영 대시보드 — 서버 리소스 패턴 분석 + 비용 최적화 인사이트</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#db2777">Indie / Small Biz</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/iot-cloud-dependency-scanner.html" style="--cat-color:#4f46e5" data-cat="IoT &amp; Data" data-slug="iot-cloud-dependency-scanner" data-title="IoT Cloud Dependency Scanner" data-desc="홈 네트워크의 IoT 기기를 자동 발견하고 DNS 트래픽 분석으로 클라우드 의존도를 정량화하여, 실행 가능한 로컬 대안을 제시하는 진단 도구" data-stack="Python">
+      <div class="card-title">IoT Cloud Dependency Scanner</div>
+      <div class="card-desc">홈 네트워크의 IoT 기기를 자동 발견하고 DNS 트래픽 분석으로 클라우드 의존도를 정량화하여, 실행 가능한 로컬 대안을 제시하는 진단 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#4f46e5">IoT &amp; Data</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/llm-context-debugger.html" style="--cat-color:#0891b2" data-cat="LLM Ops &amp; Debugging" data-slug="llm-context-debugger" data-title="LLM Context Debugger" data-desc="OpenAI Chat Completions API 프록시로 컨텍스트 윈도우의 토큰 구성을 실시간 분석·시각화" data-stack="Python">
+      <div class="card-title">LLM Context Debugger</div>
+      <div class="card-desc">OpenAI Chat Completions API 프록시로 컨텍스트 윈도우의 토큰 구성을 실시간 분석·시각화</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#0891b2">LLM Ops &amp; Debugging</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-agent-mesh.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="local-agent-mesh" data-title="Local Agent Mesh" data-desc="소형/대형 LLM 간 복잡도 기반 스마트 라우팅 + self-delegation CLI 도구" data-stack="Python">
+      <div class="card-title">Local Agent Mesh</div>
+      <div class="card-desc">소형/대형 LLM 간 복잡도 기반 스마트 라우팅 + self-delegation CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-agent-resource-planner.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="local-agent-resource-planner" data-title="Local Agent VRAM Resource Planner" data-desc="GGUF 메타데이터 기반 멀티 모델 VRAM 예측 및 리소스 플래닝 도구" data-stack="Python">
+      <div class="card-title">Local Agent VRAM Resource Planner</div>
+      <div class="card-desc">GGUF 메타데이터 기반 멀티 모델 VRAM 예측 및 리소스 플래닝 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-coding-agent-stabilizer.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="local-coding-agent-stabilizer" data-title="Local Coding Agent Stabilizer" data-desc="OpenAI-호환 프록시로 로컬 LLM 코딩 에이전트의 파괴적 파일 편집을 실시간 감지·차단하는 미들웨어" data-stack="Python">
+      <div class="card-title">Local Coding Agent Stabilizer</div>
+      <div class="card-desc">OpenAI-호환 프록시로 로컬 LLM 코딩 에이전트의 파괴적 파일 편집을 실시간 감지·차단하는 미들웨어</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-email-cleanup.html" style="--cat-color:#db2777" data-cat="Indie / Small Biz" data-slug="local-email-cleanup" data-title="Local Email Inbox Cleaner" data-desc="IMAP 헤더 메타데이터만으로 뉴스레터·마케팅·알림 이메일을 자동 분류하고 정리 제안을 생성하는 CLI 도구" data-stack="Python">
+      <div class="card-title">Local Email Inbox Cleaner</div>
+      <div class="card-desc">IMAP 헤더 메타데이터만으로 뉴스레터·마케팅·알림 이메일을 자동 분류하고 정리 제안을 생성하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#db2777">Indie / Small Biz</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-first-data-guard.html" style="--cat-color:#4f46e5" data-cat="IoT &amp; Data" data-slug="local-first-data-guard" data-title="Local-First Data Guard" data-desc="브라우저 스토리지 내구성 자동 탐지 + IndexedDB ↔ OPFS 크로스 스토리지 자동 복구 라이브러리" data-stack="TypeScript">
+      <div class="card-title">Local-First Data Guard</div>
+      <div class="card-desc">브라우저 스토리지 내구성 자동 탐지 + IndexedDB ↔ OPFS 크로스 스토리지 자동 복구 라이브러리</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#4f46e5">IoT &amp; Data</span>
+        <span class="badge badge-stack">TypeScript</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-llm-qual-probe.html" style="--cat-color:#0891b2" data-cat="LLM Ops &amp; Debugging" data-slug="local-llm-qual-probe" data-title="Local LLM Quality Probe" data-desc="소형 로컬 LLM의 실패 패턴(JSON 깨짐, 멀티턴 붕괴, 과잉 출력)을 한 줄 명령으로 감지하는 CLI 도구" data-stack="Python">
+      <div class="card-title">Local LLM Quality Probe</div>
+      <div class="card-desc">소형 로컬 LLM의 실패 패턴(JSON 깨짐, 멀티턴 붕괴, 과잉 출력)을 한 줄 명령으로 감지하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#0891b2">LLM Ops &amp; Debugging</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-llm-resource-monitor.html" style="--cat-color:#0891b2" data-cat="LLM Ops &amp; Debugging" data-slug="local-llm-resource-monitor" data-title="Local LLM Resource Monitor" data-desc="KV 캐시 포함 VRAM 추정과 GPU 상태 기반 모델 로드 가능 여부를 실시간으로 보여주는 대시보드" data-stack="Python">
+      <div class="card-title">Local LLM Resource Monitor</div>
+      <div class="card-desc">KV 캐시 포함 VRAM 추정과 GPU 상태 기반 모델 로드 가능 여부를 실시간으로 보여주는 대시보드</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#0891b2">LLM Ops &amp; Debugging</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/local-llm-serve-guard.html" style="--cat-color:#0891b2" data-cat="LLM Ops &amp; Debugging" data-slug="local-llm-serve-guard" data-title="Local LLM Serve Guard" data-desc="VRAM 사용량 기반 동적 어드미션 컨트롤로 로컬 LLM OOM을 방지하는 OpenAI-호환 리버스 프록시" data-stack="Python">
+      <div class="card-title">Local LLM Serve Guard</div>
+      <div class="card-desc">VRAM 사용량 기반 동적 어드미션 컨트롤로 로컬 LLM OOM을 방지하는 OpenAI-호환 리버스 프록시</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#0891b2">LLM Ops &amp; Debugging</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/log-incident-correlator.html" style="--cat-color:#059669" data-cat="CI/CD &amp; Infrastructure" data-slug="log-incident-correlator" data-title="Log-Incident Correlator" data-desc="Drain3 기반 first-seen 로그 패턴 탐지와 배포 이벤트 자동 상관관계 분석 프로토타입" data-stack="Python">
+      <div class="card-title">Log-Incident Correlator</div>
+      <div class="card-desc">Drain3 기반 first-seen 로그 패턴 탐지와 배포 이벤트 자동 상관관계 분석 프로토타입</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#059669">CI/CD &amp; Infrastructure</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/long-context-consistency.html" style="--cat-color:#0891b2" data-cat="LLM Ops &amp; Debugging" data-slug="long-context-consistency" data-title="Long Context Consistency" data-desc="장편 텍스트에서 사실을 추출하고, 임베딩 유사도 기반으로 잠재적 불일치를 탐지하는 CLI 도구" data-stack="Python">
+      <div class="card-title">Long Context Consistency</div>
+      <div class="card-desc">장편 텍스트에서 사실을 추출하고, 임베딩 유사도 기반으로 잠재적 불일치를 탐지하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#0891b2">LLM Ops &amp; Debugging</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/openapi-form-tester.html" style="--cat-color:#4f46e5" data-cat="IoT &amp; Data" data-slug="openapi-form-tester" data-title="OpenAPI Form Tester" data-desc="OpenAPI 스펙에서 자동 생성된 폼으로 API를 테스트하고 응답-스펙 드리프트를 즉시 시각화하는 로컬 웹 도구" data-stack="Node.js">
+      <div class="card-title">OpenAPI Form Tester</div>
+      <div class="card-desc">OpenAPI 스펙에서 자동 생성된 폼으로 API를 테스트하고 응답-스펙 드리프트를 즉시 시각화하는 로컬 웹 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#4f46e5">IoT &amp; Data</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/oss-search-guard.html" style="--cat-color:#d97706" data-cat="Web &amp; SEO" data-slug="oss-search-guard" data-title="OSS Search Guard" data-desc="Detect impersonation sites in search results for open-source projects." data-stack="Python">
+      <div class="card-title">OSS Search Guard</div>
+      <div class="card-desc">Detect impersonation sites in search results for open-source projects.</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#d97706">Web &amp; SEO</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/rag-doc-cleaner.html" style="--cat-color:#dc2626" data-cat="Document &amp; Content" data-slug="rag-doc-cleaner" data-title="RAG Document Quality Diagnosis &amp; Preprocessing Tool" data-desc="PDF 문서의 OCR 노이즈(워터마크, 반복 헤더/푸터, 아티팩트)를 자동 감지·제거하여 RAG 파이프라인에 투입할 정제 텍스트를 생성합니다." data-stack="Python">
+      <div class="card-title">RAG Document Quality Diagnosis &amp; Preprocessing Tool</div>
+      <div class="card-desc">PDF 문서의 OCR 노이즈(워터마크, 반복 헤더/푸터, 아티팩트)를 자동 감지·제거하여 RAG 파이프라인에 투입할 정제 텍스트를 생성합니다.</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#dc2626">Document &amp; Content</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/runtime-debug-bridge.html" style="--cat-color:#7c3aed" data-cat="AI Agent &amp; LLM Infra" data-slug="runtime-debug-bridge" data-title="Runtime Debug Bridge" data-desc="AI 코딩 에이전트가 MCP를 통해 실행 중인 앱의 런타임 컨텍스트(stdout, stderr, HTTP 트래픽, 프로세스 상태)를 직접 조회할 수 있는 디버깅 브릿지" data-stack="Python">
+      <div class="card-title">Runtime Debug Bridge</div>
+      <div class="card-desc">AI 코딩 에이전트가 MCP를 통해 실행 중인 앱의 런타임 컨텍스트(stdout, stderr, HTTP 트래픽, 프로세스 상태)를 직접 조회할 수 있는 디버깅 브릿지</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#7c3aed">AI Agent &amp; LLM Infra</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/seo-indie-toolkit.html" style="--cat-color:#d97706" data-cat="Web &amp; SEO" data-slug="seo-indie-toolkit" data-title="SEO Indie Toolkit" data-desc="SPA 크롤러 시뮬레이션으로 검색엔진이 놓치는 SEO 인덱싱 문제를 진단하는 도구" data-stack="Node.js">
+      <div class="card-title">SEO Indie Toolkit</div>
+      <div class="card-desc">SPA 크롤러 시뮬레이션으로 검색엔진이 놓치는 SEO 인덱싱 문제를 진단하는 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#d97706">Web &amp; SEO</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/slide-lastmile-editor.html" style="--cat-color:#dc2626" data-cat="Document &amp; Content" data-slug="slide-lastmile-editor" data-title="Slide Last-Mile Editor" data-desc="Marp 마크다운 슬라이드를 브라우저에서 시각적으로 편집하고, 원본 .md 파일과 블록 레벨 양방향 동기화" data-stack="Node.js">
+      <div class="card-title">Slide Last-Mile Editor</div>
+      <div class="card-desc">Marp 마크다운 슬라이드를 브라우저에서 시각적으로 편집하고, 원본 .md 파일과 블록 레벨 양방향 동기화</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#dc2626">Document &amp; Content</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/small-biz-queue-ops.html" style="--cat-color:#db2777" data-cat="Indie / Small Biz" data-slug="small-biz-queue-ops" data-title="Small Biz Queue Ops" data-desc="QR 코드 기반 매장 대기열 관리 시스템 — 실시간 대기 순서 표시, 매장 관리, KDS 뷰" data-stack="Node.js">
+      <div class="card-title">Small Biz Queue Ops</div>
+      <div class="card-desc">QR 코드 기반 매장 대기열 관리 시스템 — 실시간 대기 순서 표시, 매장 관리, KDS 뷰</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#db2777">Indie / Small Biz</span>
+        <span class="badge badge-stack">Node.js</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/sql-ci-static-guard.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="sql-ci-static-guard" data-title="SQL CI Static Guard" data-desc="sqlglot AST 기반 SQL 안티패턴 감지 CLI — cross-dialect 지원, pre-commit hook 통합" data-stack="Python">
+      <div class="card-title">SQL CI Static Guard</div>
+      <div class="card-desc">sqlglot AST 기반 SQL 안티패턴 감지 CLI — cross-dialect 지원, pre-commit hook 통합</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/vibe-code-decay-detector.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="vibe-code-decay-detector" data-title="Vibe Code Decay Detector" data-desc="Git 히스토리 기반 아키텍처 침식 탐지 CLI — 의존성 결합도, 순환 의존성, churn rate 추적 및 commit-revert 패턴 감지" data-stack="Python">
+      <div class="card-title">Vibe Code Decay Detector</div>
+      <div class="card-desc">Git 히스토리 기반 아키텍처 침식 탐지 CLI — 의존성 결합도, 순환 의존성, churn rate 추적 및 commit-revert 패턴 감지</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/vibe-code-prod-audit.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="vibe-code-prod-audit" data-title="vibe-audit" data-desc="tree-sitter 기반 바이브코딩 FastAPI 프로젝트 프로덕션 준비도 감사 CLI 도구" data-stack="Python">
+      <div class="card-title">vibe-audit</div>
+      <div class="card-desc">tree-sitter 기반 바이브코딩 FastAPI 프로젝트 프로덕션 준비도 감사 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/web-health-guard.html" style="--cat-color:#d97706" data-cat="Web &amp; SEO" data-slug="web-health-guard" data-title="Web Health Guard" data-desc="URL 하나로 기술 SEO, AI 크롤러 방어, 팬텀 URL을 한 화면에서 진단하는 웹 도구" data-stack="Python">
+      <div class="card-title">Web Health Guard</div>
+      <div class="card-desc">URL 하나로 기술 SEO, AI 크롤러 방어, 팬텀 URL을 한 화면에서 진단하는 웹 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#d97706">Web &amp; SEO</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/webhook-chaos-tester.html" style="--cat-color:#059669" data-cat="CI/CD &amp; Infrastructure" data-slug="webhook-chaos-tester" data-title="Webhook Chaos Tester" data-desc="CLI tool that runs chaos scenarios (duplicate, delay, reorder) against webhook endpoints to find idempotency and error-handling bugs." data-stack="Python">
+      <div class="card-title">Webhook Chaos Tester</div>
+      <div class="card-desc">CLI tool that runs chaos scenarios (duplicate, delay, reorder) against webhook endpoints to find idempotency and error-handling bugs.</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#059669">CI/CD &amp; Infrastructure</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+</div>
+
+<footer class="footer">
+  <a href="https://github.com/jinu99/prototypes">github.com/jinu99/prototypes</a>
+  &nbsp;&middot;&nbsp; Auto-generated by prototype-pipeline
+</footer>
+
+<script>
+(function() {
+  var activeCat = '';
+  var searchBox = document.getElementById('search');
+  var cards = document.querySelectorAll('.card');
+  var filterBtns = document.querySelectorAll('.filter-btn');
+  var resultCount = document.getElementById('result-count');
+  var total = cards.length;
+
+  function updateFilter() {
+    var q = searchBox.value.toLowerCase();
+    var shown = 0;
+
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var cat = card.getAttribute('data-cat');
+      var slug = card.getAttribute('data-slug');
+      var title = card.getAttribute('data-title');
+      var desc = card.getAttribute('data-desc');
+      var stack = card.getAttribute('data-stack');
+
+      var catMatch = !activeCat || cat === activeCat;
+      var textMatch = !q
+        || title.toLowerCase().indexOf(q) !== -1
+        || desc.toLowerCase().indexOf(q) !== -1
+        || slug.toLowerCase().indexOf(q) !== -1
+        || cat.toLowerCase().indexOf(q) !== -1
+        || stack.toLowerCase().indexOf(q) !== -1;
+
+      if (catMatch && textMatch) {
+        card.classList.remove('hidden');
+        shown++;
+      } else {
+        card.classList.add('hidden');
+      }
+    }
+
+    resultCount.textContent = shown === total ? '' : shown + ' / ' + total;
+
+    for (var j = 0; j < filterBtns.length; j++) {
+      var btn = filterBtns[j];
+      var btnCat = btn.getAttribute('data-cat');
+      if (btnCat === activeCat) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+  }
+
+  for (var k = 0; k < filterBtns.length; k++) {
+    filterBtns[k].addEventListener('click', function() {
+      var cat = this.getAttribute('data-cat');
+      activeCat = activeCat === cat ? '' : cat;
+      updateFilter();
+    });
+  }
+
+  searchBox.addEventListener('input', updateFilter);
+})();
+</script>
+</body>
+</html>

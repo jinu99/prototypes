@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+screenshots/
+digest_output.md
+digest.yaml
+*.egg-info/

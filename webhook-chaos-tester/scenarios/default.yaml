@@ -1,0 +1,33 @@
+scenarios:
+  - name: duplicate-delivery
+    type: duplicate
+    description: "Send same webhook 3 times to verify idempotent handling"
+    payload:
+      event: payment.completed
+      id: evt_001
+      amount: 5000
+      currency: KRW
+    count: 3
+
+  - name: delayed-delivery
+    type: delay
+    description: "Send webhook after 2s delay to test timeout resilience"
+    payload:
+      event: order.shipped
+      id: evt_002
+      tracking: TRACK123
+    delay_seconds: 2.0
+
+  - name: out-of-order
+    type: reorder
+    description: "Send 3 sequential events in reverse order"
+    payloads:
+      - event: order.created
+        id: evt_010
+        seq: 1
+      - event: order.paid
+        id: evt_011
+        seq: 2
+      - event: order.shipped
+        id: evt_012
+        seq: 3

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local LLM Resource Monitor</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --border: #2e3348;
+    --text: #e4e6f0;
+    --text2: #8b8fa8;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --cyan: #22d3ee;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 18px; font-weight: 600; color: var(--accent); }
+  .mock-badge {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: var(--yellow); color: #000; font-weight: 600;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text2); margin-bottom: 12px;
+  }
+  .full-width { grid-column: 1 / -1; }
+  .gpu-name { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .stat-label { font-size: 12px; color: var(--text2); }
+  .stat-value { font-size: 14px; font-weight: 600; }
+  .bar-container { width: 100%; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--text2); font-weight: 500; padding: 6px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 6px 8px; border-top: 1px solid var(--border); }
+  .status-active { color: var(--green); }
+  .estimator-form {
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto;
+    gap: 12px; align-items: end; margin-bottom: 16px;
+  }
+  label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  select, input {
+    width: 100%; padding: 8px 10px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: inherit; font-size: 13px;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--accent); }
+  button {
+    padding: 8px 20px; background: var(--accent); border: none;
+    border-radius: 6px; color: #fff; font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  button:hover { opacity: 0.9; }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .preset-chip {
+    padding: 5px 12px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 16px; font-size: 12px; cursor: pointer; color: var(--text2); transition: all 0.15s;
+  }
+  .preset-chip:hover { border-color: var(--accent); color: var(--text); }
+  .preset-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(108,140,255,0.1); }
+  .result-panel { display: none; background: var(--surface2); border-radius: 8px; padding: 16px; }
+  .result-panel.visible { display: block; }
+  .result-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+  .result-item { text-align: center; }
+  .result-number { font-size: 20px; font-weight: 700; }
+  .result-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .verdict { text-align: center; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 2px; }
+  .verdict-go { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+  .verdict-nogo { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .verdict-detail { font-size: 12px; color: var(--text2); margin-top: 8px; text-align: center; }
+  .vram-breakdown { display: flex; height: 24px; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  .vram-seg { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; }
+  .vram-weights { background: var(--accent); }
+  .vram-kv { background: var(--cyan); }
+  .vram-overhead { background: var(--text2); }
+  .vram-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text2); }
+  .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+    .estimator-form { grid-template-columns: 1fr 1fr; }
+    .result-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Local LLM Resource Monitor</h1>
+  <span id="mock-gpu" class="mock-badge" style="display:none">GPU: Mock</span>
+  <span id="mock-ollama" class="mock-badge" style="display:none">Ollama: Mock</span>
+  <span style="flex:1"></span>
+  <span style="font-size:12px;color:var(--text2)" id="refresh-timer">Refreshing in 2s</span>
+</header>
+
+<div class="grid">
+  <div class="card" id="gpu-card">
+    <div class="card-title">GPU Status</div>
+    <div id="gpu-content">Loading...</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Loaded Models (Ollama)</div>
+    <div id="running-content">Loading...</div>
+  </div>
+  <div class="card full-width">
+    <div class="card-title">Available Models</div>
+    <div id="models-content">Loading...</div>
+  </div>
+  <div class="card full-width">
+    <div class="card-title">VRAM Estimator &amp; Load Check</div>
+    <div class="presets" id="presets"></div>
+    <div class="estimator-form">
+      <div>
+        <label>Model Architecture</label>
+        <select id="est-arch"><option value="custom">Custom</option></select>
+      </div>
+      <div>
+        <label>Parameters (B)</label>
+        <input type="number" id="est-params" value="8.03" step="0.1" min="0.1">
+      </div>
+      <div>
+        <label>Quantization</label>
+        <select id="est-quant"></select>
+      </div>
+      <div>
+        <label>Context Length</label>
+        <select id="est-ctx">
+          <option value="2048">2K</option>
+          <option value="4096" selected>4K</option>
+          <option value="8192">8K</option>
+          <option value="16384">16K</option>
+          <option value="32768">32K</option>
+          <option value="65536">64K</option>
+          <option value="131072">128K</option>
+        </select>
+      </div>
+      <div><button onclick="runEstimate()">Check</button></div>
+    </div>
+    <div class="result-panel" id="result-panel">
+      <div class="vram-breakdown" id="vram-breakdown"></div>
+      <div class="vram-legend" id="vram-legend"></div>
+      <br>
+      <div class="result-grid" id="result-grid"></div>
+      <div id="verdict-box"></div>
+      <div class="verdict-detail" id="verdict-detail"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Sanitize strings to prevent XSS when building DOM via safe helpers
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+// Safe DOM builder helpers
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'style') { e.style.cssText = v; }
+      else if (k === 'className') { e.className = v; }
+      else if (k === 'onclick') { e.addEventListener('click', v); }
+      else { e.setAttribute(k, v); }
+    }
+  }
+  if (typeof children === 'string') { e.textContent = children; }
+  else if (Array.isArray(children)) { children.forEach(c => { if (c) e.appendChild(c); }); }
+  else if (children instanceof Node) { e.appendChild(children); }
+  return e;
+}
+
+function clearEl(id) {
+  const e = document.getElementById(id);
+  while (e.firstChild) e.removeChild(e.firstChild);
+  return e;
+}
+
+let refreshInterval;
+let countdown = 2;
+
+async function fetchJSON(url) {
+  const resp = await fetch(url);
+  return resp.json();
+}
+
+function formatMB(mb) {
+  return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : mb.toFixed(0) + ' MB';
+}
+
+function barColor(pct) {
+  if (pct > 90) return 'var(--red)';
+  if (pct > 70) return 'var(--yellow)';
+  return 'var(--green)';
+}
+
+async function refreshGPU() {
+  try {
+    const data = await fetchJSON('/api/gpu');
+    if (data.mock) document.getElementById('mock-gpu').style.display = '';
+    const gpu = data.gpus[0];
+    const container = clearEl('gpu-content');
+    if (!gpu) { container.textContent = 'No GPU detected'; return; }
+
+    container.appendChild(el('div', {className: 'gpu-name'}, gpu.name));
+
+    // VRAM usage row
+    const vramRow = el('div', {className: 'stat-row'}, [
+      el('span', {className: 'stat-label'}, 'VRAM Usage'),
+      el('span', {className: 'stat-value'}, formatMB(gpu.memory_used_mb) + ' / ' + formatMB(gpu.memory_total_mb) + ' (' + gpu.memory_used_pct + '%)'),
+    ]);
+    container.appendChild(vramRow);
+
+    // VRAM bar
+    const vramBar = el('div', {className: 'bar-container'}, [
+      el('div', {className: 'bar-fill', style: 'width:' + gpu.memory_used_pct + '%;background:' + barColor(gpu.memory_used_pct)})
+    ]);
+    container.appendChild(vramBar);
+
+    // Free VRAM
+    container.appendChild(el('div', {className: 'stat-row'}, [
+      el('span', {className: 'stat-label'}, 'Free VRAM'),
+      el('span', {className: 'stat-value', style: 'color:var(--green)'}, formatMB(gpu.memory_free_mb)),
+    ]));
+
+    // GPU Utilization
+    container.appendChild(el('div', {className: 'stat-row'}, [
+      el('span', {className: 'stat-label'}, 'GPU Utilization'),
+      el('span', {className: 'stat-value'}, gpu.utilization_pct + '%'),
+    ]));
+    container.appendChild(el('div', {className: 'bar-container'}, [
+      el('div', {className: 'bar-fill', style: 'width:' + gpu.utilization_pct + '%;background:linear-gradient(90deg,var(--green),var(--yellow))'})
+    ]));
+  } catch(e) {
+    clearEl('gpu-content').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function refreshRunning() {
+  try {
+    const data = await fetchJSON('/api/ollama/running');
+    if (data.mock) document.getElementById('mock-ollama').style.display = '';
+    const container = clearEl('running-content');
+    if (!data.models.length) {
+      container.appendChild(el('span', {style: 'color:var(--text2)'}, 'No models currently loaded'));
+      return;
+    }
+    const tbl = el('table');
+    const headRow = el('tr', null, [el('th', null, 'Model'), el('th', null, 'VRAM'), el('th', null, 'Status')]);
+    tbl.appendChild(headRow);
+    for (const m of data.models) {
+      tbl.appendChild(el('tr', null, [
+        el('td', null, m.name),
+        el('td', null, m.vram_gb.toFixed(1) + ' GB'),
+        el('td', {className: 'status-active'}, m.status),
+      ]));
+    }
+    container.appendChild(tbl);
+  } catch(e) {
+    clearEl('running-content').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function refreshModels() {
+  try {
+    const data = await fetchJSON('/api/ollama/models');
+    const container = clearEl('models-content');
+    if (!data.models.length) {
+      container.appendChild(el('span', {style: 'color:var(--text2)'}, 'No models available'));
+      return;
+    }
+    const tbl = el('table');
+    tbl.appendChild(el('tr', null, [
+      el('th', null, 'Model'), el('th', null, 'Size'), el('th', null, 'Params'),
+      el('th', null, 'Quant'), el('th', null, 'Family'), el('th', null, 'Action'),
+    ]));
+    for (const m of data.models) {
+      const btn = el('button', {
+        style: 'padding:3px 10px;font-size:11px',
+        onclick: () => quickCheck(m.parameter_size, m.quantization, m.family),
+      }, 'Check');
+      tbl.appendChild(el('tr', null, [
+        el('td', null, m.name),
+        el('td', null, m.size_gb + ' GB'),
+        el('td', null, m.parameter_size),
+        el('td', null, m.quantization),
+        el('td', null, m.family),
+        el('td', null, btn),
+      ]));
+    }
+    container.appendChild(tbl);
+  } catch(e) {
+    clearEl('models-content').textContent = 'Error: ' + e.message;
+  }
+}
+
+function quickCheck(paramSize, quant, family) {
+  const params = parseFloat(paramSize);
+  if (isNaN(params)) return;
+  document.getElementById('est-params').value = params;
+  const qSel = document.getElementById('est-quant');
+  for (const opt of qSel.options) {
+    if (opt.value === quant) { qSel.value = quant; break; }
+  }
+  const archKey = family + '-' + Math.round(params) + 'b';
+  const aSel = document.getElementById('est-arch');
+  for (const opt of aSel.options) {
+    if (opt.value === archKey) { aSel.value = archKey; break; }
+  }
+  runEstimate();
+}
+
+async function loadMeta() {
+  const data = await fetchJSON('/api/meta');
+  const archSel = document.getElementById('est-arch');
+  for (const a of data.architectures) {
+    archSel.appendChild(el('option', {value: a}, a));
+  }
+  const quantSel = document.getElementById('est-quant');
+  for (const q of data.quantizations) {
+    const opt = el('option', {value: q}, q);
+    if (q === 'Q4_K_M') opt.selected = true;
+    quantSel.appendChild(opt);
+  }
+}
+
+async function loadPresets() {
+  const data = await fetchJSON('/api/presets');
+  const container = document.getElementById('presets');
+  for (const p of data.presets) {
+    const chip = el('span', {
+      className: 'preset-chip',
+      onclick: () => {
+        document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        document.getElementById('est-params').value = p.params_b;
+        document.getElementById('est-arch').value = p.model_name;
+        const qSel = document.getElementById('est-quant');
+        for (const opt of qSel.options) {
+          if (opt.value === p.quant) { qSel.value = p.quant; break; }
+        }
+        runEstimate();
+      }
+    }, p.name);
+    container.appendChild(chip);
+  }
+}
+
+async function runEstimate() {
+  const params = document.getElementById('est-params').value;
+  const quant = document.getElementById('est-quant').value;
+  const ctx = document.getElementById('est-ctx').value;
+  const arch = document.getElementById('est-arch').value;
+
+  const data = await fetchJSON('/api/check-load?params_b=' + encodeURIComponent(params) + '&quant=' + encodeURIComponent(quant) + '&context_length=' + encodeURIComponent(ctx) + '&model_name=' + encodeURIComponent(arch));
+  const est = data.estimate;
+  const feas = data.feasibility;
+  const panel = document.getElementById('result-panel');
+  panel.classList.add('visible');
+
+  // VRAM breakdown bar
+  const total = est.weights_mb + est.kv_cache_mb + est.overhead_mb;
+  const wPct = (est.weights_mb / total * 100).toFixed(1);
+  const kPct = (est.kv_cache_mb / total * 100).toFixed(1);
+  const oPct = (est.overhead_mb / total * 100).toFixed(1);
+
+  const breakdownEl = clearEl('vram-breakdown');
+  const wSeg = el('div', {className: 'vram-seg vram-weights', style: 'width:' + wPct + '%'});
+  if (wPct > 10) wSeg.textContent = formatMB(est.weights_mb);
+  const kSeg = el('div', {className: 'vram-seg vram-kv', style: 'width:' + kPct + '%'});
+  if (kPct > 10) kSeg.textContent = formatMB(est.kv_cache_mb);
+  const oSeg = el('div', {className: 'vram-seg vram-overhead', style: 'width:' + oPct + '%'});
+  breakdownEl.append(wSeg, kSeg, oSeg);
+
+  const legendEl = clearEl('vram-legend');
+  function legendItem(color, label) {
+    const dot = el('span', {className: 'legend-dot', style: 'background:' + color});
+    const sp = el('span', null, [dot]);
+    sp.appendChild(document.createTextNode(' ' + label));
+    return sp;
+  }
+  legendEl.append(
+    legendItem('var(--accent)', 'Weights ' + formatMB(est.weights_mb)),
+    legendItem('var(--cyan)', 'KV Cache ' + formatMB(est.kv_cache_mb)),
+    legendItem('var(--text2)', 'Overhead ' + formatMB(est.overhead_mb)),
+  );
+
+  // Result grid
+  const gridEl = clearEl('result-grid');
+  function resultItem(value, label, color) {
+    return el('div', {className: 'result-item'}, [
+      el('div', {className: 'result-number', style: color ? 'color:' + color : ''}, value),
+      el('div', {className: 'result-label'}, label),
+    ]);
+  }
+  gridEl.append(
+    resultItem(est.total_gb + ' GB', 'Total Required', 'var(--accent)'),
+    resultItem(formatMB(feas.available_mb), 'Available VRAM', 'var(--green)'),
+    resultItem(est.bits_per_weight + ' bit', 'Bits/Weight', ''),
+    resultItem((est.context_length / 1024).toFixed(0) + 'K', 'Context', ''),
+  );
+
+  // Verdict
+  const isGo = feas.verdict === 'GO';
+  const verdictBox = clearEl('verdict-box');
+  verdictBox.appendChild(el('div', {className: 'verdict ' + (isGo ? 'verdict-go' : 'verdict-nogo')}, feas.verdict));
+  document.getElementById('verdict-detail').textContent = feas.detail;
+}
+
+async function refreshAll() {
+  await Promise.all([refreshGPU(), refreshRunning(), refreshModels()]);
+}
+
+function startRefreshLoop() {
+  countdown = 2;
+  refreshAll();
+  refreshInterval = setInterval(() => {
+    countdown--;
+    document.getElementById('refresh-timer').textContent = 'Refreshing in ' + countdown + 's';
+    if (countdown <= 0) {
+      countdown = 2;
+      refreshAll();
+    }
+  }, 1000);
+}
+
+loadMeta();
+loadPresets();
+startRefreshLoop();
+</script>
+</body>
+</html>

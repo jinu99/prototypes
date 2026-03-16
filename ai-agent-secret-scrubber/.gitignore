@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+*.pyc
+.scrubber_log.json
+demo_workspace/
+screenshots/

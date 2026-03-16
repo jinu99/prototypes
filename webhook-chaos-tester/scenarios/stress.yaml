@@ -1,0 +1,27 @@
+scenarios:
+  - name: heavy-duplicate
+    type: duplicate
+    description: "Send same webhook 10 times — stress test for idempotency"
+    payload:
+      event: invoice.paid
+      id: evt_100
+      amount: 99000
+    count: 10
+
+  - name: long-delay
+    type: delay
+    description: "Send webhook after 5s delay — test longer timeout windows"
+    payload:
+      event: subscription.renewed
+      id: evt_101
+    delay_seconds: 5.0
+
+  - name: reverse-5-events
+    type: reorder
+    description: "Send 5 lifecycle events in reverse order"
+    payloads:
+      - { event: user.created, id: evt_200, seq: 1 }
+      - { event: user.verified, id: evt_201, seq: 2 }
+      - { event: user.subscribed, id: evt_202, seq: 3 }
+      - { event: user.upgraded, id: evt_203, seq: 4 }
+      - { event: user.churned, id: evt_204, seq: 5 }

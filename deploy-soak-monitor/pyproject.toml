@@ -1,0 +1,9 @@
+[project]
+name = "deploy-soak-monitor"
+version = "0.1.0"
+description = "Automated post-deploy soak monitor with anomaly detection"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+soak = "soak.cli:main"

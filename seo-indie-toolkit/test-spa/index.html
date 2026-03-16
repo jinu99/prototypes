@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <!-- Intentionally missing: title, description, canonical set only by JS -->
+</head>
+<body>
+  <div id="app">Loading...</div>
+  <script>
+    // Simulates a typical SPA that sets SEO tags via JS
+    document.title = 'My SPA App - 최고의 웹 애플리케이션';
+
+    var meta = document.createElement('meta');
+    meta.name = 'description';
+    meta.content = 'SPA로 만든 최고의 웹 애플리케이션입니다.';
+    document.head.appendChild(meta);
+
+    var canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    canonical.href = 'https://example.com/my-spa';
+    document.head.appendChild(canonical);
+
+    var ogTitle = document.createElement('meta');
+    ogTitle.setAttribute('property', 'og:title');
+    ogTitle.content = 'My SPA App';
+    document.head.appendChild(ogTitle);
+
+    var ogDesc = document.createElement('meta');
+    ogDesc.setAttribute('property', 'og:description');
+    ogDesc.content = 'SPA 앱 설명';
+    document.head.appendChild(ogDesc);
+
+    // JSON-LD added via JS
+    var ldScript = document.createElement('script');
+    ldScript.type = 'application/ld+json';
+    ldScript.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "My SPA App",
+      "description": "SPA로 만든 웹 애플리케이션"
+    });
+    document.head.appendChild(ldScript);
+
+    // Content rendered via JS using safe DOM methods
+    var app = document.getElementById('app');
+    app.textContent = '';
+    var h1 = document.createElement('h1');
+    h1.textContent = '환영합니다!';
+    app.appendChild(h1);
+    var p = document.createElement('p');
+    p.textContent = '이 페이지는 JavaScript로 렌더링되었습니다.';
+    app.appendChild(p);
+  </script>
+</body>
+</html>

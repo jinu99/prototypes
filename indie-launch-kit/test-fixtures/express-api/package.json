@@ -1,0 +1,34 @@
+{
+  "name": "express-api-kit",
+  "version": "3.0.0",
+  "description": "A batteries-included toolkit for building production-ready REST APIs with Express",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "lint": "eslint src/",
+    "prepublishOnly": "npm run build"
+  },
+  "author": "Alex Chen",
+  "license": "Apache-2.0",
+  "keywords": [
+    "express",
+    "rest",
+    "api",
+    "framework",
+    "typescript",
+    "validation",
+    "authentication"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexchen/express-api-kit.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

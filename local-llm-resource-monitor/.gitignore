@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+screenshots/
+node_modules/
+*.egg-info/
+.uv/

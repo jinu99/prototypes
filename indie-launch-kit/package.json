@@ -1,0 +1,26 @@
+{
+  "name": "indie-launch-kit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bin": {
+    "indie-launch-kit": "./bin/cli.js"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "handlebars": "^4.7.8",
+    "playwright": "^1.58.2",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "simple-git": "^3.33.0",
+    "unified": "^11.0.5"
+  }
+}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Indie Toolkit — SPA 크롤러 시뮬레이션</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242734;
+      --border: #2e3245;
+      --text: #e4e6ed;
+      --text-dim: #8b8fa3;
+      --accent: #6c8cff;
+      --accent-hover: #8ba3ff;
+      --high: #ff5c5c;
+      --medium: #ffb84d;
+      --low: #4ddb8f;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+    header { text-align: center; margin-bottom: 40px; }
+    header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+    header p { color: var(--text-dim); font-size: 0.95rem; }
+
+    .input-section {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
+    }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+
+    .tab {
+      padding: 8px 18px; border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-dim); cursor: pointer;
+      font-size: 0.9rem; transition: all 0.15s;
+    }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .input-row { display: flex; gap: 10px; }
+
+    input[type="text"] {
+      flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"]::placeholder { color: var(--text-dim); }
+
+    button.analyze-btn {
+      padding: 12px 28px; border-radius: 8px; border: none; background: var(--accent);
+      color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s; white-space: nowrap;
+    }
+    button.analyze-btn:hover { background: var(--accent-hover); }
+    button.analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+
+    .spinner {
+      display: inline-block; width: 28px; height: 28px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+    }
+
+    .result-header {
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .result-url { font-weight: 600; font-size: 0.95rem; word-break: break-all; }
+
+    .summary-badges { display: flex; gap: 8px; flex-shrink: 0; margin-left: 16px; }
+
+    .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .badge.high { background: rgba(255,92,92,0.15); color: var(--high); }
+    .badge.medium { background: rgba(255,184,77,0.15); color: var(--medium); }
+    .badge.low { background: rgba(77,219,143,0.15); color: var(--low); }
+    .badge.ok { background: rgba(77,219,143,0.15); color: var(--low); }
+
+    .issue-item { padding: 18px 24px; border-bottom: 1px solid var(--border); }
+    .issue-item:last-child { border-bottom: none; }
+
+    .issue-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+
+    .severity-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .severity-dot.high { background: var(--high); }
+    .severity-dot.medium { background: var(--medium); }
+    .severity-dot.low { background: var(--low); }
+
+    .issue-element { font-weight: 600; font-size: 0.9rem; }
+    .issue-type {
+      font-size: 0.8rem; color: var(--text-dim); background: var(--surface2);
+      padding: 2px 8px; border-radius: 4px;
+    }
+
+    .issue-compare {
+      background: var(--bg); border-radius: 6px; padding: 12px 16px;
+      margin-bottom: 10px; font-size: 0.85rem;
+    }
+    .issue-compare .label { color: var(--text-dim); font-size: 0.78rem; margin-bottom: 3px; }
+    .issue-compare .value { word-break: break-all; }
+    .issue-compare .value.empty { color: var(--text-dim); font-style: italic; }
+
+    .issue-advice {
+      background: rgba(108,140,255,0.08); border-left: 3px solid var(--accent);
+      padding: 10px 14px; border-radius: 0 6px 6px 0;
+      font-size: 0.85rem; line-height: 1.5; color: var(--text);
+    }
+
+    .no-issues { padding: 30px 24px; text-align: center; color: var(--low); font-size: 0.95rem; }
+
+    .error-msg {
+      background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.2);
+      border-radius: var(--radius); padding: 16px 24px; color: var(--high); margin-bottom: 16px;
+    }
+
+    .batch-summary {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 24px; margin-bottom: 20px; display: flex; gap: 24px; justify-content: center;
+    }
+    .batch-stat { text-align: center; }
+    .batch-stat .num { font-size: 1.6rem; font-weight: 700; }
+    .batch-stat .lbl { font-size: 0.8rem; color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SEO Indie Toolkit</h1>
+      <p>SPA 크롤러 시뮬레이션으로 검색엔진이 놓치는 SEO 문제를 진단합니다</p>
+    </header>
+
+    <div class="input-section">
+      <div class="tabs">
+        <button class="tab active" data-mode="single">단일 페이지</button>
+        <button class="tab" data-mode="sitemap">Sitemap 일괄</button>
+      </div>
+      <div class="input-row">
+        <input type="text" id="urlInput" placeholder="https://example.com" />
+        <button class="analyze-btn" id="analyzeBtn">진단 시작</button>
+      </div>
+    </div>
+
+    <div id="loadingArea" class="loading" style="display:none">
+      <div class="spinner"></div>
+      <div>페이지를 분석하고 있습니다...</div>
+    </div>
+
+    <div id="resultsArea"></div>
+  </div>
+
+  <script>
+    let mode = 'single';
+
+    document.querySelectorAll('.tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        mode = tab.dataset.mode;
+        var input = document.getElementById('urlInput');
+        input.placeholder = mode === 'sitemap'
+          ? 'https://example.com/sitemap.xml'
+          : 'https://example.com';
+      });
+    });
+
+    document.getElementById('urlInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') runAnalysis();
+    });
+
+    document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+
+    function el(tag, attrs, children) {
+      var elem = document.createElement(tag);
+      if (attrs) {
+        Object.keys(attrs).forEach(function(key) {
+          if (key === 'className') elem.className = attrs[key];
+          else if (key === 'textContent') elem.textContent = attrs[key];
+          else if (key === 'style') Object.assign(elem.style, attrs[key]);
+          else elem.setAttribute(key, attrs[key]);
+        });
+      }
+      if (children) {
+        children.forEach(function(child) {
+          if (typeof child === 'string') elem.appendChild(document.createTextNode(child));
+          else if (child) elem.appendChild(child);
+        });
+      }
+      return elem;
+    }
+
+    async function runAnalysis() {
+      var url = document.getElementById('urlInput').value.trim();
+      if (!url) return;
+
+      var btn = document.getElementById('analyzeBtn');
+      var loading = document.getElementById('loadingArea');
+      var results = document.getElementById('resultsArea');
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      results.textContent = '';
+
+      try {
+        var endpoint = mode === 'sitemap'
+          ? '/api/sitemap?url=' + encodeURIComponent(url) + '&limit=10'
+          : '/api/analyze?url=' + encodeURIComponent(url);
+
+        var res = await fetch(endpoint);
+        var data = await res.json();
+
+        if (data.error) {
+          results.appendChild(el('div', { className: 'error-msg', textContent: data.error }));
+          return;
+        }
+
+        if (mode === 'sitemap' && data.results) {
+          renderBatchResults(data, results);
+        } else {
+          results.appendChild(buildResultCard(data));
+        }
+      } catch (err) {
+        results.appendChild(el('div', { className: 'error-msg', textContent: '요청 실패: ' + err.message }));
+      } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+      }
+    }
+
+    function renderBatchResults(data, container) {
+      var allIssues = data.results.reduce(function(sum, r) { return sum + (r.issues ? r.issues.length : 0); }, 0);
+      var highIssues = data.results.reduce(function(sum, r) {
+        return sum + (r.issues ? r.issues.filter(function(i) { return i.severity === 'high'; }).length : 0);
+      }, 0);
+
+      var summary = el('div', { className: 'batch-summary' }, [
+        el('div', { className: 'batch-stat' }, [
+          el('div', { className: 'num', textContent: String(data.total) }),
+          el('div', { className: 'lbl', textContent: '총 페이지' })
+        ]),
+        el('div', { className: 'batch-stat' }, [
+          el('div', { className: 'num', textContent: String(allIssues) }),
+          el('div', { className: 'lbl', textContent: '발견된 문제' })
+        ]),
+        el('div', { className: 'batch-stat' }, [
+          el('div', { className: 'num', style: { color: 'var(--high)' }, textContent: String(highIssues) }),
+          el('div', { className: 'lbl', textContent: '심각한 문제' })
+        ])
+      ]);
+      container.appendChild(summary);
+
+      data.results.forEach(function(result) {
+        if (result.error) {
+          container.appendChild(el('div', { className: 'error-msg', textContent: result.url + ': ' + result.error }));
+        } else {
+          container.appendChild(buildResultCard(result));
+        }
+      });
+    }
+
+    function buildResultCard(report) {
+      var s = report.summary || { total: 0, high: 0, medium: 0, low: 0 };
+      var issues = report.issues || [];
+
+      var badgesDiv = el('div', { className: 'summary-badges' });
+      if (s.total === 0) {
+        badgesDiv.appendChild(el('span', { className: 'badge ok', textContent: '문제 없음' }));
+      } else {
+        if (s.high) badgesDiv.appendChild(el('span', { className: 'badge high', textContent: '심각 ' + s.high }));
+        if (s.medium) badgesDiv.appendChild(el('span', { className: 'badge medium', textContent: '주의 ' + s.medium }));
+        if (s.low) badgesDiv.appendChild(el('span', { className: 'badge low', textContent: '참고 ' + s.low }));
+      }
+
+      var header = el('div', { className: 'result-header' }, [
+        el('span', { className: 'result-url', textContent: report.url }),
+        badgesDiv
+      ]);
+
+      var card = el('div', { className: 'result-card' }, [header]);
+
+      if (issues.length === 0) {
+        card.appendChild(el('div', { className: 'no-issues', textContent: '✅ JS 실행 전후 SEO 요소가 동일합니다. 문제가 발견되지 않았습니다.' }));
+      } else {
+        issues.forEach(function(issue) {
+          var rawDisplay = issue.raw || '(없음)';
+          var renderedDisplay = issue.rendered || '(없음)';
+
+          var item = el('div', { className: 'issue-item' }, [
+            el('div', { className: 'issue-top' }, [
+              el('div', { className: 'severity-dot ' + issue.severity }),
+              el('span', { className: 'issue-element', textContent: issue.element }),
+              el('span', { className: 'issue-type', textContent: issue.typeLabel || issue.type })
+            ]),
+            el('div', { className: 'issue-compare' }, [
+              el('div', { className: 'label', textContent: '크롤러가 보는 값 (JS 실행 전)' }),
+              el('div', { className: 'value' + (!issue.raw ? ' empty' : ''), textContent: rawDisplay })
+            ]),
+            el('div', { className: 'issue-compare' }, [
+              el('div', { className: 'label', textContent: '실제 렌더링 값 (JS 실행 후)' }),
+              el('div', { className: 'value' + (!issue.rendered ? ' empty' : ''), textContent: renderedDisplay })
+            ])
+          ]);
+
+          if (issue.advice) {
+            item.appendChild(el('div', { className: 'issue-advice', textContent: '💡 ' + issue.advice }));
+          }
+
+          card.appendChild(item);
+        });
+      }
+
+      return card;
+    }
+  </script>
+</body>
+</html>

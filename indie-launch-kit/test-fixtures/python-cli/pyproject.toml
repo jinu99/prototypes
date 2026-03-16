@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "taskflow-cli"
+version = "0.5.2"
+description = "A fast, opinionated task runner for developers who live in the terminal"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Maria Navarro", email = "maria@navarro.dev" },
+]
+keywords = ["task-runner", "cli", "automation", "developer-tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Build Tools",
+]
+dependencies = [
+    "click>=8.1",
+    "tomli>=2.0; python_version < '3.11'",
+    "rich>=13.0",
+    "watchfiles>=0.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1",
+    "mypy>=1.5",
+]
+
+[project.scripts]
+taskflow = "taskflow_cli.main:cli"
+
+[project.urls]
+Homepage = "https://github.com/mnavarro/taskflow-cli"
+Repository = "https://github.com/mnavarro/taskflow-cli"
+Issues = "https://github.com/mnavarro/taskflow-cli/issues"

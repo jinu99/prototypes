@@ -1,0 +1,7 @@
+{
+  "name": "fastapi-starter",
+  "version": "2.1.0",
+  "description": "A batteries-included FastAPI project template",
+  "license": "MIT",
+  "author": "Jane Developer"
+}

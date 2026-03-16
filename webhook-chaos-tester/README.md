@@ -2,6 +2,112 @@
 
 > CLI tool that runs chaos scenarios (duplicate, delay, reorder) against webhook endpoints to find idempotency and error-handling bugs.
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          CLI (cli.py)                           │
+│              click 기반 명령어: run / demo / echo               │
+└──────┬──────────────────┬───────────────────────┬───────────────┘
+       │                  │                       │
+       ▼                  ▼                       ▼
+┌──────────────┐  ┌───────────────┐  ┌────────────────────────┐
+│ Loader       │  │ Engine        │  │ Echo Server            │
+│ (loader.py)  │  │ (engine.py)   │  │ (echo_server.py)       │
+│              │  │               │  │                        │
+│ YAML 파싱    │  │ 시나리오 실행 │  │ 테스트용 HTTP 서버     │
+│ → Scenario[] │  │ httpx로 전송  │  │ POST /webhook 수신     │
+└──────┬───────┘  └───────┬───────┘  │ GET  /_requests 조회   │
+       │                  │          │ GET  /_reset    초기화  │
+       │                  │          │                        │
+       ▼                  │          │ 모드:                  │
+┌──────────────┐          │          │  · 기본: 200 응답      │
+│ scenarios/   │          │          │  · --reject-duplicates │
+│  default.yaml│          │          │    : 409 중복 거부     │
+│  stress.yaml │          │          └────────────┬───────────┘
+└──────────────┘          │                       │
+                          │    HTTP POST (JSON)   │
+                          │──────────────────────▶│
+                          │                       │
+                          ▼                       │
+                  ┌───────────────┐               │
+                  │ ScenarioResult│◀──── 응답 ────┘
+                  │  · verdict    │
+                  │  · requests[] │
+                  └───────┬───────┘
+                          │
+                          ▼
+                  ┌───────────────┐
+                  │ Report        │
+                  │ (report.py)   │
+                  │               │
+                  │ Markdown 또는 │
+                  │ JSON 리포트   │
+                  └───────────────┘
+```
+
+**데이터 흐름:**
+1. CLI가 Loader를 통해 YAML 시나리오를 파싱하거나 기본 시나리오 3종을 로드
+2. Engine이 각 시나리오 타입(duplicate/delay/reorder)에 맞는 카오스 패턴으로 HTTP 요청 전송
+3. 대상 서버(또는 내장 Echo Server)의 응답 코드로 PASS/FAIL 판정
+4. Report 모듈이 결과를 Markdown 또는 JSON 형식으로 출력
+
+## Demo
+
+`demo` 명령어는 Echo Server를 자동으로 시작하고 기본 시나리오 3종을 실행합니다.
+
+```bash
+$ uv run webhook-chaos demo
+
+Starting echo server on port 9876...
+Target: http://127.0.0.1:9876/webhook
+Scenarios: 3
+
+[1/3] duplicate-delivery (duplicate)...
+  PASS: All 3 duplicate requests returned 2xx
+[2/3] delayed-delivery (delay)...
+  PASS: Response 200 after 2.0s delay
+[3/3] out-of-order (reorder)...
+  PASS: All reversed-order requests returned 2xx
+
+Results: 3/3 passed
+
+# Webhook Chaos Test Report
+
+**Target:** `http://127.0.0.1:9876/webhook`
+**Date:** 2026-03-16 14:30:00
+**Scenarios:** 3
+
+## Summary: 3 PASS / 0 FAIL
+
+### ✅ duplicate-delivery
+- **Type:** duplicate
+- **Verdict:** **PASS**
+- **Reason:** All 3 duplicate requests returned 2xx
+
+### ✅ delayed-delivery
+- **Type:** delay
+- **Verdict:** **PASS**
+- **Reason:** Response 200 after 2.0s delay
+
+### ✅ out-of-order
+- **Type:** reorder
+- **Verdict:** **PASS**
+- **Reason:** All reversed-order requests returned 2xx
+```
+
+JSON 형식으로 리포트를 파일에 저장할 수도 있습니다:
+
+```bash
+$ uv run webhook-chaos demo --format json --output report.json
+```
+
+특정 webhook 서버를 대상으로 테스트하려면 `run` 명령어를 사용합니다:
+
+```bash
+$ uv run webhook-chaos run --target http://your-server.com/webhook
+```
+
 ## 실행 방법
 
 ```bash

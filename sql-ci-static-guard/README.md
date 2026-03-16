@@ -2,6 +2,95 @@
 
 > sqlglot AST 기반 SQL 안티패턴 감지 CLI — cross-dialect 지원, pre-commit hook 통합
 
+## Architecture
+
+```
+┌─────────────────┐     ┌──────────────────────────────────────────────────┐
+│  SQL 파일/디렉토리  │     │                  sql-guard CLI                   │
+│  (.sql)         │     │               (cli.py / Click)                   │
+└────────┬────────┘     │                                                  │
+         │              │  --dialect, --format, --strict                   │
+         ▼              └──────────────────┬───────────────────────────────┘
+┌─────────────────┐                        │
+│  pre-commit     │───────────────────────▶│
+│  hook 트리거     │                        ▼
+└─────────────────┘              ┌─────────────────────┐
+                                 │   Analyzer           │
+                                 │   (analyzer.py)      │
+                                 │                      │
+                                 │  ┌───────────────┐   │
+                                 │  │ dialect 감지    │   │
+                                 │  │ (파일명/주석)   │   │
+                                 │  └───────┬───────┘   │
+                                 │          ▼           │
+                                 │  ┌───────────────┐   │
+                                 │  │ sqlglot.parse  │   │
+                                 │  │ → AST 생성     │   │
+                                 │  └───────┬───────┘   │
+                                 │          ▼           │
+                                 │  ┌───────────────┐   │
+                                 │  │ 9개 규칙 실행   │   │
+                                 │  │ (rules.py)     │   │
+                                 │  └───────┬───────┘   │
+                                 └──────────┼──────────┘
+                                            ▼
+                          ┌─────────────────────────────────┐
+                          │         Violation 목록            │
+                          │  (rule, message, severity)       │
+                          └────────────┬────────────────────┘
+                                       │
+                       ┌───────────────┼───────────────┐
+                       ▼               ▼               ▼
+                ┌────────────┐  ┌────────────┐  ┌────────────┐
+                │ text 출력   │  │ JSON 출력   │  │ exit code  │
+                │ (기본)      │  │ (-f json)  │  │ 0/1 (CI)   │
+                └────────────┘  └────────────┘  └────────────┘
+```
+
+**핵심 흐름**: SQL 파일 → sqlglot AST 파싱 (cross-dialect) → 9개 규칙 함수가 AST 노드를 순회하며 안티패턴 탐지 → Violation 리포트 출력
+
+## Demo
+
+```bash
+$ uv run sql-guard samples/postgres_bad.sql
+
+✗  samples/postgres_bad.sql [postgres]
+   🟡 [select-star] Avoid SELECT *; explicitly list needed columns.
+   🔴 [missing-where-delete] DELETE without WHERE clause will delete all rows.
+   🔴 [missing-where-update] UPDATE without WHERE clause will update all rows.
+   🟡 [leading-wildcard-like] LIKE '%widget%' uses a leading wildcard, preventing index usage.
+   🟡 [implicit-column-order] INSERT without explicit column list relies on implicit column ordering.
+   🔴 [hardcoded-credentials] Possible hardcoded credential: 'password ='
+   🟡 [cartesian-join] CROSS JOIN produces a cartesian product — likely unintended.
+   🟡 [order-by-ordinal] ORDER BY 2 uses ordinal position; use column name instead.
+   🔴 [null-comparison] Use IS NULL / IS NOT NULL instead of = NULL / != NULL.
+   🟡 [select-star] Avoid SELECT *; explicitly list needed columns.
+   🟡 [select-star] Avoid SELECT *; explicitly list needed columns.
+
+──────────────────────────────────────────────────
+Files scanned: 1
+Violations: 11
+```
+
+```bash
+# JSON 출력 모드
+$ uv run sql-guard samples/clean.sql -f json
+[
+  {
+    "path": "samples/clean.sql",
+    "dialect": "auto",
+    "violations": []
+  }
+]
+```
+
+```bash
+# CI strict 모드 — warning 포함 모든 violation에서 exit 1
+$ uv run sql-guard samples/ --strict; echo "exit: $?"
+...
+exit: 1
+```
+
 ## 실행 방법
 
 ```bash

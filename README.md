@@ -170,6 +170,13 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [local-first-data-guard](./local-first-data-guard) | 브라우저 스토리지 내구성 자동 탐지 + IndexedDB ↔ OPFS 크로스 스토리지 자동 복구 라이브러리 | TypeScript |
 | [openapi-form-tester](./openapi-form-tester) | OpenAPI 스펙에서 자동 생성된 폼으로 API를 테스트하고 응답-스펙 드리프트를 즉시 시각화하는 로컬 웹 도구 | Node.js |
 
+### Other
+
+| Prototype | Description | Stack |
+|-----------|-------------|-------|
+| [docs](./docs) | (설명 없음) | Other |
+| [lora-streaming-merge](./lora-streaming-merge) | 16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI | Python |
+
 ---
 
-**Total: 40 prototypes** | Auto-updated by prototype-pipeline
+**Total: 42 prototypes** | Auto-updated by prototype-pipeline

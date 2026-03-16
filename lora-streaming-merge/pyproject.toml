@@ -1,0 +1,22 @@
+[project]
+name = "lora-streaming-merge"
+version = "0.1.0"
+description = "Streaming LoRA merge for safetensors models — layer-by-layer, memory-efficient"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.4.3",
+    "packaging>=26.0",
+    "safetensors>=0.7.0",
+    "torch>=2.10.0",
+    "tqdm>=4.67.3",
+]
+
+[project.scripts]
+lora-merge = "src.cli:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]

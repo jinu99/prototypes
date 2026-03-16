@@ -111,6 +111,7 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [ai-agent-secret-scrubber](./ai-agent-secret-scrubber) | AI 에이전트 출력 스트림에서 시크릿을 실시간 탐지·마스킹하는 쉘 래퍼 | Python |
 | [ai-code-change-tracker](./ai-code-change-tracker) | tree-sitter AST 파싱 + git diff 분석으로 코드 변경의 downstream 영향 범위를 추적하고, spec 문서와의 괴리를 자동 탐지하는 CLI 도구 | Python |
 | [ai-code-perf-verifier](./ai-code-perf-verifier) | Git diff에서 변경된 Python 함수를 자동 식별하고, 변경 전/후 성능을 비교하여 머지 전 성능 회귀를 탐지하는 CLI 도구 | Python |
+| [ai-code-smell-linter](./ai-code-smell-linter) | tree-sitter AST 기반으로 AI 생성 코드의 구조적 위험 패턴을 탐지하는 CLI 린터 | Python |
 | [sql-ci-static-guard](./sql-ci-static-guard) | sqlglot AST 기반 SQL 안티패턴 감지 CLI — cross-dialect 지원, pre-commit hook 통합 | Python |
 | [vibe-code-decay-detector](./vibe-code-decay-detector) | Git 히스토리 기반 아키텍처 침식 탐지 CLI — 의존성 결합도, 순환 의존성, churn rate 추적 및 commit-revert 패턴 감지 | Python |
 | [vibe-code-prod-audit](./vibe-code-prod-audit) | tree-sitter 기반 바이브코딩 FastAPI 프로젝트 프로덕션 준비도 감사 CLI 도구 | Python |
@@ -179,4 +180,4 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 ---
 
-**Total: 42 prototypes** | Auto-updated by prototype-pipeline
+**Total: 43 prototypes** | Auto-updated by prototype-pipeline

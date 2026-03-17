@@ -176,6 +176,7 @@ Community Sources                 Pipeline (cron-automated)                    O
 | Prototype | Description | Stack |
 |-----------|-------------|-------|
 | [docs](./docs) | (설명 없음) | Other |
+| [email-workflow](./email-workflow) | IMAP EXAMINE 모드로 이메일을 읽고, 로컬 LLM(Ollama) 또는 키워드 규칙으로 분류하는 CLI 도구 | Python |
 | [local-feed-relevance-engine](./local-feed-relevance-engine) | 로컬 임베딩(all-MiniLM-L6-v2)으로 RSS 피드 기사의 관심도를 스코어링하고, 읽기/스킵 피드백으로 개인화하는 엔진 | Python |
 | [lora-streaming-merge](./lora-streaming-merge) | 16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI | Python |
 | [oncall-gap-predetector](./oncall-gap-predetector) | Docker Compose + Prometheus config 정적 분석으로 모니터링 사각지대를 자동 탐지하는 CLI 도구 | Python |
@@ -183,4 +184,4 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 ---
 
-**Total: 46 prototypes** | Auto-updated by prototype-pipeline
+**Total: 47 prototypes** | Auto-updated by prototype-pipeline

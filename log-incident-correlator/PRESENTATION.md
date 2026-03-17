@@ -76,33 +76,37 @@ HN이나 Reddit에서 이 주제가 계속 나온다. 크게 세 가지다. 첫�
 
 ## Architecture
 
-```
-┌─────────────────┐     ┌─────────────────┐
-│   Log Files     │     │  Deploy Events  │
-│  (plaintext)    │     │  (JSON / CSV)   │
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│   log_parser    │     │  deploy_events  │
-│ Drain3 Template │     │ Parse &         │
-│ Extract + first-│     │ Normalize       │
-│ seen Detection  │     │                 │
-└────────┬────────┘     └────────┬────────┘
-         │         ┌─────┘
-         ▼         ▼
-┌──────────────────────────────────────────┐
-│        db.py (SQLite) — 3 Tables          │
-│  log_templates │ deploy_events │ correlations │
-└──────────────────┬───────────────────────┘
-                   ▼
-         ┌─────────────────┐
-         │   correlator    │
-         │ Window Matching │
-         └────────┬────────┘
-         ┌────────┴────────┐
-         ▼                 ▼
-  CLI (Terminal)       Web Dashboard
+```mermaid
+graph TD
+    subgraph Input
+        A["Log Files (plaintext)"]
+        B["Deploy Events (JSON / CSV)"]
+    end
+
+    subgraph Parsing
+        C["log_parser (log_parser.py)\nDrain3 Template Extract\n+ first-seen Detection"]
+        D["deploy_events (deploy_events.py)\nParse & Normalize"]
+    end
+
+    A --> C
+    B --> D
+
+    subgraph Storage
+        E["db.py (SQLite) — 3 Tables\nlog_templates | deploy_events | correlations"]
+    end
+
+    C --> E
+    D --> E
+
+    E --> F["correlator (correlator.py)\nWindow Matching"]
+
+    subgraph Output
+        G["CLI (cli.py)"]
+        H["Web Dashboard (server.py)"]
+    end
+
+    F --> G
+    F --> H
 ```
 
 <!--

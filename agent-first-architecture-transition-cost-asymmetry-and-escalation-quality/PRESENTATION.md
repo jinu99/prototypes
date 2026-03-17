@@ -72,34 +72,37 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────┐
-│                  main.py (CLI)                    │
-│           Simulation Orchestrator                 │
-└────────┬────────────────────────────┬────────────┘
-         │                            │
-         ▼                            ▼
-┌──────────────────┐     ┌───────────────────────────┐
-│  scenarios.py     │     │  server.py → dashboard    │
-│  Scenarios ×10   │     │  Dashboard (port 8000)    │
-│  ○ simple ×5     │     └───────────────────────────┘
-│  ◉ complex ×3    │                ▲
-│  ◆ edge ×2       │       output/results.json
-└────────┬─────────┘                ▲
-    ┌────┴────┐                     │
-    ▼         ▼                     │
-┌────────┐ ┌──────────────┐        │
-│Workflow│ │Agent Engine  │        │
-│if/else │ │5 Eval Steps  │        │
-│keyword  │ │confidence    │        │
-│matching │ │cascade       │        │
-└───┬────┘ └──────┬───────┘        │
-    └──────┬──────┘                │
-           ▼                       │
-    ┌──────────────┐              │
-    │comparator.py │──────────────┘
-    │Accuracy/FP/FN│   Save JSON Results
-    └──────────────┘
+```mermaid
+graph TD
+    MAIN["main.py (CLI)<br>Simulation Orchestrator"]
+    MAIN --> SCENARIOS
+    MAIN --> SERVER
+
+    subgraph Scenarios
+        SCENARIOS["scenarios.py<br>Scenarios ×10<br>○ simple ×5 / ◉ complex ×3 / ◆ edge ×2"]
+    end
+
+    subgraph Engines
+        WF["Workflow Engine (workflow_engine.py)<br>if/else keyword matching"]
+        AG["Agent Engine (agent_engine.py)<br>5 Eval Steps / confidence cascade"]
+    end
+
+    SCENARIOS --> WF
+    SCENARIOS --> AG
+
+    subgraph Evaluation
+        COMP["comparator.py<br>Accuracy / FP / FN"]
+    end
+
+    WF --> COMP
+    AG --> COMP
+    COMP -->|"Save JSON Results"| JSON["output/results.json"]
+
+    subgraph Dashboard
+        SERVER["server.py<br>Dashboard (port 8000)"]
+    end
+
+    JSON --> SERVER
 ```
 
 - **scenarios.py**: 10 scenarios + ground truth definitions

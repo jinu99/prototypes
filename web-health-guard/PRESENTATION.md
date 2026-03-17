@@ -78,27 +78,25 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Browser (index.html)                         │
-│  URL input → Scan button → fetch(/api/scan) → render dashboard   │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ GET /api/scan?url=...
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                 FastAPI Server (main.py)                        │
-│                                                                 │
-│  httpx.AsyncClient fetches 3 resources concurrently:             │
-│     ┌──────────┐  ┌──────────────┐  ┌──────────────┐           │
-│     │ Target Page│  │ /robots.txt  │  │ /sitemap.xml │           │
-│     └────┬─────┘  └──────┬───────┘  └──────┬───────┘           │
-│          ▼               ▼                  ▼                   │
-│   seo_checker      robots_analyzer    phantom_detector          │
-│   (14 checks)     (10 AI crawlers)   (sitemap vs text)         │
-│          └───────────────┼──────────────────┘                   │
-│                          ▼                                      │
-│                   JSON Response                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Browser["Browser (index.html)"]
+        A["URL input → Scan button → fetch(/api/scan) → render dashboard"]
+    end
+
+    A -->|"GET /api/scan?url=..."| B
+
+    subgraph Server["FastAPI Server (main.py)"]
+        B["httpx.AsyncClient"] -->|"concurrent fetch"| C["Target Page"]
+        B -->|"concurrent fetch"| D["/robots.txt"]
+        B -->|"concurrent fetch"| E["/sitemap.xml"]
+        C --> F["seo_checker (14 checks)"]
+        D --> G["robots_analyzer (10 AI crawlers)"]
+        E --> H["phantom_detector (sitemap vs text)"]
+        F --> I["JSON Response"]
+        G --> I
+        H --> I
+    end
 ```
 
 - **seo_checker**: pass/fail for 14 checks including title, meta, OG, JSON-LD, viewport

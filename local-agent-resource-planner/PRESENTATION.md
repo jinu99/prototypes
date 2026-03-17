@@ -73,30 +73,28 @@ LocalLLaMA 서브레딧에서 이런 얘기가 계속 나온다. GPU 24기가로
 
 ## Architecture
 
-```
-┌──────────────────┐    ┌──────────────────────────┐
-│  GGUF Files      │    │  Sample Profile (Presets) │
-│  (Binary Parsing)│    │  Llama-7B, Mixtral, Phi-2│
-└────────┬─────────┘    └────────────┬─────────────┘
-         │                          │
-         ▼                          ▼
-┌────────────────────────────────────────────┐
-│         vram_calculator.py                 │
-│  Weights + KV Cache + Activation + OH     │
-│  MoE offloading scenario calculation      │
-└──────────────────┬─────────────────────────┘
-                   │
-                   ▼
-┌────────────────────────────────────────────┐
-│         planner.py                         │
-│  Single/Multi model est · Grid search · Val │
-└──────────┬─────────────────┬───────────────┘
-           ▼                 ▼
-   ┌─────────────┐   ┌───────────────┐
-   │ server.py   │   │ main.py (CLI) │
-   │ Web UI +    │   │ Table output  │
-   │ REST API    │   │ Validation    │
-   └─────────────┘   └───────────────┘
+```mermaid
+graph TD
+    subgraph Input
+        A["GGUF Files (Binary Parsing)"]
+        B["Sample Profile (Presets)\nLlama-7B, Mixtral, Phi-2"]
+    end
+
+    subgraph Core
+        C["VRAM Calculator (vram_calculator.py)\nWeights + KV Cache + Activation + OH\nMoE offloading scenario calculation"]
+        D["Planner (planner.py)\nSingle/Multi model est · Grid search · Validation"]
+    end
+
+    subgraph Output
+        E["Web Server (server.py)\nWeb UI + REST API"]
+        F["CLI (main.py)\nTable output · Validation"]
+    end
+
+    A --> C
+    B --> C
+    C --> D
+    D --> E
+    D --> F
 ```
 
 - **gguf_parser**: Extracts model structure metadata from GGUF binaries (v2/v3 support)

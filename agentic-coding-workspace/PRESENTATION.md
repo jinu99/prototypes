@@ -78,33 +78,32 @@ HN이나 GitHub에서 이런 얘기가 계속 나온다. 크게 세 가지인데
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Browser (SPA)                        │
-│                                                             │
-│  ┌───────────┐    ┌────────────┐    ┌───────────────────┐   │
-│  │ index.html│    │  style.css │    │   mock-data.js    │   │
-│  │ (Entry)   │    │(Dark Theme)│    │(Mock AI Scenarios)│   │
-│  └─────┬─────┘    └────────────┘    └────────┬──────────┘   │
-│        │                                     │              │
-│        ▼                                     ▼              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                    app.js (Core Logic)                │   │
-│  │  cells[] ─── State Mgmt ─── cellIdCounter            │   │
-│  │     │                                                │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌──────────┐             │   │
-│  │  │ Prompt  │─▶│  Plan   │─▶│  Result  │             │   │
-│  │  │  Cell   │  │  Cell   │  │  Cell    │             │   │
-│  │  │ (idle)  │  │(preview)│  │(stream→  │             │   │
-│  │  │         │  │         │  │  done)   │             │   │
-│  │  └─────────┘  └─────────┘  └──────────┘             │   │
-│  └──────────────────┬──────────────────────────────────┘   │
-│                     ▼                                       │
-│  ┌────────────────────────┐   ┌───────────────────┐        │
-│  │      render.js         │   │   LocalStorage     │        │
-│  │  (Cell DOM & Events)   │   │(State Persistence) │        │
-│  └────────────────────────┘   └───────────────────┘        │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Browser["Browser (SPA)"]
+        HTML["index.html (Entry)"]
+        CSS["style.css (Dark Theme)"]
+        MOCK["mock-data.js (Mock AI Scenarios)"]
+
+        subgraph APP["app.js (Core Logic)"]
+            STATE["cells[] ── State Mgmt ── cellIdCounter"]
+            PROMPT["Prompt Cell (idle)"]
+            PLAN["Plan Cell (preview)"]
+            RESULT["Result Cell (stream→done)"]
+            STATE --- PROMPT
+            PROMPT -->|"Run"| PLAN
+            PLAN -->|"Approve"| RESULT
+        end
+
+        HTML --> APP
+        MOCK --> APP
+
+        RENDER["render.js (Cell DOM & Events)"]
+        LS["LocalStorage (State Persistence)"]
+
+        APP --> RENDER
+        APP --> LS
+    end
 ```
 
 - **app.js**: Cell create/delete, execution flow, plan approval, state persistence (216 lines)

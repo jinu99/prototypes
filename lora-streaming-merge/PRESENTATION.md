@@ -75,31 +75,21 @@ Reddit LocalLLaMA나 Hacker News를 보면 같은 이야기가 반복된다. 모
 
 ## Architecture
 
-```
-┌─────────────────┐     ┌──────────────────┐
-│  Base Model      │     │  LoRA Adapter     │
-│  (multi-shard    │     │  adapter_model    │
-│   safetensors)   │     │  .safetensors     │
-└────────┬────────┘     └────────┬─────────┘
-         │                       │
-         ▼                       ▼
-┌────────────────────────────────────────────┐
-│  shard_map.py — index.json → key→shard map  │
-└────────────────┬───────────────────────────┘
-                 ▼
-┌────────────────────────────────────────────┐
-│  adapter.py — LoRA key ↔ base key auto map   │
-└────────────────┬───────────────────────────┘
-                 ▼
-┌────────────────────────────────────────────┐
-│  merge.py — per-tensor streaming             │
-│  W = safe_open(key) → W' = W + scale*B@A   │
-│  → save_file → del W, A, B (free memory)     │
-└────────────────┬───────────────────────────┘
-                 ▼
-┌────────────────────────────────────────────┐
-│  Output: merged safetensors + index.json    │
-└────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Inputs
+        A["Base Model (multi-shard safetensors)"]
+        B["LoRA Adapter (adapter_model.safetensors)"]
+    end
+
+    A -->|"index.json"| C["ShardMap (shard_map.py)"]
+    B --> C
+
+    C -->|"key→shard map"| D["Adapter (adapter.py)"]
+
+    D -->|"matched key pairs"| E["Merge (merge.py)"]
+
+    E -->|"per-tensor streaming"| F["Output (merged safetensors + index.json)"]
 ```
 
 <!--

@@ -75,28 +75,32 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────┐
-│  Input: architecture.mmd + mapping.json                    │
-└────────────┬─────────────────────────┬───────────────────┘
-             ▼                         ▼
-   ┌──────────────────┐    ┌──────────────────┐
-   │  MermaidParser    │    │  MappingConfig   │
-   │  C4/Flowchart    │    │  glob pattern     │
-   │  node+rel extract│    │  service rule mgmt│
-   └────────┬─────────┘    └────────┬─────────┘
-            └──────────┬───────────┘
-                       ▼
-            ┌──────────────────┐
-            │  ContextMapper   │
-            │  file→service map │
-            │  FileContext gen  │
-            └──────┬───────────┘
-         ┌─────────┼──────────┐
-         ▼         ▼          ▼
-   ┌──────────┐ ┌────────┐ ┌──────────────┐
-   │ CLI(7cmd)│ │MCP(4t) │ │CLAUDE.md Gen │
-   └──────────┘ └────────┘ └──────────────┘
+```mermaid
+graph TD
+    INPUT["Input: architecture.mmd + mapping.json"]
+
+    subgraph Parsing
+        PARSER["MermaidParser (parser.py)<br/>C4/Flowchart<br/>node+rel extract"]
+        CONFIG["MappingConfig (config.py)<br/>glob pattern<br/>service rule mgmt"]
+    end
+
+    subgraph Mapping
+        MAPPER["ContextMapper (mapper.py)<br/>file→service map<br/>FileContext gen"]
+    end
+
+    subgraph Delivery
+        CLI["CLI (cli.py)<br/>7 commands"]
+        MCP["MCP Server (server.py)<br/>4 tools"]
+        CLAUDE["CLAUDE.md Gen (generator.py)"]
+    end
+
+    INPUT --> PARSER
+    INPUT --> CONFIG
+    PARSER --> MAPPER
+    CONFIG --> MAPPER
+    MAPPER --> CLI
+    MAPPER --> MCP
+    MAPPER --> CLAUDE
 ```
 
 - **MermaidParser**: Regex-based. Supports C4 Context/Container and Flowchart formats

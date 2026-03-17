@@ -83,35 +83,18 @@ AI 코딩 도구가 빠르게 퍼지고 있다. 근데 AI가 만든 코드가 �
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        perf-verify CLI                         │
-└──────────┬──────────────────────────────────────────────────────┘
-           │
-           ▼
-┌─────────────────────┐    git diff --unified=0    ┌────────────┐
-│   Diff Parser       │◀──────────────────────────▶│    Git     │
-│  (diff_parser.py)   │                            │ Repository │
-└──────────┬──────────┘
-           │ Changed .py files + line numbers
-           ▼
-┌─────────────────────┐
-│   AST Analyzer      │    Maps changed lines to
-│  (ast_analyzer.py)  │    functions/methods via Python AST
-└──────────┬──────────┘
-           │ List of changed functions
-           ▼
-┌─────────────────────┐    git show ref:file    ┌────────────────┐
-│   Benchmarker       │◀───────────────────────▶│ Before Source  │
-│  (benchmarker.py)   │    time.perf_counter    └────────────────┘
-│                     │    tracemalloc
-└──────────┬──────────┘
-           │ before/after benchmark results
-           ▼
-┌─────────────────────┐
-│   Reporter          │    Rich table output
-│  (reporter.py)      │    exit code: 0=OK, 1=regression
-└─────────────────────┘
+```mermaid
+graph TD
+    CLI["perf-verify CLI"] --> DP
+
+    subgraph Core Pipeline
+        DP["Diff Parser (diff_parser.py)"] -->|"Changed .py files + line numbers"| AST["AST Analyzer (ast_analyzer.py)"]
+        AST -->|"List of changed functions"| BM["Benchmarker (benchmarker.py)"]
+        BM -->|"before/after benchmark results"| RP["Reporter (reporter.py)"]
+    end
+
+    DP <-->|"git diff --unified=0"| GIT["Git Repository"]
+    BM <-->|"git show ref:file"| SRC["Before Source"]
 ```
 
 <!--

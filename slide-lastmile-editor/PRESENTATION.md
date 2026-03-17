@@ -81,33 +81,36 @@ GeekNews와 Reddit의 SideProject 커뮤니티에서 비슷한 얘기가 계속 
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Browser (index.html)                     │
-│                                                                 │
-│  ┌──────────────┐   ┌───────────────────┐   ┌───────────────┐  │
-│  │ Slide Preview │   │  Source Editor     │   │  Diff Viewer  │  │
-│  │ (contentedi-  │   │  (textarea,       │   │  (change      │  │
-│  │  table edit)  │   │   real-time sync) │   │   visual.)    │  │
-│  └──────┬───────┘   └────────┬──────────┘   └───────┬───────┘  │
-│         │ blur/drag           │ input (800ms)        │ toggle   │
-└─────────┼────────────────────┼──────────────────────┼──────────┘
-          │                    │                      │
-          ▼                    ▼                      ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Express Server (server.js)                    │
-│                                                                 │
-│  POST /api/edit ──┐                                             │
-│  (block-level     │   ┌──────────────┐   ┌──────────────────┐  │
-│   edit)           ├──▶│  Marp Core   │──▶│ HTML + CSS resp. │  │
-│  POST /api/slide ──┤   │  (render +    │   └──────────────────┘  │
-│  (full save)       │   │  source-line  │                         │
-│                    │   │   map inject) │   ┌──────────────────┐  │
-│  POST /api/style ──┘   └──────────────┘   │  sample.md       │  │
-│  (position adj.)                          │  (source file R/W)│  │
-│                                           └──────────────────┘  │
-│  GET /api/diff ────────▶ diff library ───▶ changes JSON         │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Browser["Browser (index.html)"]
+        A["Slide Preview<br/>(contenteditable edit)"]
+        B["Source Editor<br/>(textarea, real-time sync)"]
+        C["Diff Viewer<br/>(change visual.)"]
+    end
+
+    subgraph Server["Express Server (server.js)"]
+        D["POST /api/edit<br/>(block-level edit)"]
+        E["POST /api/slide<br/>(full save)"]
+        F["POST /api/style<br/>(position adj.)"]
+        G["Marp Core<br/>(render + source-line map inject)"]
+        H["HTML + CSS resp."]
+        I["sample.md<br/>(source file R/W)"]
+        J["GET /api/diff"]
+        K["diff library"]
+        L["changes JSON"]
+    end
+
+    A -->|"blur/drag"| D
+    B -->|"input (800ms)"| E
+    C -->|"toggle"| J
+    D --> G
+    E --> G
+    F --> G
+    G --> H
+    G -.-> I
+    J --> K
+    K --> L
 ```
 
 <!--

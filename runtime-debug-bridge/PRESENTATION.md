@@ -87,39 +87,34 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────┐
-│  AI Agent (Claude Code)                            │
-│  "Show me recent error logs"                       │
-└──────────────┬───────────────────────────────────┘
-               │ JSON-RPC (stdio)
-               ▼
-┌──────────────────────────────────────────────────┐
-│  MCP Server (mcp_server.py)                       │
-│  ┌─────────────────┬──────────────┬────────────┐ │
-│  │ get_recent_logs │ get_http     │ get_process │ │
-│  │     _tool       │ _traffic_tool│ _state_tool │ │
-│  └────────┬────────┴──────┬───────┴──────┬─────┘ │
-└───────────┼───────────────┼──────────────┼───────┘
-            ▼               ▼              ▼
-     ┌────────────┐  ┌───────────┐  ┌───────────┐
-     │  SQLite    │  │  SQLite   │  │  /proc    │
-     │  logs      │  │  http     │  │  filesystem│
-     └─────┬──────┘  └─────┬─────┘  └───────────┘
-           └────────┬──────┘
-                    ▼
-┌──────────────────────────────────────────────────┐
-│  Capture Engine (capture.py)                      │
-│  ┌───────────────────┐  ┌──────────────────────┐ │
-│  │ subprocess wrapper │  │ HTTP Forward Proxy   │ │
-│  │ asyncio PIPE      │  │ HTTP_PROXY auto-inject│ │
-│  └───────────────────┘  └──────────────────────┘ │
-│               └──────┬───────┘                    │
-│                      ▼                            │
-│             ┌──────────────┐                      │
-│             │  Target App  │                      │
-│             └──────────────┘                      │
-└──────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Agent["AI Agent (Claude Code)"]
+
+    Agent -->|"JSON-RPC (stdio)"| LogsTool
+    Agent -->|"JSON-RPC (stdio)"| HttpTool
+    Agent -->|"JSON-RPC (stdio)"| ProcTool
+
+    subgraph MCP["MCP Server (mcp_server.py)"]
+        LogsTool["get_recent_logs_tool"]
+        HttpTool["get_http_traffic_tool"]
+        ProcTool["get_process_state_tool"]
+    end
+
+    LogsTool --> DBLogs["SQLite logs"]
+    HttpTool --> DBHttp["SQLite http"]
+    ProcTool --> ProcFS["/proc filesystem"]
+
+    subgraph Capture["Capture Engine (capture.py)"]
+        Wrapper["subprocess wrapper (asyncio PIPE)"]
+        Proxy["HTTP Forward Proxy (HTTP_PROXY auto-inject)"]
+        Target["Target App"]
+    end
+
+    Wrapper -->|"store"| DBLogs
+    Proxy -->|"store"| DBHttp
+    Wrapper --> Target
+    Proxy --> Target
 ```
 
 <!--

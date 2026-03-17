@@ -75,28 +75,29 @@ HN이랑 r/selfhosted에서 같은 얘기가 반복적으로 나온다. 이메�
 
 ## Architecture
 
-```
-┌─────────────────────┐     ┌─────────────────────┐
-│   IMAP Server       │     │   Mock Generator     │
-│  (Gmail, etc.)      │     │  (mock_data.py)      │
-└────────┬────────────┘     └────────┬────────────┘
-         │ IMAP FETCH HEADER                │ 12,000 generated
-         ▼                                  ▼
-┌──────────────────────────────────────────────────┐
-│              imap_client.py                      │
-│  Header parsing: From, Subject, List-Unsubscribe,│
-│  X-Mailer, Precedence, Date, Size               │
-└────────────────────┬─────────────────────────────┘
-                     │ upsert
-                     ▼
-            ┌─────────────────┐
-            │   SQLite (WAL)  │  ← Local cache, no external transfer
-            └───┬─────┬───┬───┘
-       ┌────────┘     │   └────────┐
-       ▼              ▼            ▼
- classifier.py   analyzer.py   cleanup.py
- 6 signals       sender stats   dry run →
- score/classify  unsub candidates  delete/archive
+```mermaid
+graph TD
+    subgraph Data Sources
+        A["IMAP Server (Gmail, etc.)"]
+        B["Mock Generator (mock_data.py)"]
+    end
+
+    A -->|"IMAP FETCH HEADER"| C
+    B -->|"12,000 generated"| C
+
+    C["imap_client.py\nHeader parsing: From, Subject,\nList-Unsubscribe, X-Mailer,\nPrecedence, Date, Size"]
+
+    C -->|"upsert"| D["SQLite (WAL)\nLocal cache, no external transfer"]
+
+    subgraph Processing
+        E["classifier.py\n6 signals\nscore/classify"]
+        F["analyzer.py\nsender stats\nunsub candidates"]
+        G["cleanup.py\ndry run →\ndelete/archive"]
+    end
+
+    D --> E
+    D --> F
+    D --> G
 ```
 
 <!--

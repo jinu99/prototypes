@@ -88,28 +88,36 @@ uv run 한 줄이면 돌아간다.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Browser (Dashboard)                      │
-│                     static/index.html (vanilla JS)              │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTP
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    FastAPI Server (server.py)                    │
-│                                                                 │
-│  GET /api/matches ─── Timeline query (filter: source, keyword, …)│
-│  POST /api/collect/* ─ Trigger collection                       │
-│  GET/POST/DELETE /api/config/* ─ Config management               │
-└────────┬───────────────────┬───────────────────┬────────────────┘
-         │                   │                   │
-         ▼                   ▼                   ▼
-┌────────────────┐ ┌────────────────┐ ┌──────────────────────────┐
-│ Reddit         │ │ RSS            │ │ SQLite DB (monitor.db)   │
-│ Collector      │ │ Collector      │ │                          │
-│ (mock data)    │ │ (feedparser)   │ │  matches table           │
-│                │ │                │ │  config table            │
-└────────────────┘ └────────────────┘ └──────────────────────────┘
+```mermaid
+graph TD
+    subgraph Frontend
+        A["Browser Dashboard (static/index.html)"]
+    end
+
+    subgraph API ["FastAPI Server (server.py)"]
+        B["GET /api/matches — Timeline query"]
+        C["POST /api/collect/* — Trigger collection"]
+        D["GET/POST/DELETE /api/config/* — Config management"]
+    end
+
+    subgraph Collectors
+        E["Reddit Collector (reddit_collector.py, mock data)"]
+        F["RSS Collector (rss_collector.py, feedparser)"]
+    end
+
+    subgraph Storage
+        G["SQLite DB (monitor.db)\nmatches table · config table"]
+    end
+
+    A -->|"HTTP"| B
+    A -->|"HTTP"| C
+    A -->|"HTTP"| D
+    C --> E
+    C --> F
+    E -->|"MatchData"| G
+    F -->|"MatchData"| G
+    B -->|"query"| G
+    D -->|"read/write"| G
 ```
 
 - **server.py**: 7 FastAPI endpoints, also serves static files

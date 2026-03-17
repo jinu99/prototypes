@@ -72,37 +72,27 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌─────────────────────┐
-│   CLI (cli.py)      │
-└────────┬────────────┘
-         │ GitHub repo URL
-         ▼
-┌─────────────────────┐     ┌──────────────────────┐
-│  GitHub Parser      │────▶│  GitHub API          │
-│  (github_parser.py) │◀────│  (public REST API)   │
-│  · URL parsing      │     └──────────────────────┘
-│  · Official domains │
-└────────┬────────────┘
-         │ project_info + official_domains
-         ▼
-┌─────────────────────┐     ┌──────────────────────┐
-│  Searcher           │────▶│  DuckDuckGo          │
-│  (searcher.py)      │◀────│  (Search Engine)     │
-│  · 3-query search   │     └──────────────────────┘
-│  · Deduplication    │
-└────────┬────────────┘
-         │ filtered results[]
-         ▼
-┌─────────────────────┐
-│  Analyzer           │  difflib similarity + heuristic scoring
-│  (analyzer.py)      │  typosquatting / suspicious TLD / keywords
-└────────┬────────────┘
-         ▼
-┌─────────────────────┐
-│  Reporter           │  DANGER / WARNING / SAFE
-│  (reporter.py)      │  ANSI color CLI report
-└─────────────────────┘
+```mermaid
+graph TD
+    CLI["CLI (cli.py)"] -->|"GitHub repo URL"| Parser
+
+    subgraph Core Pipeline
+        Parser["GitHub Parser (github_parser.py)\n· URL parsing\n· Official domains"]
+        Searcher["Searcher (searcher.py)\n· 3-query search\n· Deduplication"]
+        Analyzer["Analyzer (analyzer.py)\ndifflib similarity + heuristic scoring\ntyposquatting / suspicious TLD / keywords"]
+        Reporter["Reporter (reporter.py)\nDANGER / WARNING / SAFE\nANSI color CLI report"]
+    end
+
+    subgraph External Services
+        GitHubAPI["GitHub API (public REST API)"]
+        DuckDuckGo["DuckDuckGo (Search Engine)"]
+    end
+
+    Parser <-->|"project_info"| GitHubAPI
+    Parser -->|"project_info + official_domains"| Searcher
+    Searcher <-->|"search queries"| DuckDuckGo
+    Searcher -->|"filtered results[]"| Analyzer
+    Analyzer --> Reporter
 ```
 
 <!--

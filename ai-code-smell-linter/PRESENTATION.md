@@ -91,30 +91,27 @@ ESLint나 Pylint는 로컬이지만 AI 특유 패턴을 잡는 룰이 없다.
 
 ## Architecture
 
-```
-                    ┌─────────────┐
-   .py/.js/.ts ────▶│  Parser     │ tree-sitter
-   source files     │  (multi-    │ Language()
-                    │   lang)     │
-                    └──────┬──────┘
-                           │ AST
-                    ┌──────▼──────┐
-                    │  Scanner    │ run all rules
-                    │             │ against AST
-                    └──────┬──────┘
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-   ┌──────▼──┐     ┌──────▼──┐     ┌───────▼─┐
-   │ ACS001  │     │ ACS003  │     │ ACS005  │  ... 5 rules
-   │ empty   │     │ god     │     │ unnec.  │
-   │ catch   │     │ function│     │ abstr.  │
-   └─────────┘     └─────────┘     └─────────┘
-                           │
-                    ┌──────▼──────┐
-   CLI ────────────▶│  Output     │──▶ JSON / colored text
-   scan / diff      │  Formatter  │
-                    └─────────────┘
+```mermaid
+graph TD
+    Source[".py / .js / .ts<br>source files"] -->|"source code"| Parser["Parser (parser.py)<br>multi-lang, tree-sitter"]
+    Parser -->|"AST"| Scanner["Scanner (scanner.py)<br>run all rules against AST"]
+
+    subgraph Rules ["Rules (5 rules)"]
+        ACS001["ACS001<br>empty catch"]
+        ACS003["ACS003<br>god function"]
+        ACS005["ACS005<br>unnec. abstr."]
+    end
+
+    Scanner --> ACS001
+    Scanner --> ACS003
+    Scanner --> ACS005
+
+    ACS001 --> Output["Output Formatter"]
+    ACS003 --> Output
+    ACS005 --> Output
+
+    CLI["CLI (run.py)<br>scan / diff"] --> Output
+    Output --> Result["JSON / colored text"]
 ```
 
 - **Parser**: Converts Python/JS/TS source files into AST via tree-sitter

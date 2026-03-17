@@ -77,36 +77,19 @@ Hacker News나 Reddit에서 이 주제로 계속 얘기가 나온다. 배포 직
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                          CLI (cli.py)                           │
-│                   argparse: watch / scenarios                   │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ Command parsing
-                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    Demo Runner (demo.py)                         │
-│        Scenario select: healthy │ oom │ crashloop │ error_logs     │
-└──────────────┬──────────────────────────────────┬────────────────┘
-               │ create_deployment()              │ rolling_update()
-               ▼                                  ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                 Simulated Cluster (cluster.py)                   │
-│   Deployment/Pod create → Fault inject (OOM/CrashLoop/Log) → Emit event │
-└──────────────────────────────────────────┬───────────────────────┘
-                                           │ watcher callback
-                                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                   Soak Monitor (monitor.py)                      │
-│   Event receive → Pod status check → Log analysis (PatternMatcher, 9 regex) │
-└──────────────────────────────────────────┬───────────────────────┘
-                                           │ anomaly / pattern_alert
-                                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     Reporter (reporter.py)                       │
-│   ✓ Pod started │ ↻ Rolling Update │ ✖ Issue detected │ ⚠ Anomaly  │
-│   Progress Bar [████░░░░] 40%  │  ALL CLEAR / SOAK FAILED       │
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["CLI (cli.py)<br/>argparse: watch / scenarios"]
+    B["Demo Runner (demo.py)<br/>Scenario select: healthy | oom | crashloop | error_logs"]
+    C["Simulated Cluster (cluster.py)<br/>Deployment/Pod create → Fault inject → Emit event"]
+    D["Soak Monitor (monitor.py)<br/>Event receive → Pod status check → Log analysis (9 regex)"]
+    E["Reporter (reporter.py)<br/>Pod started | Rolling Update | Issue detected | Anomaly<br/>Progress Bar → ALL CLEAR / SOAK FAILED"]
+
+    A -->|"Command parsing"| B
+    B -->|"create_deployment()"| C
+    B -->|"rolling_update()"| C
+    C -->|"watcher callback"| D
+    D -->|"anomaly / pattern_alert"| E
 ```
 
 <!--

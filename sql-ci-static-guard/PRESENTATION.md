@@ -69,32 +69,18 @@ Hacker News나 Reddit에서 이 주제가 꾸준히 올라온다. SQL 변경사�
 
 ## Architecture
 
-```
-┌─────────────────┐     ┌──────────────────────────────────────────────────┐
-│  SQL Files/Dirs  │     │                  sql-guard CLI                   │
-│  (.sql)         │     │               (cli.py / Click)                   │
-└────────┬────────┘     │  --dialect, --format, --strict                   │
-         │              └──────────────────┬───────────────────────────────┘
-         ▼                                 │
-┌─────────────────┐                        ▼
-│  pre-commit     │───────────▶ ┌─────────────────────┐
-│  hook trigger    │            │   Analyzer           │
-└─────────────────┘            │   ┌───────────────┐   │
-                               │   │ dialect detect  │   │
-                               │   └───────┬───────┘   │
-                               │           ▼           │
-                               │   ┌───────────────┐   │
-                               │   │ sqlglot.parse  │   │
-                               │   │ → AST build    │   │
-                               │   └───────┬───────┘   │
-                               │           ▼           │
-                               │   ┌───────────────┐   │
-                               │   │ Run 9 rules    │   │
-                               │   │ (rules.py)     │   │
-                               │   └───────────────┘   │
-                               └───────────┬──────────┘
-                                           ▼
-                          text / JSON output + exit code (CI integration)
+```mermaid
+graph TD
+    A["SQL Files/Dirs (.sql)"] --> B["pre-commit hook trigger"]
+    B --> E
+    C["sql-guard CLI (cli.py / Click)<br/>--dialect, --format, --strict"] --> E
+
+    subgraph Analyzer["Analyzer (analyzer.py)"]
+        E["Dialect Detect"] --> F["sqlglot.parse → AST Build"]
+        F --> G["Run 9 Rules (rules.py)"]
+    end
+
+    G --> H["text / JSON Output + Exit Code<br/>(CI Integration)"]
 ```
 
 - **rules.py**: 9 rule functions, each traversing AST nodes for pattern matching

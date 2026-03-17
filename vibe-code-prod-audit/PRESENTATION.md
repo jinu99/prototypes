@@ -73,43 +73,38 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌─────────────────┐
-│   CLI (cli.py)  │  argparse: scan <project-dir> [--json] [--output-dir]
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────┐
-│              Scanner (scanner.py)                    │
-│                                                     │
-│  project-dir ──▶ find_python_files()                │
-│                       │                             │
-│                       ▼                             │
-│              tree-sitter Parser                     │
-│                       │                             │
-│          ┌────────────┼────────────┐                │
-│          ▼            ▼            ▼                │
-│  Route Extraction  Middleware     Error Handler      │
-│   (@app.get,       Detection     Detection           │
-│    @router.post)                                    │
-└───────────────────────┬─────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│           Checklist (checklist.py)                   │
-│  9 items evaluated (weighted scoring: 0-100)        │
-│  Structure(20) │ Reliability(35) │ Quality(20)      │
-│  Security(20)  │ Deployment(5)                      │
-└───────────────────────┬─────────────────────────────┘
-                        │
-              ┌─────────┴─────────┐
-              ▼                   ▼
-┌──────────────────────┐  ┌──────────────────────────────┐
-│  Terminal Report     │  │  Generator (generator.py)     │
-│  (color bar, score)  │  │  Fix code per failed item:    │
-│  or --json           │  │  health.py, test_api.py,      │
-│                      │  │  Dockerfile, config.py        │
-└──────────────────────┘  └──────────────────────────────┘
+```mermaid
+graph TD
+    CLI["CLI (cli.py)<br/>argparse: scan &lt;project-dir&gt; [--json] [--output-dir]"]
+
+    subgraph Scanner["Scanner (scanner.py)"]
+        FindFiles["find_python_files()"]
+        TSParser["tree-sitter Parser"]
+        RouteExtract["Route Extraction<br/>(@app.get, @router.post)"]
+        Middleware["Middleware Detection"]
+        ErrorHandler["Error Handler Detection"]
+
+        FindFiles -->|"project-dir"| TSParser
+        TSParser --> RouteExtract
+        TSParser --> Middleware
+        TSParser --> ErrorHandler
+    end
+
+    subgraph Checklist["Checklist (checklist.py)<br/>9 items · weighted scoring: 0-100"]
+        Structure["Structure (20)"]
+        Reliability["Reliability (35)"]
+        Quality["Quality (20)"]
+        Security["Security (20)"]
+        Deployment["Deployment (5)"]
+    end
+
+    Report["Terminal Report<br/>(color bar, score / --json)"]
+    Generator["Generator (generator.py)<br/>health.py, test_api.py,<br/>Dockerfile, config.py"]
+
+    CLI --> Scanner
+    Scanner --> Checklist
+    Checklist --> Report
+    Checklist -->|"failed items"| Generator
 ```
 
 <!--

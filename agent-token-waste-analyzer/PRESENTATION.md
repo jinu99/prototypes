@@ -85,34 +85,22 @@ AI 코딩 도구가 좋은데, 같은 파일을 계속 다시 읽고, 검색 결
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                     CLI (run.py / main.py)                       │
-│               list · analyze <path> · latest                     │
-└───────────────────────────┬──────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     Parser (parser.py)                            │
-│   ~/.claude/projects/**/*.jsonl  ──▶  SessionData                │
-│     ├─ messages[], tool_calls[], token usage aggregation          │
-└───────────────────────────┬──────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    Analyzer (analyzer.py)                         │
-│   ┌────────────────┐ ┌───────────────┐ ┌──────────────────┐      │
-│   │ repeated_read  │ │ unused_search │ │ duplicate_context│      │
-│   └────────┬───────┘ └───────┬───────┘ └────────┬─────────┘      │
-│            └─────────────────┼──────────────────┘                │
-│                    WastePattern[] + OptimizationSuggestion[]      │
-└───────────────────────────┬──────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                   Dashboard (dashboard.py)                        │
-│            Rich terminal UI — summary, hotspots, suggestions, grade│
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    CLI["CLI (run.py / main.py)<br/>list · analyze · latest"]
+    CLI -->|"JSONL path"| Parser
+
+    Parser["Parser (parser.py)<br/>~/.claude/projects/**/*.jsonl → SessionData"]
+    Parser -->|"SessionData"| Analyzer
+
+    subgraph Analyzer["Analyzer (analyzer.py)"]
+        R["repeated_read"]
+        U["unused_search"]
+        D["duplicate_context"]
+    end
+    Analyzer -->|"WastePattern[] + OptimizationSuggestion[]"| Dashboard
+
+    Dashboard["Dashboard (dashboard.py)<br/>Rich terminal UI — summary, hotspots, suggestions, grade"]
 ```
 
 - **Parser**: Parses JSONL line by line, extracts tool call sequences from `tool_use` types, aggregates tokens from `usage` fields

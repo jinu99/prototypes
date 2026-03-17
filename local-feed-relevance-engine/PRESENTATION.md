@@ -75,33 +75,32 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌──────────┐     ┌──────────────┐     ┌─────────────────┐
-│ OPML File│────▶│ feed_parser  │────▶│   feedparser    │
-└──────────┘     │  parse OPML  │     │  fetch RSS/Atom │
-                 └──────┬───────┘     └────────┬────────┘
-                        │                      │
-                        ▼                      ▼
-              ┌─────────────────┐    ┌──────────────────┐
-              │    SQLite DB    │◀───│    embedder.py   │
-              │  feeds/articles │    │ all-MiniLM-L6-v2 │
-              │  interest_profile│   │ batch embed text │
-              └────────┬────────┘    └──────────────────┘
-                       │
-                       ▼
-              ┌─────────────────┐     ┌──────────────────┐
-              │  FastAPI server │────▶│  Web UI (HTML)   │
-              │  /api/opml      │     │  Score Badge      │
-              │  /api/keywords  │◀────│  Read/Skip Button │
-              │  /api/feedback  │     │  Sort by Relevance│
-              └─────────────────┘     └──────────────────┘
-                       │
-                       ▼
-              ┌─────────────────┐
-              │ EMA Vector Update│
-              │  read: α=0.15   │
-              │  skip: α=0.075  │
-              └─────────────────┘
+```mermaid
+graph TD
+    subgraph Ingestion
+        A["OPML File"] -->|"feed URLs"| B["feed_parser\nparse OPML"]
+        B -->|"RSS/Atom URLs"| C["feedparser\nfetch RSS/Atom"]
+    end
+
+    subgraph Processing
+        D["Embedder (embedder.py)\nall-MiniLM-L6-v2\nbatch embed text"]
+        E["SQLite DB\nfeeds / articles\ninterest_profile"]
+    end
+
+    B -->|"feed metadata"| E
+    C -->|"articles"| D
+    D -->|"vectors"| E
+
+    subgraph Serving
+        F["FastAPI Server\n/api/opml · /api/keywords\n/api/feedback"]
+        G["Web UI (HTML)\nScore Badge · Read/Skip Button\nSort by Relevance"]
+    end
+
+    E --> F
+    F --> G
+    G -->|"read/skip feedback"| F
+
+    F --> H["EMA Vector Update\nread: α=0.15 · skip: α=0.075"]
 ```
 
 <!--

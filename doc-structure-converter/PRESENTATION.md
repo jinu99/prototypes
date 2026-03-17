@@ -79,34 +79,32 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                      CLI (cli.js)                         │
-│             convert  │  analyze  │  compare               │
-└───────┬──────────────┴─────┬─────┴──────┬─────────────────┘
-        │                    │            │
-        ▼                    ▼            ▼
-┌──────────────────────────────────────────────────────────┐
-│                   Parser (parser.js)                      │
-│  Markdown ──▶ remark + GFM ──▶ AST ──▶ Block Detection    │
-│                                 breakable check:          │
-│                                 table/code/image → false  │
-└───────┬──────────────────────────────────────────────────┘
-        │
-        ▼
-┌──────────────────────┐     ┌─────────────────────────┐
-│  Typst Generator     │     │  Compare (compare.js)    │
-│  (typst-gen.js)      │     │  Pandoc PDF (before)     │
-│  AST → Typst markup  │     │        vs                │
-│  + breakable hints   │     │  docconv PDF (after)     │
-└───────┬──────────────┘     └─────────┬───────────────┘
-        │                              │
-        ▼                              ▼
-┌──────────────────────────────────────────────────────────┐
-│                  Renderer (renderer.js)                    │
-│  Typst CLI compile → docconv.pdf                          │
-│  Pandoc + Typst     → pandoc.pdf (baseline)               │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph CLI ["CLI (cli.js)"]
+        direction LR
+        C1["convert"]
+        C2["analyze"]
+        C3["compare"]
+    end
+
+    P["Parser (parser.js)<br/>Markdown → remark + GFM → AST → Block Detection<br/>breakable check: table/code/image → false"]
+
+    CLI -->|"Markdown input"| P
+
+    TG["Typst Generator (typst-gen.js)<br/>AST → Typst markup + breakable hints"]
+    CMP["Compare (compare.js)<br/>Pandoc PDF (before) vs docconv PDF (after)"]
+
+    P -->|"AST + block info"| TG
+    P -->|"AST + block info"| CMP
+
+    subgraph Output ["Renderer (renderer.js)"]
+        R1["Typst CLI compile → docconv.pdf"]
+        R2["Pandoc + Typst → pandoc.pdf (baseline)"]
+    end
+
+    TG --> Output
+    CMP --> Output
 ```
 
 <!--

@@ -78,29 +78,29 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. 첫째, 업타
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Collection Layer                                           │
-│  collector.py (every 30s)       uptime.py (HTTP retry x2)  │
-│   psutil: CPU/Mem/Net            httpbin.org, example.com   │
-└──────────────┬─────────────────────────┬────────────────────┘
-               ▼                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  database.py — SQLite (metrics.db)                          │
-│  metrics │ uptime_checks │ cron_heartbeats                  │
-└──────────────────────────┬──────────────────────────────────┘
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│  analyzer.py                                                │
-│  CPU ≥ 10% → active / < 10% → idle                         │
-│  Time-based segments → EC2 vs Lambda cost comparison        │
-└──────────────────────────┬──────────────────────────────────┘
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│  server.py — FastAPI :8099                                  │
-│  REST API (7 endpoints) + static/index.html (Chart.js)      │
-│  Time-series │ Segment bar │ Cost comp │ Uptime │ Cron      │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Collection["Collection Layer"]
+        A["collector.py (every 30s)\npsutil: CPU/Mem/Net"]
+        B["uptime.py (HTTP retry x2)\nhttpbin.org, example.com"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        C["database.py — SQLite (metrics.db)\nmetrics | uptime_checks | cron_heartbeats"]
+    end
+
+    subgraph Analysis["Analysis Layer"]
+        D["analyzer.py\nCPU ≥ 10% → active / < 10% → idle\nTime-based segments → EC2 vs Lambda cost comparison"]
+    end
+
+    subgraph Presentation["Presentation Layer"]
+        E["server.py — FastAPI :8099\nREST API (7 endpoints) + static/index.html (Chart.js)\nTime-series | Segment bar | Cost comp | Uptime | Cron"]
+    end
+
+    A -->|"SystemMetrics"| C
+    B -->|"UptimeResults"| C
+    C -->|"RawData"| D
+    D -->|"CostInsights"| E
 ```
 
 - **Collection**: psutil collects CPU/Memory/Network every 30s → stored in SQLite

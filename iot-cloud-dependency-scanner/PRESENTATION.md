@@ -78,24 +78,27 @@ Home Assistant 같은 셀프호스팅 대안은 있지만,
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        cli.py (Entry Point)                         │
-│              scan │ capture │ report │ run (Full Workflow)           │
-└──────┬──────────────┬──────────────┬────────────────────────────────┘
-       │              │              │
-       ▼              ▼              ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────────────────────────┐
-│ scanner.py   │ │dns_capture.py│ │          analyzer.py             │
-│ ARP + mDNS   │ │ Passive DNS  │ │  Cloud Dependency Score (0-100)  │
-│ + SSDP       │ │  Sniffing    │ │  = QueryFreq(40)+EP Diversity(30)│
-│  (scapy)     │ │  (scapy)     │ │    + CloudRatio(30)              │
-└──────────────┘ └──────────────┘ └──────────────┬───────────────────┘
-                                                 │
-                    ┌────────────────────────────┐│┌─────────────────┐
-                    │ alternatives_db.py         │▼│   report.py     │
-                    │ 19 Vendors → Local Alt Map  │→│ CLI+HTML Output │
-                    └────────────────────────────┘ └─────────────────┘
+```mermaid
+graph TD
+    CLI["CLI (cli.py)<br>scan | capture | report | run"]
+
+    subgraph Discovery["Discovery"]
+        Scanner["Scanner (scanner.py)<br>ARP + mDNS + SSDP (scapy)"]
+        DNS["DNS Capture (dns_capture.py)<br>Passive DNS Sniffing (scapy)"]
+    end
+
+    subgraph Analysis["Analysis & Output"]
+        Analyzer["Analyzer (analyzer.py)<br>Cloud Dependency Score 0-100<br>QueryFreq(40) + EP Diversity(30) + CloudRatio(30)"]
+        AltDB["Alternatives DB (alternatives_db.py)<br>19 Vendors → Local Alt Map"]
+        Report["Report (report.py)<br>CLI + HTML Output"]
+    end
+
+    CLI -->|"scan"| Scanner
+    CLI -->|"capture"| DNS
+    CLI -->|"report"| Analyzer
+    Analyzer --> AltDB
+    Analyzer --> Report
+    AltDB --> Report
 ```
 
 **Data Flow**: Scan(Device Discovery) → Capture(DNS Sniffing) → Analyze(Scoring) → Report

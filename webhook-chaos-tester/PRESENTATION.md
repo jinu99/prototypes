@@ -81,29 +81,21 @@ Stripe, GitHub, Slack — 다 웹훅으로 이벤트를 전달한다.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                          CLI (cli.py)                           │
-│           click-based commands: run / demo / echo               │
-└──────┬──────────────────┬───────────────────────┬───────────────┘
-       │                  │                       │
-       ▼                  ▼                       ▼
-┌──────────────┐  ┌───────────────┐  ┌────────────────────────┐
-│ Loader       │  │ Engine        │  │ Echo Server            │
-│ (loader.py)  │  │ (engine.py)   │  │ (echo_server.py)       │
-│              │  │               │  │                        │
-│ YAML parsing │  │ Run scenarios │  │ Test HTTP server       │
-│ → Scenario[] │  │ Send via httpx│  │ Receive POST /webhook  │
-└──────────────┘  └───────────────┘  │ --reject-duplicates    │
-                                     │  : 409 reject dups     │
-                                     └────────────────────────┘
-                          │
-                          ▼
-                  ┌───────────────┐
-                  │ Report        │
-                  │ (report.py)   │
-                  │ Markdown/JSON │
-                  └───────────────┘
+```mermaid
+graph TD
+    CLI["CLI (cli.py)<br>click-based commands: run / demo / echo"]
+
+    CLI -->|"YAML path"| Loader
+    CLI -->|"Scenario[]"| Engine
+    CLI -->|"start"| Echo
+
+    subgraph Core Modules
+        Loader["Loader (loader.py)<br>YAML parsing → Scenario[]"]
+        Engine["Engine (engine.py)<br>Run scenarios · Send via httpx"]
+        Echo["Echo Server (echo_server.py)<br>Test HTTP server · POST /webhook<br>--reject-duplicates: 409 reject dups"]
+    end
+
+    Engine -->|"Results"| Report["Report (report.py)<br>Markdown / JSON"]
 ```
 
 **Loader** → Parse YAML scenarios | **Engine** → Execute chaos patterns + judge results | **Echo** → Local test target | **Report** → Output results

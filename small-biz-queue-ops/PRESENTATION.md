@@ -82,23 +82,33 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                         Client (Browser)                          │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐ │
-│  │ index.html │  │ join.html  │  │ admin.html │  │  kds.html  │ │
-│  │  Home / QR │  │ Join Queue │  │ Shop Admin │  │  KDS View  │ │
-│  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘ │
-│        └───────────┬────┴───────────────┴───────┬───────┘        │
-│              REST API (fetch)            SSE (EventSource)       │
-└──────────────────┬───────────────────────────┬───────────────────┘
-                   ▼                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  server.js → routes.js (CRUD) ──broadcast──▶ sse.js (Realtime)  │
-│                  │                                               │
-│                  ▼                                               │
-│             db.js (SQLite)                                       │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Client ["Client (Browser)"]
+        A["Home / QR (index.html)"]
+        B["Join Queue (join.html)"]
+        C["Shop Admin (admin.html)"]
+        D["KDS View (kds.html)"]
+    end
+
+    subgraph Server ["Server (server.js)"]
+        E["Routes (routes.js)"]
+        F["SSE (sse.js)"]
+        G["DB (db.js / SQLite)"]
+    end
+
+    A -->|"REST API"| E
+    B -->|"REST API"| E
+    C -->|"REST API"| E
+    D -->|"REST API"| E
+
+    F -->|"SSE (EventSource)"| A
+    F -->|"SSE (EventSource)"| B
+    F -->|"SSE (EventSource)"| C
+    F -->|"SSE (EventSource)"| D
+
+    E -->|"broadcast"| F
+    E --> G
 ```
 
 - **routes.js**: Queue CRUD + QR generation — auto-broadcast on status change

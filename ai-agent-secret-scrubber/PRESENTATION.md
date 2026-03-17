@@ -89,37 +89,33 @@ AI 코딩 에이전트가 보편화되면서 새로운 종류의 시크릿 유�
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLI (main.py)                            │
-│                  scan │ wrap │ demo command routing               │
-└───────┬─────────────────┬───────────────────────────────────────┘
-        │                 │
-        ▼                 ▼
-┌───────────────┐   ┌──────────────────────────────────────────┐
-│  SecretRegistry│   │          Scrubber (scrubber.py)          │
-│ (registry.py) │   │                                          │
-│               │   │  subprocess.Popen ─▶ selectors-based     │
-│ .env parsing  │   │  real-time stdout/stderr stream intercept │
-│ credentials   │   │                                          │
-│  .json parsing │   │  ┌─ line-by-line processing ─────────┐   │
-│               │   │  │         SecretDetector            │   │
-│  ┌──────────┐ │   │  │        (detector.py)              │   │
-│  │ key=value│──────▶ │                                   │   │
-│  │ collection│ │   │  │  1️⃣ Registry match (exact match)  │   │
-│  └──────────┘ │   │  │  2️⃣ Pattern match (regex)        │   │
-└───────────────┘   │  │  3️⃣ Entropy detection (Shannon)  │   │
-                    │  │                                   │   │
-                    │  │  detected → "***" masking         │   │
-                    │  └───────────────────────────────────┘   │
-                    └─────────┬──────────────────┬─────────────┘
-                              │                  │
-                              ▼                  ▼
-                    ┌──────────────┐   ┌──────────────────┐
-                    │   Masked     │   │  .scrubber_log   │
-                    │  stdout/stderr│   │   .json          │
-                    │ (real-time)  │   │ (detection log)  │
-                    └──────────────┘   └──────────────────┘
+```mermaid
+graph TD
+    CLI["CLI (main.py)<br/>scan | wrap | demo command routing"]
+
+    CLI --> Registry
+    CLI --> Scrubber
+
+    subgraph Registry ["SecretRegistry (registry.py)"]
+        ENV[".env parsing<br/>credentials.json parsing"]
+        KV["key=value collection"]
+        ENV --> KV
+    end
+
+    subgraph Scrubber ["Scrubber (scrubber.py)<br/>subprocess.Popen → selectors-based<br/>real-time stdout/stderr stream intercept"]
+        subgraph Detector ["SecretDetector (detector.py)<br/>line-by-line processing"]
+            D1["1. Registry match (exact)"]
+            D2["2. Pattern match (regex)"]
+            D3["3. Entropy detection (Shannon)"]
+            MASK["detected → *** masking"]
+            D1 --> D2 --> D3 --> MASK
+        end
+    end
+
+    KV -->|"key=value"| D1
+
+    Scrubber --> OUT1["Masked stdout/stderr<br/>(real-time)"]
+    Scrubber --> OUT2[".scrubber_log.json<br/>(detection log)"]
 ```
 
 <!--

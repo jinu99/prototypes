@@ -87,32 +87,33 @@ Keep이나 OneUptime은 좋은 도구인데, 소규모 환경에서 배포하려
 
 ## Architecture
 
-```
-┌─────────────┐
-│ digest.yaml │  YAML config (source definitions + output settings)
-└──────┬──────┘
-       │
-       ▼
-┌──────────────┐    ┌─────────────────┐
-│   Engine     │───▶│  Plugin Registry │
-│ (poll_all)   │    │                 │
-└──────┬───────┘    │ ┌─────────────┐ │
-       │            │ │ http_check  │ │
-       │            │ │ log_pattern │ │
-       │            │ │ docker_stat │ │
-       │            │ │ prom_mock   │ │
-       │            │ └─────────────┘ │
-       │            └─────────────────┘
-       │
-       ▼
-┌──────────────┐    ┌───────────────┐
-│  Renderer    │───▶│ Jinja2 Template│
-│ (severity    │    │ (digest.md.j2) │
-│  sort+group) │    └───────────────┘
-└──────┬───────┘
-       │
-       ├──▶ 📄 Markdown file
-       └──▶ 📤 Slack webhook
+```mermaid
+graph TD
+    CONFIG["digest.yaml"] -->|"source definitions + output settings"| ENGINE
+
+    subgraph Core
+        ENGINE["Engine (poll_all)"]
+        RENDERER["Renderer (severity sort+group)"]
+        ENGINE --> RENDERER
+    end
+
+    ENGINE -->|"lookup source type"| REGISTRY
+
+    subgraph Plugin Registry
+        REGISTRY["Plugin Registry"]
+        HTTP["http_check"]
+        LOG["log_pattern"]
+        DOCKER["docker_stat"]
+        PROM["prom_mock"]
+        REGISTRY --- HTTP
+        REGISTRY --- LOG
+        REGISTRY --- DOCKER
+        REGISTRY --- PROM
+    end
+
+    RENDERER -->|"render"| TEMPLATE["Jinja2 Template (digest.md.j2)"]
+    RENDERER -->|"output"| MD["Markdown file"]
+    RENDERER -->|"output"| SLACK["Slack webhook"]
 ```
 
 - **Engine**: Reads YAML → creates plugin instances → polls all sources

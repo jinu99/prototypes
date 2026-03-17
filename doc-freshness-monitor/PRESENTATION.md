@@ -77,33 +77,25 @@ Hacker News나 Reddit을 보면 이 얘기가 계속 나온다. 문서를 열심
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLI (click)                             │
-│                    scan / check commands                          │
-└──────────┬──────────────────────────────────┬───────────────────┘
-           │                                  │
-           ▼                                  ▼
-┌─────────────────────┐          ┌────────────────────────────────┐
-│  symbol_extractor    │          │         git_tracker            │
-│                      │          │                                │
-│  Extract code symbol │──────▶  │  ① find_symbol_in_code()       │
-│  refs from Markdown/ │ symbols │    find symbol def via git grep │
-│  RST via regex       │         │  ② get_symbol_history()        │
-│                      │          │    collect change history       │
-│  · backtick calls    │          │  ③ get_doc_last_modified()     │
-│  · PascalCase classes│          │    query doc last modified date │
-│  · dotted module path│          └───────────────┬────────────────┘
-│  · file path refs    │                          │
-│  · import statements │                          │ tracking records
-└─────────────────────┘                          ▼
-                                   ┌─────────────────────────┐
-                                   │   scorer → reporter      │
-                                   │   staleness 0-100 score  │
-                                   │   = date diff (max 60pt) │
-                                   │   + commits (max 40pt)   │
-                                   │   → Markdown / JSON output│
-                                   └─────────────────────────┘
+```mermaid
+graph TD
+    subgraph Interface
+        CLI["CLI (click)<br/>scan / check commands"]
+    end
+
+    subgraph Processing
+        SE["symbol_extractor<br/>Extract code symbol refs<br/>from Markdown/RST via regex<br/><br/>· backtick calls<br/>· PascalCase classes<br/>· dotted module paths<br/>· file path refs<br/>· import statements"]
+        GT["git_tracker<br/><br/>① find_symbol_in_code()<br/>② get_symbol_history()<br/>③ get_doc_last_modified()"]
+    end
+
+    subgraph Output
+        SR["scorer → reporter<br/>staleness 0-100 score<br/>= date diff (max 60pt)<br/>+ commits (max 40pt)<br/>→ Markdown / JSON output"]
+    end
+
+    CLI --> SE
+    CLI --> GT
+    SE -->|"symbols"| GT
+    GT -->|"tracking records"| SR
 ```
 
 <!--

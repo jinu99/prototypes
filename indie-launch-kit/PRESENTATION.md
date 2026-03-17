@@ -76,31 +76,26 @@ AI/LLM 없이, 순수 결정론적 파싱+템플릿으로 어디까지 갈 수 �
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLI (commander)                          │
-│                  init · build --dir --theme                     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                      builder.js (orchestration)                   │
-│                                                                  │
-│  ┌──────────────┐   ┌───────────────┐   ┌─────────────────────┐ │
-│  │  parser.js   │   │ metadata.js   │   │   changelog.js      │ │
-│  │ README → AST │   │ package.json  │   │ git log → grouped   │ │
-│  │ → classify   │   │ → name, ver   │   │   by type           │ │
-│  └──────┬───────┘   └──────┬────────┘   └──────────┬──────────┘ │
-│         └──────────────────┼───────────────────────┘            │
-│                            ▼                                    │
-│  ┌──────────────────────────────┐  ┌────────────────────────┐   │
-│  │       templates.js           │  │    launch-posts.js     │   │
-│  │ Handlebars × 3 theme render  │  │ PH / Reddit / HN drafts│   │
-│  └──────────────┬───────────────┘  └──────────┬─────────────┘   │
-└─────────────────┼─────────────────────────────┼─────────────────┘
-                  ▼                             ▼
-        dist/index.html              dist/launch-posts/*.md
-        dist/changelog.html
+```mermaid
+graph TD
+    CLI["CLI (commander)<br/>init · build --dir --theme"]
+
+    subgraph Builder["builder.js (orchestration)"]
+        Parser["Parser (parser.js)<br/>README → AST → classify"]
+        Meta["Metadata (metadata.js)<br/>package.json → name, ver"]
+        Changelog["Changelog (changelog.js)<br/>git log → grouped by type"]
+        Templates["Templates (templates.js)<br/>Handlebars × 3 theme render"]
+        Launch["Launch Posts (launch-posts.js)<br/>PH / Reddit / HN drafts"]
+    end
+
+    CLI --> Builder
+    Parser --> Templates
+    Meta --> Templates
+    Meta --> Launch
+    Changelog --> Templates
+    Parser --> Launch
+    Templates --> Out1["dist/index.html<br/>dist/changelog.html"]
+    Launch --> Out2["dist/launch-posts/*.md"]
 ```
 
 Core: `parser.js` matches heading keywords via remark AST to auto-classify into Hero/Features/Install/CTA

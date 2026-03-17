@@ -75,31 +75,27 @@ Reddit r/webdev과 Hacker News에서 이 얘기가 계속 반복된다. Safari�
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Browser Environment                      │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    index.ts (Public API)                  │   │
-│  │         detectDurability() / DataGuardReplicator          │   │
-│  └──────────┬──────────────────────────┬────────────────────┘   │
-│             │                          │                        │
-│             ▼                          ▼                        │
-│  ┌─────────────────────┐   ┌───────────────────────────────┐   │
-│  │   detect.ts          │   │   replicate.ts                │   │
-│  │   (Detection Engine)  │   │   (Replication Engine)        │   │
-│  │                      │   │                               │   │
-│  │  Safari/ITP Detection │   │  put() → IDB + OPFS Dual-Write│   │
-│  │  persist() Check      │   │  get() → OPFS Recovery on Miss│   │
-│  │  OPFS Availability    │   │  recoverAll() → Batch Recovery│   │
-│  │  → StorageReport     │   │                               │   │
-│  └─────────────────────┘   └───────────────────────────────┘   │
-│                                                                 │
-│  ┌──────────────────────┐   ┌───────────────────────────────┐   │
-│  │     IndexedDB         │   │     OPFS (Origin Private FS)  │   │
-│  │  (Primary Storage)    │   │  (Backup — File-Based)        │   │
-│  └──────────────────────┘   └───────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Browser["Browser Environment"]
+        API["index.ts (Public API)<br/>detectDurability() / DataGuardReplicator"]
+
+        subgraph Engines["Core Engines"]
+            DET["detect.ts (Detection Engine)<br/>Safari/ITP Detection<br/>persist() Check<br/>OPFS Availability<br/>→ StorageReport"]
+            REP["replicate.ts (Replication Engine)<br/>put() → IDB + OPFS Dual-Write<br/>get() → OPFS Recovery on Miss<br/>recoverAll() → Batch Recovery"]
+        end
+
+        subgraph Storage["Storage Layer"]
+            IDB["IndexedDB (Primary Storage)"]
+            OPFS["OPFS (Origin Private FS, Backup)"]
+        end
+
+        API --> DET
+        API --> REP
+        REP -->|"Dual-Write"| IDB
+        REP -->|"Dual-Write"| OPFS
+        REP -->|"Read-Repair"| OPFS
+    end
 ```
 
 - **detect.ts**: Safari/ITP detection, persist() check, OPFS availability → safe/warning/danger rating

@@ -73,29 +73,22 @@ backgroundColor: #fafafa
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│              Coding Agent (Aider etc.)                    │
-│        OPENAI_API_BASE=http://localhost:8400/v1          │
-└────────────────────────┬────────────────────────────────┘
-                         │ OpenAI-compatible API Request
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                 proxy.py (FastAPI :8400)                  │
-│                                                          │
-│   analyzer.py          loop_detector.py                  │
-│   ├ File deletion       ├ Same tool 3x consecutive       │
-│   ├ Empty file write    └ Per-session call tracking       │
-│   ├ 80%+ code loss                                       │
-│   └ Dangerous shell cmd db.py (SQLite)                   │
-│                         ├ sessions / tool_calls tables   │
-│   On block → ⚠️ BLOCKED └ Queried from dashboard.html   │
-│   On pass  → Forward original                            │
-└────────────────────────┬────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│           LLM Backend (Ollama :11434 / Mock)             │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Agent["Coding Agent (Aider etc.)<br/>OPENAI_API_BASE=http://localhost:8400/v1"]
+
+    Agent -->|"OpenAI-compatible API Request"| Proxy
+
+    subgraph Proxy["proxy.py (FastAPI :8400)"]
+        Analyzer["analyzer.py<br/>File deletion / Empty write<br/>80%+ code loss / Dangerous cmd"]
+        Loop["loop_detector.py<br/>Same tool 3x consecutive<br/>Per-session call tracking"]
+        DB["db.py (SQLite)<br/>sessions / tool_calls tables"]
+    end
+
+    Analyzer -.->|"On block → BLOCKED"| Agent
+    Loop -.->|"On block → BLOCKED"| Agent
+    Proxy -->|"On pass → Forward original"| LLM["LLM Backend (Ollama :11434 / Mock)"]
+    DB -.->|"Query"| Dashboard["dashboard.html"]
 ```
 
 <!--

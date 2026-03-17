@@ -89,26 +89,21 @@ HN이랑 Reddit에서 이 주제로 꽤 강한 시그널이 나온다.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLI (cli.js)                            │
-│              init / detect / validate command routing              │
-└──────┬──────────────────┬───────────────────┬───────────────────┘
-       │                  │                   │
-       ▼                  ▼                   ▼
-┌──────────────┐  ┌───────────────┐  ┌────────────────┐
-│   Detector   │  │   Generator   │  │   Validator    │
-│ detector.js  │  │ generator.js  │  │  validator.js  │
-├──────────────┤  ├───────────────┤  ├────────────────┤
-│ File scan +  │  │ Detection →   │  │ YAML parsing  │
-│ ecosystem    │  │ to Job config │  │ + GitHub      │
-│ detection    │  │ conversion    │  │ Actions schema│
-└──────────────┘  └───────────────┘  │ validation    │
-       ▲                              └────────────────┘
-       │
-┌──────────────┐
-│  rules.json  │  ← Detection rules (3 ecosystems × tool mapping)
-└──────────────┘
+```mermaid
+graph TD
+    CLI["CLI (cli.js)<br>init / detect / validate command routing"]
+
+    CLI --> Detector
+    CLI --> Generator
+    CLI --> Validator
+
+    subgraph Modules
+        Detector["Detector (detector.js)<br>File scan + ecosystem detection"]
+        Generator["Generator (generator.js)<br>Detection → Job config conversion"]
+        Validator["Validator (validator.js)<br>YAML parsing + GitHub Actions schema validation"]
+    end
+
+    Rules["rules.json<br>Detection rules (3 ecosystems × tool mapping)"] -->|"rule lookup"| Detector
 ```
 
 - **Detector**: Identifies toolchain by checking file existence + parsing config files

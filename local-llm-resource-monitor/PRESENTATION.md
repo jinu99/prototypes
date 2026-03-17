@@ -75,26 +75,20 @@ Reddit의 LocalLLaMA 커뮤니티에서 이런 얘기가 계속 나온다. 모�
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Browser (dashboard.html)                    │
-│  ┌──────────┐ ┌──────────────┐ ┌──────────┐ ┌───────────────┐  │
-│  │GPU Status│ │Loaded Models │ │Available │ │VRAM Estimator │  │
-│  │  Card    │ │    Card      │ │Models Tbl│ │& Load Check   │  │
-│  └────┬─────┘ └──────┬───────┘ └────┬─────┘ └───────┬───────┘  │
-│       └──────────────┴──────────────┴───────────────┘           │
-│                       fetch (auto-refresh 2s)                    │
-└───────────────────────────┬─────────────────────────────────────┘
-                            ▼
-┌───────────────────────────────────────────────────────────────────┐
-│                    FastAPI Server (7 endpoints)                   │
-└──────┬──────────────────┬──────────────────┬─────────────────────┘
-       ▼                  ▼                  ▼
-┌──────────────┐ ┌────────────────┐ ┌──────────────────────┐
-│ gpu_monitor  │ │ ollama_client  │ │   vram_estimator     │
-│ nvidia-smi   │ │ Ollama REST    │ │ weights + KV cache   │
-│ + mock       │ │ API + mock     │ │ + CUDA overhead      │
-└──────────────┘ └────────────────┘ └──────────────────────┘
+```mermaid
+graph TD
+    subgraph Browser["Browser (dashboard.html)"]
+        A["GPU Status Card"]
+        B["Loaded Models Card"]
+        C["Available Models Table"]
+        D["VRAM Estimator & Load Check"]
+    end
+
+    Browser -->|"fetch (auto-refresh 2s)"| E["FastAPI Server (7 endpoints)"]
+
+    E --> F["gpu_monitor (nvidia-smi + mock)"]
+    E --> G["ollama_client (Ollama REST API + mock)"]
+    E --> H["vram_estimator (weights + KV cache + CUDA overhead)"]
 ```
 
 - **gpu_monitor**: nvidia-smi parsing. Falls back to RTX 4090 mock if no GPU

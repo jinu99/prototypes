@@ -78,29 +78,32 @@ RAG 파이프라인이 보편화되면서, 모두가 retrieval 정확도나 프�
 
 ## Architecture
 
-```
-┌─────────────────┐
-│   PDF File      │
-└────────┬────────┘
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  extractor.py  (PyMuPDF)                            │
-│  PDF → TextBlock (text + coords + font + color)     │
-└────────┬────────────────────────────────────────────┘
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  detector.py  (Noise Detection Engine)              │
-│  ┌───────────────┐ ┌──────────────┐ ┌────────────┐  │
-│  │ Watermark     │ │ Header/Footer│ │ OCR        │  │
-│  │ Lg font+Ctr  │ │ Top/Bottom   │ │ Artifact   │  │
-│  │ +Multi-page  │ │ +Pattern     │ │ regex det. │  │
-│  └───────────────┘ └──────────────┘ └────────────┘  │
-└────────┬────────────────────────────────────────────┘
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  cleaner.py → Block-level filter → Clean text + diff │
-│  chunker.py → Paragraph-based split → Chunk stats    │
-└─────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["PDF File"] --> B["Extractor (extractor.py)"]
+
+    subgraph Extract ["Text Extraction"]
+        B["Extractor (extractor.py)<br/>PDF → TextBlock (text + coords + font + color)"]
+    end
+
+    B --> C
+
+    subgraph Detect ["Noise Detection Engine (detector.py)"]
+        C["Watermark Detector<br/>Lg font + Center + Multi-page"]
+        D["Header/Footer Detector<br/>Top/Bottom + Pattern"]
+        E["OCR Artifact Detector<br/>Regex detection"]
+    end
+
+    C --> F
+    D --> F
+    E --> F
+
+    subgraph Output ["Output Processing"]
+        F["Cleaner (cleaner.py)<br/>Block-level filter → Clean text + diff"]
+        G["Chunker (chunker.py)<br/>Paragraph-based split → Chunk stats"]
+    end
+
+    F --> G
 ```
 
 <!--

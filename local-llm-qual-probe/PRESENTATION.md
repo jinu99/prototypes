@@ -83,31 +83,25 @@ JSON 출력이 깨진다, 멀티턴 대화가 붕괴된다, thinking을 꺼도 �
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLI (cli.py)                            │
-│  argparse: endpoint, --model, --mock, --probes, --output        │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ probe selection & execution
-              ┌────────────┼────────────────┐
-              ▼            ▼                ▼
-┌──────────────────┐ ┌──────────────┐ ┌──────────────────┐
-│  structured.py   │ │ multiturn.py │ │  efficiency.py   │
-│ JSON/YAML parsing│ │ 7-turn×2 cases│ │ thinking on/off  │
-│ → success/schema │ │ → repeat/forget│ │ → token compare  │
-└────────┬─────────┘ └──────┬───────┘ └────────┬─────────┘
-         └──────────────────┼───────────────────┘
-                            ▼
-              ┌──────────────────────────┐
-              │  LLMClient (client.py)   │
-              │  OpenAI-compatible wrapper │
-              │  + built-in mock mode     │
-              └────────────┬─────────────┘
-                           ▼
-              ┌──────────────────────────┐
-              │  Reporter (reporter.py)  │
-              │  Rich terminal + JSON file │
-              └──────────────────────────┘
+```mermaid
+graph TD
+    CLI["CLI (cli.py)<br/>argparse: endpoint, --model, --mock, --probes, --output"]
+
+    CLI -->|"probe selection & execution"| S
+    CLI -->|"probe selection & execution"| M
+    CLI -->|"probe selection & execution"| E
+
+    subgraph Probes
+        S["structured.py<br/>JSON/YAML parsing → success/schema"]
+        M["multiturn.py<br/>7-turn×2 cases → repeat/forget"]
+        E["efficiency.py<br/>thinking on/off → token compare"]
+    end
+
+    S --> Client["LLMClient (client.py)<br/>OpenAI-compatible wrapper + built-in mock mode"]
+    M --> Client
+    E --> Client
+
+    Client --> Reporter["Reporter (reporter.py)<br/>Rich terminal + JSON file"]
 ```
 
 <!--

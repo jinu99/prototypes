@@ -76,31 +76,34 @@ Reddit이나 GeekNews에서 이런 얘기가 계속 나온다. SEO 도구가 좋
 
 ## Architecture
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                      Input                                  │
-│  URL / sitemap.xml ──▶ cli.js or server.js                 │
-└────────────────────────────┬───────────────────────────────┘
-                             ▼
-┌────────────────────────────────────────────────────────────┐
-│               crawler.js (Dual Crawling)                    │
-│  HTTP Raw Fetch ──┐              ┌── Playwright Rendering  │
-│  (Googlebot UA)   ├─ Promise.all ┤  (Chromium headless)    │
-│  → Static HTML    ┘              └→ Rendered HTML           │
-└────────────────────────────┬───────────────────────────────┘
-                             ▼
-┌────────────────────────────────────────────────────────────┐
-│               analyzer.js (Comparative Analysis)            │
-│  extractSeoElements() × 2 → compareSeo()                   │
-│  → js_dependent / mismatch / missing verdict                │
-│  → severity: high / medium / low                            │
-└────────────────────────────┬───────────────────────────────┘
-                             ▼
-┌────────────────────────────────────────────────────────────┐
-│               reporter.js (Report Generation)               │
-│  CLI: Sorted by severity + actionable advice               │
-│  JSON: Structured response for Web UI + advice included    │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Input
+        A["URL / sitemap.xml"] --> B["CLI (cli.js) / Server (server.js)"]
+    end
+
+    B --> C
+
+    subgraph Crawler ["Dual Crawling (crawler.js)"]
+        C["Promise.all"]
+        C --> D["HTTP Raw Fetch\n(Googlebot UA)\n→ Static HTML"]
+        C --> E["Playwright Rendering\n(Chromium headless)\n→ Rendered HTML"]
+    end
+
+    D --> F
+    E --> F
+
+    subgraph Analyzer ["Comparative Analysis (analyzer.js)"]
+        F["extractSeoElements() × 2 → compareSeo()"]
+        F -->|"verdict + severity"| G["js_dependent / mismatch / missing\nhigh / medium / low"]
+    end
+
+    G --> H
+
+    subgraph Reporter ["Report Generation (reporter.js)"]
+        H["CLI: Sorted by severity\n+ actionable advice"]
+        I["JSON: Structured response\nfor Web UI + advice"]
+    end
 ```
 
 <!--

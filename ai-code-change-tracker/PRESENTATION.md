@@ -81,37 +81,38 @@ reddit, Hacker News, geeknews 같은 개발자 커뮤니티에서 이런 얘기�
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLI (typer)                              │
-│                  diff  │  spec-check                            │
-└────────┬────────────────────────┬────────────────────────────────┘
-         │                        │
-         ▼                        ▼
-┌─────────────────┐      ┌─────────────────┐
-│   diff_parser   │      │  spec_checker   │
-│ git diff HEAD~N │      │ markdown parsing │
-│ → ChangedFile[] │      │ → Requirement[] │
-└────────┬────────┘      └────────┬────────┘
-         │                        │
-         ▼                        ▼
-┌─────────────────────────────────────────────┐
-│              ast_analyzer (tree-sitter)      │
-│  Python source → Symbol[] + ImportInfo[]      │
-└──────┬──────────────────────────┬───────────┘
-       │                          │
-       ▼                          ▼
-┌─────────────────┐      ┌─────────────────┐
-│  impact_graph   │      │  spec_checker   │
-│ 1-hop downstream│      │ keyword matching │
-│ impact tracking  │      │ → MatchResult[] │
-└────────┬────────┘      └────────┬────────┘
-         │                        │
-         ▼                        ▼
-┌─────────────────────────────────────────────┐
-│              display (rich)                  │
-│  Impact Tree  │  Alignment Table             │
-└─────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph CLI ["CLI (typer)"]
+        A1["diff"]
+        A2["spec-check"]
+    end
+
+    subgraph Parsing ["Parsing Layer"]
+        B["diff_parser\ngit diff HEAD~N\n→ ChangedFile[]"]
+        C["spec_checker\nmarkdown parsing\n→ Requirement[]"]
+    end
+
+    A1 --> B
+    A2 --> C
+
+    D["ast_analyzer (tree-sitter)\nPython source → Symbol[] + ImportInfo[]"]
+
+    B --> D
+    C --> D
+
+    subgraph Analysis ["Analysis Layer"]
+        E["impact_graph\n1-hop downstream\nimpact tracking"]
+        F["spec_checker\nkeyword matching\n→ MatchResult[]"]
+    end
+
+    D --> E
+    D --> F
+
+    G["display (rich)\nImpact Tree | Alignment Table"]
+
+    E --> G
+    F --> G
 ```
 
 - **ast_analyzer**: Core engine that structurally extracts function/class/import/call relationships using tree-sitter

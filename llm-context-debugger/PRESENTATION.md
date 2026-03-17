@@ -73,22 +73,16 @@ Reddit이랑 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
 
 ## Architecture
 
-```
-┌─────────────────┐       ┌──────────────────────────────────────────────┐
-│  OpenAI Client  │       │        FastAPI Proxy (proxy.py:8088)        │
-│                 │  POST │                                              │
-│  base_url =     ├──────▶│  ┌──────────────────┐  ┌─────────────────┐  │
-│  localhost:8088 │       │  │ Token Analyzer   │  │ In-Memory Store │  │
-└─────────────────┘       │  │ (token_counter)  │─▶│ (store.py)      │  │
-                          │  │ tiktoken-based    │  │ CallRecord+diff │  │
-                          │  └──────────────────┘  └────────┬────────┘  │
-                          └──────────────┬──────────────────┼───────────┘
-                            Forward ─────┘                  │
-                            (real mode)                     ▼
-                          ┌──────────────┐       ┌──────────────────────┐
-                          │ OpenAI API   │       │ Dashboard (HTML)     │
-                          │ (upstream)   │       │ bar chart·treemap·diff│
-                          └──────────────┘       └──────────────────────┘
+```mermaid
+graph LR
+    A["OpenAI Client<br/>base_url=localhost:8088"] -->|"POST"| Proxy
+
+    subgraph Proxy["FastAPI Proxy (proxy.py:8088)"]
+        B["Token Analyzer<br/>(token_counter.py)<br/>tiktoken-based"] -->|"CallRecord+diff"| C["In-Memory Store<br/>(store.py)"]
+    end
+
+    Proxy -->|"Forward (real mode)"| D["OpenAI API (upstream)"]
+    C --> E["Dashboard (HTML)<br/>bar chart · treemap · diff"]
 ```
 
 - **proxy.py**: Request intercept + mock/real mode switching

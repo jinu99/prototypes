@@ -74,10 +74,25 @@ API를 만들 때 보통 스펙을 먼저 쓴다. OpenAPI YAML 같은 걸로. �
 
 ## Architecture
 
-```
-OpenAPI YAML ──▶ Parser (swagger-parser, $ref dereferencing) ──▶ /api/spec ──▶ Browser UI
-User Form Input ──▶ /api/send (Express proxy) ──▶ Target API ──▶ Response Received
-Response JSON ──▶ /api/validate ──▶ Validator (recursive schema comparison) ──▶ Drift Table
+```mermaid
+graph LR
+    subgraph Spec Loading
+        A["OpenAPI YAML"] -->|"$ref dereferencing"| B["Parser (parser.js)"]
+        B --> C["/api/spec"]
+        C --> D["Browser UI (app.js)"]
+    end
+
+    subgraph Request Flow
+        E["User Form Input (form-builder.js)"] --> F["/api/send"]
+        F -->|"Express proxy"| G["Target API"]
+        G -->|"Response"| H["Response Received"]
+    end
+
+    subgraph Drift Detection
+        H -->|"Response JSON"| I["/api/validate"]
+        I --> J["Validator (validator.js)"]
+        J -->|"missing / type_mismatch / undocumented"| K["Drift Table"]
+    end
 ```
 
 | Component | Role |

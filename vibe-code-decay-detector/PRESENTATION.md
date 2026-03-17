@@ -80,45 +80,20 @@ Reddit, Hacker News, GeekNews에서 비슷한 얘기가 계속 올라온다. 셋
 
 ## Architecture
 
-```
-┌─────────────────┐
-│   CLI (Click)   │  decay-detect scan <repo-path>
-│    cli.py       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐     ┌──────────────────────┐
-│  Git Analyzer   │────▶│  Dependency Parser    │
-│ git_analyzer.py │     │ dependency_parser.py  │
-│                 │     │ (tree-sitter based)   │
-│ · commit list   │     │ · Python import parse │
-│ · file content  │     │ · JS/TS import parse  │
-│ · churn stats   │     └──────────┬───────────┘
-│ · diff files    │                │
-└────────┬────────┘                ▼
-         │              ┌──────────────────────┐
-         │              │   Metrics Engine      │
-         │              │   metrics.py          │
-         │              │ · build dependency    │
-         │              │   graph               │
-         │              │ · edge count calc     │
-         │              │ · detect cyclic deps  │
-         │              └──────────┬───────────┘
-         ▼                         ▼
-┌─────────────────┐     ┌──────────────────────┐
-│Pattern Detector │     │   SQLite Storage      │
-│ · add-delete    │────▶│ · commit_metrics      │
-│ · delete-readd  │     │ · revert_patterns     │
-│ · rapid-edit    │     │ · time-series store   │
-└─────────────────┘     └──────────┬───────────┘
-                                   ▼
-                        ┌──────────────────────┐
-                        │   Visualizer (Rich)   │
-                        │ · coupling bar chart  │
-                        │ · churn rate chart    │
-                        │ · revert pattern table│
-                        │ · health warning      │
-                        └──────────────────────┘
+```mermaid
+graph TD
+    CLI["CLI (cli.py)"] -->|"decay-detect scan"| GA["Git Analyzer (git_analyzer.py)"]
+
+    subgraph Analysis
+        GA -->|"file content"| DP["Dependency Parser (dependency_parser.py)\ntree-sitter based"]
+        DP -->|"import graph"| ME["Metrics Engine (metrics.py)"]
+        GA -->|"diff files"| PD["Pattern Detector\nadd-delete / delete-readd / rapid-edit"]
+    end
+
+    ME -->|"edge count, cyclic deps"| DB["SQLite Storage"]
+    PD -->|"revert patterns"| DB
+
+    DB --> VIZ["Visualizer (Rich)\ncoupling bar chart / churn rate chart\nrevert pattern table / health warning"]
 ```
 
 <!--

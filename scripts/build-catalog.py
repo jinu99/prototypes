@@ -768,13 +768,29 @@ def main():
     SLIDES_DIR.mkdir(exist_ok=True)
 
     # Generate Marp markdown files in a temp dir, then batch convert
+    # Use PRESENTATION.md if available, otherwise fallback to README-based generation
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
+        pres_count = 0
+        fallback_count = 0
 
         for proto in prototypes:
-            md_content = generate_marp_markdown(proto)
+            pres_file = REPO_DIR / proto["slug"] / "PRESENTATION.md"
+            if pres_file.exists():
+                md_content = pres_file.read_text(encoding="utf-8")
+                # Ensure it has marp frontmatter
+                if "marp: true" not in md_content[:200]:
+                    md_content = generate_marp_markdown(proto)
+                    fallback_count += 1
+                else:
+                    pres_count += 1
+            else:
+                md_content = generate_marp_markdown(proto)
+                fallback_count += 1
             md_file = tmppath / f"{proto['slug']}.md"
             md_file.write_text(md_content, encoding="utf-8")
+
+        print(f"  Sources: {pres_count} PRESENTATION.md + {fallback_count} README fallback")
 
         print("Converting slides with Marp CLI...")
 

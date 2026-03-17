@@ -271,7 +271,7 @@
 <header class="header">
   <h1><span>Prototype Catalog</span></h1>
   <p class="subtitle">커뮤니티 pain point 기반 자동 프로토타이핑 파이프라인 산출물</p>
-  <p class="count">39 prototypes</p>
+  <p class="count">43 prototypes</p>
   <div class="pipeline">
     <span class="step">Crawl</span><span class="arrow">&rarr;</span>
     <span class="step">Analyze</span><span class="arrow">&rarr;</span>
@@ -284,15 +284,16 @@
 <div class="controls">
   <input type="text" class="search-box" placeholder="Search prototypes..." id="search" autocomplete="off">
   <div class="filters" id="filters">
-    <button class="filter-btn active" data-cat="">All (39)</button>
+    <button class="filter-btn active" data-cat="">All (43)</button>
       <button class="filter-btn" data-cat="AI Agent &amp; LLM Infra">AI Agent &amp; LLM Infra (8)</button>
-      <button class="filter-btn" data-cat="AI Code Quality &amp; DevTools">AI Code Quality &amp; DevTools (6)</button>
+      <button class="filter-btn" data-cat="AI Code Quality &amp; DevTools">AI Code Quality &amp; DevTools (7)</button>
       <button class="filter-btn" data-cat="LLM Ops &amp; Debugging">LLM Ops &amp; Debugging (6)</button>
       <button class="filter-btn" data-cat="CI/CD &amp; Infrastructure">CI/CD &amp; Infrastructure (4)</button>
       <button class="filter-btn" data-cat="Web &amp; SEO">Web &amp; SEO (3)</button>
       <button class="filter-btn" data-cat="Document &amp; Content">Document &amp; Content (5)</button>
       <button class="filter-btn" data-cat="Indie / Small Biz">Indie / Small Biz (4)</button>
       <button class="filter-btn" data-cat="IoT &amp; Data">IoT &amp; Data (3)</button>
+      <button class="filter-btn" data-cat="Other">Other (3)</button>
   </div>
   <div class="result-count" id="result-count"></div>
 </div>
@@ -355,6 +356,15 @@
     <a class="card" href="slides/ai-code-perf-verifier.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="ai-code-perf-verifier" data-title="AI Code Perf Verifier" data-desc="Git diff에서 변경된 Python 함수를 자동 식별하고, 변경 전/후 성능을 비교하여 머지 전 성능 회귀를 탐지하는 CLI 도구" data-stack="Python">
       <div class="card-title">AI Code Perf Verifier</div>
       <div class="card-desc">Git diff에서 변경된 Python 함수를 자동 식별하고, 변경 전/후 성능을 비교하여 머지 전 성능 회귀를 탐지하는 CLI 도구</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/ai-code-smell-linter.html" style="--cat-color:#2563eb" data-cat="AI Code Quality &amp; DevTools" data-slug="ai-code-smell-linter" data-title="AI Code Smell Linter" data-desc="tree-sitter AST 기반으로 AI 생성 코드의 구조적 위험 패턴을 탐지하는 CLI 린터" data-stack="Python">
+      <div class="card-title">AI Code Smell Linter</div>
+      <div class="card-desc">tree-sitter AST 기반으로 AI 생성 코드의 구조적 위험 패턴을 탐지하는 CLI 린터</div>
       <div class="card-meta">
         <span class="badge badge-cat" style="background:#2563eb">AI Code Quality &amp; DevTools</span>
         <span class="badge badge-stack">Python</span>
@@ -487,6 +497,15 @@
         <span class="badge-status">✅</span>
       </div>
     </a>
+    <a class="card" href="slides/local-feed-relevance-engine.html" style="--cat-color:#6b7280" data-cat="Other" data-slug="local-feed-relevance-engine" data-title="Local Feed Relevance Engine" data-desc="로컬 임베딩(all-MiniLM-L6-v2)으로 RSS 피드 기사의 관심도를 스코어링하고, 읽기/스킵 피드백으로 개인화하는 엔진" data-stack="Python">
+      <div class="card-title">Local Feed Relevance Engine</div>
+      <div class="card-desc">로컬 임베딩(all-MiniLM-L6-v2)으로 RSS 피드 기사의 관심도를 스코어링하고, 읽기/스킵 피드백으로 개인화하는 엔진</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#6b7280">Other</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
     <a class="card" href="slides/local-first-data-guard.html" style="--cat-color:#4f46e5" data-cat="IoT &amp; Data" data-slug="local-first-data-guard" data-title="Local-First Data Guard" data-desc="브라우저 스토리지 내구성 자동 탐지 + IndexedDB ↔ OPFS 크로스 스토리지 자동 복구 라이브러리" data-stack="TypeScript">
       <div class="card-title">Local-First Data Guard</div>
       <div class="card-desc">브라우저 스토리지 내구성 자동 탐지 + IndexedDB ↔ OPFS 크로스 스토리지 자동 복구 라이브러리</div>
@@ -541,6 +560,15 @@
         <span class="badge-status">✅</span>
       </div>
     </a>
+    <a class="card" href="slides/lora-streaming-merge.html" style="--cat-color:#6b7280" data-cat="Other" data-slug="lora-streaming-merge" data-title="LoRA Streaming Merge" data-desc="16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI" data-stack="Python">
+      <div class="card-title">LoRA Streaming Merge</div>
+      <div class="card-desc">16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#6b7280">Other</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
     <a class="card" href="slides/openapi-form-tester.html" style="--cat-color:#4f46e5" data-cat="IoT &amp; Data" data-slug="openapi-form-tester" data-title="OpenAPI Form Tester" data-desc="OpenAPI 스펙에서 자동 생성된 폼으로 API를 테스트하고 응답-스펙 드리프트를 즉시 시각화하는 로컬 웹 도구" data-stack="Node.js">
       <div class="card-title">OpenAPI Form Tester</div>
       <div class="card-desc">OpenAPI 스펙에서 자동 생성된 폼으로 API를 테스트하고 응답-스펙 드리프트를 즉시 시각화하는 로컬 웹 도구</div>
@@ -555,6 +583,15 @@
       <div class="card-desc">Detect impersonation sites in search results for open-source projects.</div>
       <div class="card-meta">
         <span class="badge badge-cat" style="background:#d97706">Web &amp; SEO</span>
+        <span class="badge badge-stack">Python</span>
+        <span class="badge-status">✅</span>
+      </div>
+    </a>
+    <a class="card" href="slides/proactive-alert-digest.html" style="--cat-color:#6b7280" data-cat="Other" data-slug="proactive-alert-digest" data-title="Proactive Alert Digest" data-desc="YAML 설정만으로 멀티소스 모니터링 → &quot;오늘 아침에 뭘 봐야 하는지&quot; 한 장짜리 다이제스트 생성" data-stack="Python">
+      <div class="card-title">Proactive Alert Digest</div>
+      <div class="card-desc">YAML 설정만으로 멀티소스 모니터링 → &quot;오늘 아침에 뭘 봐야 하는지&quot; 한 장짜리 다이제스트 생성</div>
+      <div class="card-meta">
+        <span class="badge badge-cat" style="background:#6b7280">Other</span>
         <span class="badge badge-stack">Python</span>
         <span class="badge-status">✅</span>
       </div>

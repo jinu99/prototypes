@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,9 +300,24 @@
 <table><tr><th>기존 방식</th><th>이 도구</th></tr><tr><td>Swagger UI에서 JSON 수동 편집</td><td>스키마에서 타입별 폼 자동 생성</td></tr><tr><td>응답 확인 → 별도 도구로 스펙 검증</td><td>응답 수신 즉시 드리프트 테이블 표시</td></tr><tr><td>Postman + Dredd 조합 필요</td><td><code>node cli.js spec.yaml</code> 한 줄로 끝</td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>OpenAPI YAML ──▶ Parser (swagger-parser, $ref dereferencing) ──▶ /api/spec ──▶ Browser UI
-User Form Input ──▶ /api/send (Express proxy) ──▶ Target API ──▶ Response Received
-Response JSON ──▶ /api/validate ──▶ Validator (recursive schema comparison) ──▶ Drift Table</code></pre>
+<pre class="mermaid">graph LR
+    subgraph Spec Loading
+        A["OpenAPI YAML"] -->|"$ref dereferencing"| B["Parser (parser.js)"]
+        B --> C["/api/spec"]
+        C --> D["Browser UI (app.js)"]
+    end
+
+    subgraph Request Flow
+        E["User Form Input (form-builder.js)"] --> F["/api/send"]
+        F -->|"Express proxy"| G["Target API"]
+        G -->|"Response"| H["Response Received"]
+    end
+
+    subgraph Drift Detection
+        H -->|"Response JSON"| I["/api/validate"]
+        I --> J["Validator (validator.js)"]
+        J -->|"missing / type_mismatch / undocumented"| K["Drift Table"]
+    end</pre>
 <table><tr><th>Component</th><th>Role</th></tr><tr><td><strong>cli.js</strong></td><td>Parse spec path → start server → auto-open browser</td></tr><tr><td><strong>parser.js</strong></td><td>Resolve OpenAPI 3.x $ref via swagger-parser and extract endpoints</td></tr><tr><td><strong>validator.js</strong></td><td>Recursive response vs spec comparison — detect missing / type_mismatch / undocumented</td></tr><tr><td><strong>form-builder.js</strong></td><td>JSON Schema → dynamic form rendering (nested object, array, enum support)</td></tr><tr><td><strong>app.js</strong></td><td>Sidebar · request dispatch · response/drift display main logic</td></tr></table>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -393,6 +415,24 @@ Request Body
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#4f46e5',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

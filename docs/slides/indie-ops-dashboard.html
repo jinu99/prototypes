@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -295,28 +302,28 @@
 <p>→ <strong>이 대시보드</strong>: 메트릭 수집 + 패턴 분석 + 비용 비교 + 업타임 + 크론을 <strong>하나의 경량 도구</strong>로 통합</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────┐
-│  Collection Layer                                           │
-│  collector.py (every 30s)       uptime.py (HTTP retry x2)  │
-│   psutil: CPU/Mem/Net            httpbin.org, example.com   │
-└──────────────┬─────────────────────────┬────────────────────┘
-               ▼                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  database.py — SQLite (metrics.db)                          │
-│  metrics │ uptime_checks │ cron_heartbeats                  │
-└──────────────────────────┬──────────────────────────────────┘
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│  analyzer.py                                                │
-│  CPU ≥ 10% → active / &lt; 10% → idle                         │
-│  Time-based segments → EC2 vs Lambda cost comparison        │
-└──────────────────────────┬──────────────────────────────────┘
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│  server.py — FastAPI :8099                                  │
-│  REST API (7 endpoints) + static/index.html (Chart.js)      │
-│  Time-series │ Segment bar │ Cost comp │ Uptime │ Cron      │
-└─────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Collection["Collection Layer"]
+        A["collector.py (every 30s)\npsutil: CPU/Mem/Net"]
+        B["uptime.py (HTTP retry x2)\nhttpbin.org, example.com"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        C["database.py — SQLite (metrics.db)\nmetrics | uptime_checks | cron_heartbeats"]
+    end
+
+    subgraph Analysis["Analysis Layer"]
+        D["analyzer.py\nCPU ≥ 10% → active / < 10% → idle\nTime-based segments → EC2 vs Lambda cost comparison"]
+    end
+
+    subgraph Presentation["Presentation Layer"]
+        E["server.py — FastAPI :8099\nREST API (7 endpoints) + static/index.html (Chart.js)\nTime-series | Segment bar | Cost comp | Uptime | Cron"]
+    end
+
+    A -->|"SystemMetrics"| C
+    B -->|"UptimeResults"| C
+    C -->|"RawData"| D
+    D -->|"CostInsights"| E</pre>
 <ul><li><strong>Collection</strong>: psutil collects CPU/Memory/Network every 30s → stored in SQLite</li><li><strong>Analysis</strong>: Active/Idle classification at 10% CPU threshold → daily active hours → Lambda cost estimation</li><li><strong>Presentation</strong>: FastAPI + Chart.js single-page dashboard</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -410,6 +417,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#db2777',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

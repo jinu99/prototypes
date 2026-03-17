@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,29 +300,26 @@
 <p>핵심 아이디어: <strong>AST 레벨에서 AI 코드의 구조적 패턴을 잡는다.</strong> regex가 아닌 tree-sitter AST로 분석하므로, 문법 구조를 정확히 이해한 탐지가 가능하다.</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>                    ┌─────────────┐
-   .py/.js/.ts ────▶│  Parser     │ tree-sitter
-   source files     │  (multi-    │ Language()
-                    │   lang)     │
-                    └──────┬──────┘
-                           │ AST
-                    ┌──────▼──────┐
-                    │  Scanner    │ run all rules
-                    │             │ against AST
-                    └──────┬──────┘
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-   ┌──────▼──┐     ┌──────▼──┐     ┌───────▼─┐
-   │ ACS001  │     │ ACS003  │     │ ACS005  │  ... 5 rules
-   │ empty   │     │ god     │     │ unnec.  │
-   │ catch   │     │ function│     │ abstr.  │
-   └─────────┘     └─────────┘     └─────────┘
-                           │
-                    ┌──────▼──────┐
-   CLI ────────────▶│  Output     │──▶ JSON / colored text
-   scan / diff      │  Formatter  │
-                    └─────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    Source[".py / .js / .ts<br>source files"] -->|"source code"| Parser["Parser (parser.py)<br>multi-lang, tree-sitter"]
+    Parser -->|"AST"| Scanner["Scanner (scanner.py)<br>run all rules against AST"]
+
+    subgraph Rules ["Rules (5 rules)"]
+        ACS001["ACS001<br>empty catch"]
+        ACS003["ACS003<br>god function"]
+        ACS005["ACS005<br>unnec. abstr."]
+    end
+
+    Scanner --> ACS001
+    Scanner --> ACS003
+    Scanner --> ACS005
+
+    ACS001 --> Output["Output Formatter"]
+    ACS003 --> Output
+    ACS005 --> Output
+
+    CLI["CLI (run.py)<br>scan / diff"] --> Output
+    Output --> Result["JSON / colored text"]</pre>
 <ul><li><strong>Parser</strong>: Converts Python/JS/TS source files into AST via tree-sitter</li><li><strong>Scanner</strong>: Runs all rules against the AST, automatically filters applicable rules per language</li><li><strong>Rules</strong>: Each rule extends BaseRule with a <code>check(tree, source, lang, filepath)</code> interface</li><li><strong>Output</strong>: Choose between JSON or colored text output format</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -409,6 +413,24 @@ $ aicslint scan comparison_demo.py
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#2563eb',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

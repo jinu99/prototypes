@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -296,28 +303,31 @@
 <ul><li>외부 API/ML 모델 없이, <strong>PyMuPDF 좌표 + 휴리스틱 규칙</strong>만으로 감지</li><li><code>diagnose</code> → <code>clean</code> → <code>stats</code> 3단계 파이프라인</li></ul>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────┐
-│   PDF File      │
-└────────┬────────┘
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  extractor.py  (PyMuPDF)                            │
-│  PDF → TextBlock (text + coords + font + color)     │
-└────────┬────────────────────────────────────────────┘
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  detector.py  (Noise Detection Engine)              │
-│  ┌───────────────┐ ┌──────────────┐ ┌────────────┐  │
-│  │ Watermark     │ │ Header/Footer│ │ OCR        │  │
-│  │ Lg font+Ctr  │ │ Top/Bottom   │ │ Artifact   │  │
-│  │ +Multi-page  │ │ +Pattern     │ │ regex det. │  │
-│  └───────────────┘ └──────────────┘ └────────────┘  │
-└────────┬────────────────────────────────────────────┘
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  cleaner.py → Block-level filter → Clean text + diff │
-│  chunker.py → Paragraph-based split → Chunk stats    │
-└─────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    A["PDF File"] --> B["Extractor (extractor.py)"]
+
+    subgraph Extract ["Text Extraction"]
+        B["Extractor (extractor.py)<br/>PDF → TextBlock (text + coords + font + color)"]
+    end
+
+    B --> C
+
+    subgraph Detect ["Noise Detection Engine (detector.py)"]
+        C["Watermark Detector<br/>Lg font + Center + Multi-page"]
+        D["Header/Footer Detector<br/>Top/Bottom + Pattern"]
+        E["OCR Artifact Detector<br/>Regex detection"]
+    end
+
+    C --> F
+    D --> F
+    E --> F
+
+    subgraph Output ["Output Processing"]
+        F["Cleaner (cleaner.py)<br/>Block-level filter → Clean text + diff"]
+        G["Chunker (chunker.py)<br/>Paragraph-based split → Chunk stats"]
+    end
+
+    F --> G</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>diagnose — 노이즈 감지 결과</h3>
@@ -411,6 +421,24 @@ Total items removed: 12</code></pre>
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#dc2626',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

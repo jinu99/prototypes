@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,27 +300,35 @@
 <table><tr><th></th><th>Brand24 / Mention</th><th>TrendRadar (OSS)</th><th><strong>이 프로토타입</strong></th></tr><tr><td>가격</td><td>월 $79+</td><td>무료</td><td>무료 (셀프호스팅)</td></tr><tr><td>플랫폼</td><td>소셜 미디어 중심</td><td>핫이슈 집계</td><td>Reddit + RSS 통합</td></tr><tr><td>노이즈 필터링</td><td>있음</td><td>없음</td><td>upvote/score 임계값</td></tr><tr><td>키워드 커스터마이징</td><td>있음</td><td>제한적</td><td>UI에서 자유롭게 추가/삭제</td></tr><tr><td>셀프호스팅</td><td>불가</td><td>가능</td><td>가능 (uv run 한 줄)</td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                        Browser (Dashboard)                      │
-│                     static/index.html (vanilla JS)              │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTP
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    FastAPI Server (server.py)                    │
-│                                                                 │
-│  GET /api/matches ─── Timeline query (filter: source, keyword, …)│
-│  POST /api/collect/* ─ Trigger collection                       │
-│  GET/POST/DELETE /api/config/* ─ Config management               │
-└────────┬───────────────────┬───────────────────┬────────────────┘
-         │                   │                   │
-         ▼                   ▼                   ▼
-┌────────────────┐ ┌────────────────┐ ┌──────────────────────────┐
-│ Reddit         │ │ RSS            │ │ SQLite DB (monitor.db)   │
-│ Collector      │ │ Collector      │ │                          │
-│ (mock data)    │ │ (feedparser)   │ │  matches table           │
-│                │ │                │ │  config table            │
-└────────────────┘ └────────────────┘ └──────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Frontend
+        A["Browser Dashboard (static/index.html)"]
+    end
+
+    subgraph API ["FastAPI Server (server.py)"]
+        B["GET /api/matches — Timeline query"]
+        C["POST /api/collect/* — Trigger collection"]
+        D["GET/POST/DELETE /api/config/* — Config management"]
+    end
+
+    subgraph Collectors
+        E["Reddit Collector (reddit_collector.py, mock data)"]
+        F["RSS Collector (rss_collector.py, feedparser)"]
+    end
+
+    subgraph Storage
+        G["SQLite DB (monitor.db)\nmatches table · config table"]
+    end
+
+    A -->|"HTTP"| B
+    A -->|"HTTP"| C
+    A -->|"HTTP"| D
+    C --> E
+    C --> F
+    E -->|"MatchData"| G
+    F -->|"MatchData"| G
+    B -->|"query"| G
+    D -->|"read/write"| G</pre>
 <ul><li><strong>server.py</strong>: 7 FastAPI endpoints, also serves static files</li><li><strong>reddit_collector.py</strong>: Generates mock data (no API key required)</li><li><strong>rss_collector.py</strong>: Parses real RSS feeds with feedparser</li><li><strong>db.py</strong>: SQLite WAL mode, deduplication via <code>INSERT OR IGNORE</code></li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -405,6 +420,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#db2777',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

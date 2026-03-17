@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -296,26 +303,24 @@
 <p>핵심: <strong>세 가지를 통합</strong>하되, SEO를 마케팅 용어가 아닌 <strong>기술 용어</strong>(HTTP 상태, DOM 구조)로 설명한다.</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                    Browser (index.html)                         │
-│  URL input → Scan button → fetch(/api/scan) → render dashboard   │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ GET /api/scan?url=...
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                 FastAPI Server (main.py)                        │
-│                                                                 │
-│  httpx.AsyncClient fetches 3 resources concurrently:             │
-│     ┌──────────┐  ┌──────────────┐  ┌──────────────┐           │
-│     │ Target Page│  │ /robots.txt  │  │ /sitemap.xml │           │
-│     └────┬─────┘  └──────┬───────┘  └──────┬───────┘           │
-│          ▼               ▼                  ▼                   │
-│   seo_checker      robots_analyzer    phantom_detector          │
-│   (14 checks)     (10 AI crawlers)   (sitemap vs text)         │
-│          └───────────────┼──────────────────┘                   │
-│                          ▼                                      │
-│                   JSON Response                                 │
-└─────────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Browser["Browser (index.html)"]
+        A["URL input → Scan button → fetch(/api/scan) → render dashboard"]
+    end
+
+    A -->|"GET /api/scan?url=..."| B
+
+    subgraph Server["FastAPI Server (main.py)"]
+        B["httpx.AsyncClient"] -->|"concurrent fetch"| C["Target Page"]
+        B -->|"concurrent fetch"| D["/robots.txt"]
+        B -->|"concurrent fetch"| E["/sitemap.xml"]
+        C --> F["seo_checker (14 checks)"]
+        D --> G["robots_analyzer (10 AI crawlers)"]
+        E --> H["phantom_detector (sitemap vs text)"]
+        F --> I["JSON Response"]
+        G --> I
+        H --> I
+    end</pre>
 <ul><li><strong>seo_checker</strong>: pass/fail for 14 checks including title, meta, OG, JSON-LD, viewport</li><li><strong>robots_analyzer</strong>: block status of 10 AI crawlers + auto-generated robots.txt snippet for unblocked ones</li><li><strong>phantom_detector</strong>: compares sitemap URLs against path patterns in page text → detects phantom URLs</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -412,6 +417,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#d97706',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -294,30 +301,26 @@
 <blockquote><p>브라우저별 스토리지 내구성 자동 탐지 + 크로스 스토리지 복제로 데이터 손실을 방지하는 것이 개발자에게 실질적 가치를 제공하는지</p></blockquote>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                        Browser Environment                      │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    index.ts (Public API)                  │   │
-│  │         detectDurability() / DataGuardReplicator          │   │
-│  └──────────┬──────────────────────────┬────────────────────┘   │
-│             │                          │                        │
-│             ▼                          ▼                        │
-│  ┌─────────────────────┐   ┌───────────────────────────────┐   │
-│  │   detect.ts          │   │   replicate.ts                │   │
-│  │   (Detection Engine)  │   │   (Replication Engine)        │   │
-│  │                      │   │                               │   │
-│  │  Safari/ITP Detection │   │  put() → IDB + OPFS Dual-Write│   │
-│  │  persist() Check      │   │  get() → OPFS Recovery on Miss│   │
-│  │  OPFS Availability    │   │  recoverAll() → Batch Recovery│   │
-│  │  → StorageReport     │   │                               │   │
-│  └─────────────────────┘   └───────────────────────────────┘   │
-│                                                                 │
-│  ┌──────────────────────┐   ┌───────────────────────────────┐   │
-│  │     IndexedDB         │   │     OPFS (Origin Private FS)  │   │
-│  │  (Primary Storage)    │   │  (Backup — File-Based)        │   │
-│  └──────────────────────┘   └───────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Browser["Browser Environment"]
+        API["index.ts (Public API)<br/>detectDurability() / DataGuardReplicator"]
+
+        subgraph Engines["Core Engines"]
+            DET["detect.ts (Detection Engine)<br/>Safari/ITP Detection<br/>persist() Check<br/>OPFS Availability<br/>→ StorageReport"]
+            REP["replicate.ts (Replication Engine)<br/>put() → IDB + OPFS Dual-Write<br/>get() → OPFS Recovery on Miss<br/>recoverAll() → Batch Recovery"]
+        end
+
+        subgraph Storage["Storage Layer"]
+            IDB["IndexedDB (Primary Storage)"]
+            OPFS["OPFS (Origin Private FS, Backup)"]
+        end
+
+        API --> DET
+        API --> REP
+        REP -->|"Dual-Write"| IDB
+        REP -->|"Dual-Write"| OPFS
+        REP -->|"Read-Repair"| OPFS
+    end</pre>
 <ul><li><strong>detect.ts</strong>: Safari/ITP detection, persist() check, OPFS availability → safe/warning/danger rating</li><li><strong>replicate.ts</strong>: dual-write + read-repair (auto-recovery on read) pattern</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -406,6 +409,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#4f46e5',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

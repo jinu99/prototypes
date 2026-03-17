@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -296,32 +303,31 @@
 <p><strong>우리 접근</strong>: 셀 타입을 분리(Prompt / Plan / Result)하고, 각 셀을 독립 실행 단위로 만든다. 에이전트가 코드를 쓰기 전에 플랜을 먼저 보여주고, 사람이 항목을 수정하거나 빼고 승인한 뒤 실행한다.</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────┐
-│                        Browser (SPA)                        │
-│                                                             │
-│  ┌───────────┐    ┌────────────┐    ┌───────────────────┐   │
-│  │ index.html│    │  style.css │    │   mock-data.js    │   │
-│  │ (Entry)   │    │(Dark Theme)│    │(Mock AI Scenarios)│   │
-│  └─────┬─────┘    └────────────┘    └────────┬──────────┘   │
-│        │                                     │              │
-│        ▼                                     ▼              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                    app.js (Core Logic)                │   │
-│  │  cells[] ─── State Mgmt ─── cellIdCounter            │   │
-│  │     │                                                │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌──────────┐             │   │
-│  │  │ Prompt  │─▶│  Plan   │─▶│  Result  │             │   │
-│  │  │  Cell   │  │  Cell   │  │  Cell    │             │   │
-│  │  │ (idle)  │  │(preview)│  │(stream→  │             │   │
-│  │  │         │  │         │  │  done)   │             │   │
-│  │  └─────────┘  └─────────┘  └──────────┘             │   │
-│  └──────────────────┬──────────────────────────────────┘   │
-│                     ▼                                       │
-│  ┌────────────────────────┐   ┌───────────────────┐        │
-│  │      render.js         │   │   LocalStorage     │        │
-│  │  (Cell DOM &amp; Events)   │   │(State Persistence) │        │
-│  └────────────────────────┘   └───────────────────┘        │
-└─────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Browser["Browser (SPA)"]
+        HTML["index.html (Entry)"]
+        CSS["style.css (Dark Theme)"]
+        MOCK["mock-data.js (Mock AI Scenarios)"]
+
+        subgraph APP["app.js (Core Logic)"]
+            STATE["cells[] ── State Mgmt ── cellIdCounter"]
+            PROMPT["Prompt Cell (idle)"]
+            PLAN["Plan Cell (preview)"]
+            RESULT["Result Cell (stream→done)"]
+            STATE --- PROMPT
+            PROMPT -->|"Run"| PLAN
+            PLAN -->|"Approve"| RESULT
+        end
+
+        HTML --> APP
+        MOCK --> APP
+
+        RENDER["render.js (Cell DOM & Events)"]
+        LS["LocalStorage (State Persistence)"]
+
+        APP --> RENDER
+        APP --> LS
+    end</pre>
 <ul><li><strong>app.js</strong>: Cell create/delete, execution flow, plan approval, state persistence (216 lines)</li><li><strong>render.js</strong>: DOM creation and event binding, no innerHTML for XSS prevention (156 lines)</li><li><strong>mock-data.js</strong>: Predefined AI response scenarios (47 lines)</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -417,6 +423,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#7c3aed',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

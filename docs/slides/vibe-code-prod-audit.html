@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -292,42 +299,37 @@
 <ul><li>LLM이 아닌 <strong>tree-sitter AST 파싱</strong> → 결정론적, 빠름, API 키 불필요</li><li>진단에서 끝나지 않고 <strong>보완 코드까지 생성</strong></li></ul>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────┐
-│   CLI (cli.py)  │  argparse: scan &lt;project-dir&gt; [--json] [--output-dir]
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────┐
-│              Scanner (scanner.py)                    │
-│                                                     │
-│  project-dir ──▶ find_python_files()                │
-│                       │                             │
-│                       ▼                             │
-│              tree-sitter Parser                     │
-│                       │                             │
-│          ┌────────────┼────────────┐                │
-│          ▼            ▼            ▼                │
-│  Route Extraction  Middleware     Error Handler      │
-│   (@app.get,       Detection     Detection           │
-│    @router.post)                                    │
-└───────────────────────┬─────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│           Checklist (checklist.py)                   │
-│  9 items evaluated (weighted scoring: 0-100)        │
-│  Structure(20) │ Reliability(35) │ Quality(20)      │
-│  Security(20)  │ Deployment(5)                      │
-└───────────────────────┬─────────────────────────────┘
-                        │
-              ┌─────────┴─────────┐
-              ▼                   ▼
-┌──────────────────────┐  ┌──────────────────────────────┐
-│  Terminal Report     │  │  Generator (generator.py)     │
-│  (color bar, score)  │  │  Fix code per failed item:    │
-│  or --json           │  │  health.py, test_api.py,      │
-│                      │  │  Dockerfile, config.py        │
-└──────────────────────┘  └──────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    CLI["CLI (cli.py)<br/>argparse: scan &lt;project-dir&gt; [--json] [--output-dir]"]
+
+    subgraph Scanner["Scanner (scanner.py)"]
+        FindFiles["find_python_files()"]
+        TSParser["tree-sitter Parser"]
+        RouteExtract["Route Extraction<br/>(@app.get, @router.post)"]
+        Middleware["Middleware Detection"]
+        ErrorHandler["Error Handler Detection"]
+
+        FindFiles -->|"project-dir"| TSParser
+        TSParser --> RouteExtract
+        TSParser --> Middleware
+        TSParser --> ErrorHandler
+    end
+
+    subgraph Checklist["Checklist (checklist.py)<br/>9 items · weighted scoring: 0-100"]
+        Structure["Structure (20)"]
+        Reliability["Reliability (35)"]
+        Quality["Quality (20)"]
+        Security["Security (20)"]
+        Deployment["Deployment (5)"]
+    end
+
+    Report["Terminal Report<br/>(color bar, score / --json)"]
+    Generator["Generator (generator.py)<br/>health.py, test_api.py,<br/>Dockerfile, config.py"]
+
+    CLI --> Scanner
+    Scanner --> Checklist
+    Checklist --> Report
+    Checklist -->|"failed items"| Generator</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>미완성 프로젝트 스캔 (10/100)</strong></p>
@@ -434,6 +436,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#2563eb',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

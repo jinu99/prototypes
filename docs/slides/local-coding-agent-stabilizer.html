@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -295,28 +302,21 @@
 <table><tr><th>기존</th><th>우리 접근</th></tr><tr><td>Cline/Aider: 프레임워크 내부 안전장치</td><td><strong>프레임워크 외부</strong> 미들웨어 — 어떤 에이전트든 적용 가능</td></tr><tr><td>LangChain: 범용 미들웨어, 코딩 특화 없음</td><td><strong>diff 분석</strong> 기반 파일 편집 특화 감지</td></tr><tr><td>블로그 패턴: ad-hoc 구현 필요</td><td><strong>턴키 프록시</strong> — <code>OPENAI_API_BASE</code> 하나만 바꾸면 됨</td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────┐
-│              Coding Agent (Aider etc.)                    │
-│        OPENAI_API_BASE=http://localhost:8400/v1          │
-└────────────────────────┬────────────────────────────────┘
-                         │ OpenAI-compatible API Request
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                 proxy.py (FastAPI :8400)                  │
-│                                                          │
-│   analyzer.py          loop_detector.py                  │
-│   ├ File deletion       ├ Same tool 3x consecutive       │
-│   ├ Empty file write    └ Per-session call tracking       │
-│   ├ 80%+ code loss                                       │
-│   └ Dangerous shell cmd db.py (SQLite)                   │
-│                         ├ sessions / tool_calls tables   │
-│   On block → ⚠️ BLOCKED └ Queried from dashboard.html   │
-│   On pass  → Forward original                            │
-└────────────────────────┬────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│           LLM Backend (Ollama :11434 / Mock)             │
-└─────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    Agent["Coding Agent (Aider etc.)<br/>OPENAI_API_BASE=http://localhost:8400/v1"]
+
+    Agent -->|"OpenAI-compatible API Request"| Proxy
+
+    subgraph Proxy["proxy.py (FastAPI :8400)"]
+        Analyzer["analyzer.py<br/>File deletion / Empty write<br/>80%+ code loss / Dangerous cmd"]
+        Loop["loop_detector.py<br/>Same tool 3x consecutive<br/>Per-session call tracking"]
+        DB["db.py (SQLite)<br/>sessions / tool_calls tables"]
+    end
+
+    Analyzer -.->|"On block → BLOCKED"| Agent
+    Loop -.->|"On block → BLOCKED"| Agent
+    Proxy -->|"On pass → Forward original"| LLM["LLM Backend (Ollama :11434 / Mock)"]
+    DB -.->|"Query"| Dashboard["dashboard.html"]</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p>Mock 모드로 실행 — Ollama 없이도 모든 시나리오 테스트 가능:</p>
@@ -413,6 +413,24 @@ Results: 6/6 passed</code></pre>
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#7c3aed',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

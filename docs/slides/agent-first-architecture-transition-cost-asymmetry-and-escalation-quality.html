@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -291,33 +298,36 @@
 <p><strong>차별점</strong>: 앞 단계의 flag가 뒷 단계의 confidence를 낮추는 <strong>캐스케이드 효과</strong> — 미묘한 신호가 증폭된다</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌──────────────────────────────────────────────────┐
-│                  main.py (CLI)                    │
-│           Simulation Orchestrator                 │
-└────────┬────────────────────────────┬────────────┘
-         │                            │
-         ▼                            ▼
-┌──────────────────┐     ┌───────────────────────────┐
-│  scenarios.py     │     │  server.py → dashboard    │
-│  Scenarios ×10   │     │  Dashboard (port 8000)    │
-│  ○ simple ×5     │     └───────────────────────────┘
-│  ◉ complex ×3    │                ▲
-│  ◆ edge ×2       │       output/results.json
-└────────┬─────────┘                ▲
-    ┌────┴────┐                     │
-    ▼         ▼                     │
-┌────────┐ ┌──────────────┐        │
-│Workflow│ │Agent Engine  │        │
-│if/else │ │5 Eval Steps  │        │
-│keyword  │ │confidence    │        │
-│matching │ │cascade       │        │
-└───┬────┘ └──────┬───────┘        │
-    └──────┬──────┘                │
-           ▼                       │
-    ┌──────────────┐              │
-    │comparator.py │──────────────┘
-    │Accuracy/FP/FN│   Save JSON Results
-    └──────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    MAIN["main.py (CLI)<br>Simulation Orchestrator"]
+    MAIN --> SCENARIOS
+    MAIN --> SERVER
+
+    subgraph Scenarios
+        SCENARIOS["scenarios.py<br>Scenarios ×10<br>○ simple ×5 / ◉ complex ×3 / ◆ edge ×2"]
+    end
+
+    subgraph Engines
+        WF["Workflow Engine (workflow_engine.py)<br>if/else keyword matching"]
+        AG["Agent Engine (agent_engine.py)<br>5 Eval Steps / confidence cascade"]
+    end
+
+    SCENARIOS --> WF
+    SCENARIOS --> AG
+
+    subgraph Evaluation
+        COMP["comparator.py<br>Accuracy / FP / FN"]
+    end
+
+    WF --> COMP
+    AG --> COMP
+    COMP -->|"Save JSON Results"| JSON["output/results.json"]
+
+    subgraph Dashboard
+        SERVER["server.py<br>Dashboard (port 8000)"]
+    end
+
+    JSON --> SERVER</pre>
 <ul><li><strong>scenarios.py</strong>: 10 scenarios + ground truth definitions</li><li><strong>workflow_engine.py</strong>: category routing → keyword matching → sentiment keyword check</li><li><strong>agent_engine.py</strong>: 5 decision points sequential evaluation, confidence cascade</li><li><strong>comparator.py</strong>: accuracy vs ground truth, FP/FN, threshold sensitivity analysis</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo--핵심-결과">Demo — 핵심 결과</h2>
@@ -406,6 +416,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#7c3aed',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -296,29 +303,27 @@
 <ul><li>실제 GPU 프로파일링 없이, 메타데이터만으로 합리적 추정</li><li>llama.cpp 레퍼런스 대비 <strong>7/7 모델 20% 이내 오차</strong>로 검증</li><li>MoE expert 오프로딩 시나리오까지 표시</li></ul>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌──────────────────┐    ┌──────────────────────────┐
-│  GGUF Files      │    │  Sample Profile (Presets) │
-│  (Binary Parsing)│    │  Llama-7B, Mixtral, Phi-2│
-└────────┬─────────┘    └────────────┬─────────────┘
-         │                          │
-         ▼                          ▼
-┌────────────────────────────────────────────┐
-│         vram_calculator.py                 │
-│  Weights + KV Cache + Activation + OH     │
-│  MoE offloading scenario calculation      │
-└──────────────────┬─────────────────────────┘
-                   │
-                   ▼
-┌────────────────────────────────────────────┐
-│         planner.py                         │
-│  Single/Multi model est · Grid search · Val │
-└──────────┬─────────────────┬───────────────┘
-           ▼                 ▼
-   ┌─────────────┐   ┌───────────────┐
-   │ server.py   │   │ main.py (CLI) │
-   │ Web UI +    │   │ Table output  │
-   │ REST API    │   │ Validation    │
-   └─────────────┘   └───────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Input
+        A["GGUF Files (Binary Parsing)"]
+        B["Sample Profile (Presets)\nLlama-7B, Mixtral, Phi-2"]
+    end
+
+    subgraph Core
+        C["VRAM Calculator (vram_calculator.py)\nWeights + KV Cache + Activation + OH\nMoE offloading scenario calculation"]
+        D["Planner (planner.py)\nSingle/Multi model est · Grid search · Validation"]
+    end
+
+    subgraph Output
+        E["Web Server (server.py)\nWeb UI + REST API"]
+        F["CLI (main.py)\nTable output · Validation"]
+    end
+
+    A --> C
+    B --> C
+    C --> D
+    D --> E
+    D --> F</pre>
 <ul><li><strong>gguf_parser</strong>: Extracts model structure metadata from GGUF binaries (v2/v3 support)</li><li><strong>vram_calculator</strong>: Per-component memory formula calculation engine (4 components)</li><li><strong>planner</strong>: Multi-model aggregation, grid search, llama.cpp validation orchestration</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -409,6 +414,24 @@ Llama-7B Q4_0 ctx=512: 3,753 MB
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#7c3aed',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

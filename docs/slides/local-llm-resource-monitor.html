@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,25 +300,19 @@
 <table><tr><th></th><th>nvidia-smi</th><th>Prometheus+Grafana</th><th><strong>이 도구</strong></th></tr><tr><td>실시간 GPU 상태</td><td>O</td><td>O</td><td>O</td></tr><tr><td>모델별 VRAM 분석</td><td>X</td><td>X</td><td>O</td></tr><tr><td>KV 캐시 포함 추정</td><td>X</td><td>X</td><td>O</td></tr><tr><td>로드 가능 여부 판정</td><td>X</td><td>X</td><td>O</td></tr><tr><td>설치 복잡도</td><td>낮음</td><td>높음</td><td><strong>낮음</strong></td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                     Browser (dashboard.html)                    │
-│  ┌──────────┐ ┌──────────────┐ ┌──────────┐ ┌───────────────┐  │
-│  │GPU Status│ │Loaded Models │ │Available │ │VRAM Estimator │  │
-│  │  Card    │ │    Card      │ │Models Tbl│ │&amp; Load Check   │  │
-│  └────┬─────┘ └──────┬───────┘ └────┬─────┘ └───────┬───────┘  │
-│       └──────────────┴──────────────┴───────────────┘           │
-│                       fetch (auto-refresh 2s)                    │
-└───────────────────────────┬─────────────────────────────────────┘
-                            ▼
-┌───────────────────────────────────────────────────────────────────┐
-│                    FastAPI Server (7 endpoints)                   │
-└──────┬──────────────────┬──────────────────┬─────────────────────┘
-       ▼                  ▼                  ▼
-┌──────────────┐ ┌────────────────┐ ┌──────────────────────┐
-│ gpu_monitor  │ │ ollama_client  │ │   vram_estimator     │
-│ nvidia-smi   │ │ Ollama REST    │ │ weights + KV cache   │
-│ + mock       │ │ API + mock     │ │ + CUDA overhead      │
-└──────────────┘ └────────────────┘ └──────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Browser["Browser (dashboard.html)"]
+        A["GPU Status Card"]
+        B["Loaded Models Card"]
+        C["Available Models Table"]
+        D["VRAM Estimator & Load Check"]
+    end
+
+    Browser -->|"fetch (auto-refresh 2s)"| E["FastAPI Server (7 endpoints)"]
+
+    E --> F["gpu_monitor (nvidia-smi + mock)"]
+    E --> G["ollama_client (Ollama REST API + mock)"]
+    E --> H["vram_estimator (weights + KV cache + CUDA overhead)"]</pre>
 <ul><li><strong>gpu_monitor</strong>: nvidia-smi parsing. Falls back to RTX 4090 mock if no GPU</li><li><strong>ollama_client</strong>: Ollama API integration. Falls back to mock if not running</li><li><strong>vram_estimator</strong>: Supports 8 architectures × 16 quantization levels</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -407,6 +408,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#0891b2',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -296,36 +303,37 @@
 <p>핵심: "단일 PR 품질 검사"가 아니라 <strong>"변경의 파급 + 스펙과의 간극"</strong>을 본다</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                        CLI (typer)                              │
-│                  diff  │  spec-check                            │
-└────────┬────────────────────────┬────────────────────────────────┘
-         │                        │
-         ▼                        ▼
-┌─────────────────┐      ┌─────────────────┐
-│   diff_parser   │      │  spec_checker   │
-│ git diff HEAD~N │      │ markdown parsing │
-│ → ChangedFile[] │      │ → Requirement[] │
-└────────┬────────┘      └────────┬────────┘
-         │                        │
-         ▼                        ▼
-┌─────────────────────────────────────────────┐
-│              ast_analyzer (tree-sitter)      │
-│  Python source → Symbol[] + ImportInfo[]      │
-└──────┬──────────────────────────┬───────────┘
-       │                          │
-       ▼                          ▼
-┌─────────────────┐      ┌─────────────────┐
-│  impact_graph   │      │  spec_checker   │
-│ 1-hop downstream│      │ keyword matching │
-│ impact tracking  │      │ → MatchResult[] │
-└────────┬────────┘      └────────┬────────┘
-         │                        │
-         ▼                        ▼
-┌─────────────────────────────────────────────┐
-│              display (rich)                  │
-│  Impact Tree  │  Alignment Table             │
-└─────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph CLI ["CLI (typer)"]
+        A1["diff"]
+        A2["spec-check"]
+    end
+
+    subgraph Parsing ["Parsing Layer"]
+        B["diff_parser\ngit diff HEAD~N\n→ ChangedFile[]"]
+        C["spec_checker\nmarkdown parsing\n→ Requirement[]"]
+    end
+
+    A1 --> B
+    A2 --> C
+
+    D["ast_analyzer (tree-sitter)\nPython source → Symbol[] + ImportInfo[]"]
+
+    B --> D
+    C --> D
+
+    subgraph Analysis ["Analysis Layer"]
+        E["impact_graph\n1-hop downstream\nimpact tracking"]
+        F["spec_checker\nkeyword matching\n→ MatchResult[]"]
+    end
+
+    D --> E
+    D --> F
+
+    G["display (rich)\nImpact Tree | Alignment Table"]
+
+    E --> G
+    F --> G</pre>
 <ul><li><strong>ast_analyzer</strong>: Core engine that structurally extracts function/class/import/call relationships using tree-sitter</li><li><strong>Two pipelines</strong> (<code>diff</code>, <code>spec-check</code>) share the ast_analyzer module</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -424,6 +432,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#2563eb',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,33 +300,21 @@
 <p>그리고 세션별 <strong>유효 토큰 비율</strong>(effective token ratio)을 산출한다.</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌──────────────────────────────────────────────────────────────────┐
-│                     CLI (run.py / main.py)                       │
-│               list · analyze &lt;path&gt; · latest                     │
-└───────────────────────────┬──────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     Parser (parser.py)                            │
-│   ~/.claude/projects/**/*.jsonl  ──▶  SessionData                │
-│     ├─ messages[], tool_calls[], token usage aggregation          │
-└───────────────────────────┬──────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    Analyzer (analyzer.py)                         │
-│   ┌────────────────┐ ┌───────────────┐ ┌──────────────────┐      │
-│   │ repeated_read  │ │ unused_search │ │ duplicate_context│      │
-│   └────────┬───────┘ └───────┬───────┘ └────────┬─────────┘      │
-│            └─────────────────┼──────────────────┘                │
-│                    WastePattern[] + OptimizationSuggestion[]      │
-└───────────────────────────┬──────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                   Dashboard (dashboard.py)                        │
-│            Rich terminal UI — summary, hotspots, suggestions, grade│
-└──────────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    CLI["CLI (run.py / main.py)<br/>list · analyze · latest"]
+    CLI -->|"JSONL path"| Parser
+
+    Parser["Parser (parser.py)<br/>~/.claude/projects/**/*.jsonl → SessionData"]
+    Parser -->|"SessionData"| Analyzer
+
+    subgraph Analyzer["Analyzer (analyzer.py)"]
+        R["repeated_read"]
+        U["unused_search"]
+        D["duplicate_context"]
+    end
+    Analyzer -->|"WastePattern[] + OptimizationSuggestion[]"| Dashboard
+
+    Dashboard["Dashboard (dashboard.py)<br/>Rich terminal UI — summary, hotspots, suggestions, grade"]</pre>
 <ul><li><strong>Parser</strong>: Parses JSONL line by line, extracts tool call sequences from <code>tool_use</code> types, aggregates tokens from <code>usage</code> fields</li><li><strong>Analyzer</strong>: Three independent pattern detectors each identify waste using heuristic-based rules</li><li><strong>Dashboard</strong>: Builds an at-a-glance terminal dashboard with Rich Panel/Table</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -422,6 +417,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#7c3aed',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

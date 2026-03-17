@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -294,30 +301,25 @@
 <p><strong>검증 목표</strong>: README만으로 생성된 랜딩페이지가 "쓸 만한 수준"인지. AI/LLM 없이, 순수 결정론적 파싱+템플릿으로 어디까지 갈 수 있는지 실험.</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                        CLI (commander)                          │
-│                  init · build --dir --theme                     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                      builder.js (orchestration)                   │
-│                                                                  │
-│  ┌──────────────┐   ┌───────────────┐   ┌─────────────────────┐ │
-│  │  parser.js   │   │ metadata.js   │   │   changelog.js      │ │
-│  │ README → AST │   │ package.json  │   │ git log → grouped   │ │
-│  │ → classify   │   │ → name, ver   │   │   by type           │ │
-│  └──────┬───────┘   └──────┬────────┘   └──────────┬──────────┘ │
-│         └──────────────────┼───────────────────────┘            │
-│                            ▼                                    │
-│  ┌──────────────────────────────┐  ┌────────────────────────┐   │
-│  │       templates.js           │  │    launch-posts.js     │   │
-│  │ Handlebars × 3 theme render  │  │ PH / Reddit / HN drafts│   │
-│  └──────────────┬───────────────┘  └──────────┬─────────────┘   │
-└─────────────────┼─────────────────────────────┼─────────────────┘
-                  ▼                             ▼
-        dist/index.html              dist/launch-posts/*.md
-        dist/changelog.html</code></pre>
+<pre class="mermaid">graph TD
+    CLI["CLI (commander)<br/>init · build --dir --theme"]
+
+    subgraph Builder["builder.js (orchestration)"]
+        Parser["Parser (parser.js)<br/>README → AST → classify"]
+        Meta["Metadata (metadata.js)<br/>package.json → name, ver"]
+        Changelog["Changelog (changelog.js)<br/>git log → grouped by type"]
+        Templates["Templates (templates.js)<br/>Handlebars × 3 theme render"]
+        Launch["Launch Posts (launch-posts.js)<br/>PH / Reddit / HN drafts"]
+    end
+
+    CLI --> Builder
+    Parser --> Templates
+    Meta --> Templates
+    Meta --> Launch
+    Changelog --> Templates
+    Parser --> Launch
+    Templates --> Out1["dist/index.html<br/>dist/changelog.html"]
+    Launch --> Out2["dist/launch-posts/*.md"]</pre>
 <p>Core: <code>parser.js</code> matches heading keywords via remark AST to auto-classify into Hero/Features/Install/CTA</p>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -410,6 +412,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#dc2626',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

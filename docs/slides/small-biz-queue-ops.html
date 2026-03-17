@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -296,22 +303,32 @@
 <table><tr><th>기존</th><th>Small Biz Queue Ops</th></tr><tr><td>SaaS 구독 모델</td><td>셀프호스팅, 무료</td></tr><tr><td>복잡한 설정, 회원가입</td><td><code>npm start</code> 한 줄 실행</td></tr><tr><td>기업용 기능 과다</td><td>QR 등록 + 상태 관리 + KDS, 딱 필요한 것만</td></tr><tr><td>외부 의존성 (SMS, 클라우드)</td><td>SQLite + SSE, 외부 의존 없음</td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌──────────────────────────────────────────────────────────────────┐
-│                         Client (Browser)                          │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐ │
-│  │ index.html │  │ join.html  │  │ admin.html │  │  kds.html  │ │
-│  │  Home / QR │  │ Join Queue │  │ Shop Admin │  │  KDS View  │ │
-│  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘ │
-│        └───────────┬────┴───────────────┴───────┬───────┘        │
-│              REST API (fetch)            SSE (EventSource)       │
-└──────────────────┬───────────────────────────┬───────────────────┘
-                   ▼                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  server.js → routes.js (CRUD) ──broadcast──▶ sse.js (Realtime)  │
-│                  │                                               │
-│                  ▼                                               │
-│             db.js (SQLite)                                       │
-└─────────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Client ["Client (Browser)"]
+        A["Home / QR (index.html)"]
+        B["Join Queue (join.html)"]
+        C["Shop Admin (admin.html)"]
+        D["KDS View (kds.html)"]
+    end
+
+    subgraph Server ["Server (server.js)"]
+        E["Routes (routes.js)"]
+        F["SSE (sse.js)"]
+        G["DB (db.js / SQLite)"]
+    end
+
+    A -->|"REST API"| E
+    B -->|"REST API"| E
+    C -->|"REST API"| E
+    D -->|"REST API"| E
+
+    F -->|"SSE (EventSource)"| A
+    F -->|"SSE (EventSource)"| B
+    F -->|"SSE (EventSource)"| C
+    F -->|"SSE (EventSource)"| D
+
+    E -->|"broadcast"| F
+    E --> G</pre>
 <ul><li><strong>routes.js</strong>: Queue CRUD + QR generation — auto-broadcast on status change</li><li><strong>sse.js</strong>: SSE client management — realtime push in 20 lines</li><li><strong>db.js</strong>: SQLite initialization — automatic state transition timestamps</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -398,6 +415,24 @@ data: [{&quot;id&quot;:1,&quot;status&quot;:&quot;called&quot;,&quot;position&qu
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#db2777',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

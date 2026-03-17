@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -297,34 +304,17 @@
 <p>벤치마크를 새로 만들지 않는다. <strong>이미 있는 테스트를 벤치마크로 재활용</strong>한다.</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                        perf-verify CLI                         │
-└──────────┬──────────────────────────────────────────────────────┘
-           │
-           ▼
-┌─────────────────────┐    git diff --unified=0    ┌────────────┐
-│   Diff Parser       │◀──────────────────────────▶│    Git     │
-│  (diff_parser.py)   │                            │ Repository │
-└──────────┬──────────┘
-           │ Changed .py files + line numbers
-           ▼
-┌─────────────────────┐
-│   AST Analyzer      │    Maps changed lines to
-│  (ast_analyzer.py)  │    functions/methods via Python AST
-└──────────┬──────────┘
-           │ List of changed functions
-           ▼
-┌─────────────────────┐    git show ref:file    ┌────────────────┐
-│   Benchmarker       │◀───────────────────────▶│ Before Source  │
-│  (benchmarker.py)   │    time.perf_counter    └────────────────┘
-│                     │    tracemalloc
-└──────────┬──────────┘
-           │ before/after benchmark results
-           ▼
-┌─────────────────────┐
-│   Reporter          │    Rich table output
-│  (reporter.py)      │    exit code: 0=OK, 1=regression
-└─────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    CLI["perf-verify CLI"] --> DP
+
+    subgraph Core Pipeline
+        DP["Diff Parser (diff_parser.py)"] -->|"Changed .py files + line numbers"| AST["AST Analyzer (ast_analyzer.py)"]
+        AST -->|"List of changed functions"| BM["Benchmarker (benchmarker.py)"]
+        BM -->|"before/after benchmark results"| RP["Reporter (reporter.py)"]
+    end
+
+    DP <-->|"git diff --unified=0"| GIT["Git Repository"]
+    BM <-->|"git show ref:file"| SRC["Before Source"]</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>시나리오: fibonacci O(n) → O(2^n), sort 내장 → 버블 정렬</h3>
@@ -421,6 +411,24 @@ Exit code: 1</code></pre>
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#2563eb',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

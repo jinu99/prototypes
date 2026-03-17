@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,32 +300,36 @@
 <table><tr><th></th><th>LogAI/Loglizer</th><th>OpenSearch</th><th><strong>이 도구</strong></th></tr><tr><td>ML 학습</td><td>필요</td><td>필요</td><td><strong>불필요</strong></td></tr><tr><td>인프라</td><td>Python 라이브러리</td><td>클러스터 운영</td><td><strong>SQLite 하나</strong></td></tr><tr><td>배포 연동</td><td>없음</td><td>없음</td><td><strong>자동 상관관계</strong></td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────┐     ┌─────────────────┐
-│   Log Files     │     │  Deploy Events  │
-│  (plaintext)    │     │  (JSON / CSV)   │
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│   log_parser    │     │  deploy_events  │
-│ Drain3 Template │     │ Parse &amp;         │
-│ Extract + first-│     │ Normalize       │
-│ seen Detection  │     │                 │
-└────────┬────────┘     └────────┬────────┘
-         │         ┌─────┘
-         ▼         ▼
-┌──────────────────────────────────────────┐
-│        db.py (SQLite) — 3 Tables          │
-│  log_templates │ deploy_events │ correlations │
-└──────────────────┬───────────────────────┘
-                   ▼
-         ┌─────────────────┐
-         │   correlator    │
-         │ Window Matching │
-         └────────┬────────┘
-         ┌────────┴────────┐
-         ▼                 ▼
-  CLI (Terminal)       Web Dashboard</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Input
+        A["Log Files (plaintext)"]
+        B["Deploy Events (JSON / CSV)"]
+    end
+
+    subgraph Parsing
+        C["log_parser (log_parser.py)\nDrain3 Template Extract\n+ first-seen Detection"]
+        D["deploy_events (deploy_events.py)\nParse & Normalize"]
+    end
+
+    A --> C
+    B --> D
+
+    subgraph Storage
+        E["db.py (SQLite) — 3 Tables\nlog_templates | deploy_events | correlations"]
+    end
+
+    C --> E
+    D --> E
+
+    E --> F["correlator (correlator.py)\nWindow Matching"]
+
+    subgraph Output
+        G["CLI (cli.py)"]
+        H["Web Dashboard (server.py)"]
+    end
+
+    F --> G
+    F --> H</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code>$ uv run python cli.py demo
@@ -408,6 +419,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#059669',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

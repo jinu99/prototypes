@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -295,33 +302,31 @@
 <p>핵심: 기존 도구에 없는 <strong>"블록 구조 분석"이라는 중간 레이어</strong>를 넣었다.</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌──────────────────────────────────────────────────────────┐
-│                      CLI (cli.js)                         │
-│             convert  │  analyze  │  compare               │
-└───────┬──────────────┴─────┬─────┴──────┬─────────────────┘
-        │                    │            │
-        ▼                    ▼            ▼
-┌──────────────────────────────────────────────────────────┐
-│                   Parser (parser.js)                      │
-│  Markdown ──▶ remark + GFM ──▶ AST ──▶ Block Detection    │
-│                                 breakable check:          │
-│                                 table/code/image → false  │
-└───────┬──────────────────────────────────────────────────┘
-        │
-        ▼
-┌──────────────────────┐     ┌─────────────────────────┐
-│  Typst Generator     │     │  Compare (compare.js)    │
-│  (typst-gen.js)      │     │  Pandoc PDF (before)     │
-│  AST → Typst markup  │     │        vs                │
-│  + breakable hints   │     │  docconv PDF (after)     │
-└───────┬──────────────┘     └─────────┬───────────────┘
-        │                              │
-        ▼                              ▼
-┌──────────────────────────────────────────────────────────┐
-│                  Renderer (renderer.js)                    │
-│  Typst CLI compile → docconv.pdf                          │
-│  Pandoc + Typst     → pandoc.pdf (baseline)               │
-└──────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph CLI ["CLI (cli.js)"]
+        direction LR
+        C1["convert"]
+        C2["analyze"]
+        C3["compare"]
+    end
+
+    P["Parser (parser.js)<br/>Markdown → remark + GFM → AST → Block Detection<br/>breakable check: table/code/image → false"]
+
+    CLI -->|"Markdown input"| P
+
+    TG["Typst Generator (typst-gen.js)<br/>AST → Typst markup + breakable hints"]
+    CMP["Compare (compare.js)<br/>Pandoc PDF (before) vs docconv PDF (after)"]
+
+    P -->|"AST + block info"| TG
+    P -->|"AST + block info"| CMP
+
+    subgraph Output ["Renderer (renderer.js)"]
+        R1["Typst CLI compile → docconv.pdf"]
+        R2["Pandoc + Typst → pandoc.pdf (baseline)"]
+    end
+
+    TG --> Output
+    CMP --> Output</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>문서 분석</h3>
@@ -417,6 +422,24 @@ Block sequence:
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#dc2626',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

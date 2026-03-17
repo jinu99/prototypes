@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -295,30 +302,20 @@
 <table><tr><th></th><th>기존 도구 (PEFT 등)</th><th>LoRA Streaming Merge</th></tr><tr><td>메모리</td><td>전체 모델 로드 (~140GB)</td><td>텐서 1개 (~수 MB)</td></tr><tr><td>하드웨어</td><td>고메모리 서버 필수</td><td>16GB 랩탑 가능</td></tr><tr><td>정밀도</td><td>동일</td><td>동일 (allclose 검증)</td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────┐     ┌──────────────────┐
-│  Base Model      │     │  LoRA Adapter     │
-│  (multi-shard    │     │  adapter_model    │
-│   safetensors)   │     │  .safetensors     │
-└────────┬────────┘     └────────┬─────────┘
-         │                       │
-         ▼                       ▼
-┌────────────────────────────────────────────┐
-│  shard_map.py — index.json → key→shard map  │
-└────────────────┬───────────────────────────┘
-                 ▼
-┌────────────────────────────────────────────┐
-│  adapter.py — LoRA key ↔ base key auto map   │
-└────────────────┬───────────────────────────┘
-                 ▼
-┌────────────────────────────────────────────┐
-│  merge.py — per-tensor streaming             │
-│  W = safe_open(key) → W&#39; = W + scale*B@A   │
-│  → save_file → del W, A, B (free memory)     │
-└────────────────┬───────────────────────────┘
-                 ▼
-┌────────────────────────────────────────────┐
-│  Output: merged safetensors + index.json    │
-└────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Inputs
+        A["Base Model (multi-shard safetensors)"]
+        B["LoRA Adapter (adapter_model.safetensors)"]
+    end
+
+    A -->|"index.json"| C["ShardMap (shard_map.py)"]
+    B --> C
+
+    C -->|"key→shard map"| D["Adapter (adapter.py)"]
+
+    D -->|"matched key pairs"| E["Merge (merge.py)"]
+
+    E -->|"per-tensor streaming"| F["Output (merged safetensors + index.json)"]</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>머지 실행</strong> — 30개 텐서 중 24개에 LoRA 적용</p>
@@ -410,6 +407,24 @@ Result:        PASS ✓</code></pre>
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#4f46e5',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

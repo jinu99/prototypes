@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -292,36 +299,26 @@
 <p>핵심 아이디어: "메인테이너가 내 프로젝트명을 검색하면 사용자가 뭘 보는가?"를 자동으로 답하는 도구</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────┐
-│   CLI (cli.py)      │
-└────────┬────────────┘
-         │ GitHub repo URL
-         ▼
-┌─────────────────────┐     ┌──────────────────────┐
-│  GitHub Parser      │────▶│  GitHub API          │
-│  (github_parser.py) │◀────│  (public REST API)   │
-│  · URL parsing      │     └──────────────────────┘
-│  · Official domains │
-└────────┬────────────┘
-         │ project_info + official_domains
-         ▼
-┌─────────────────────┐     ┌──────────────────────┐
-│  Searcher           │────▶│  DuckDuckGo          │
-│  (searcher.py)      │◀────│  (Search Engine)     │
-│  · 3-query search   │     └──────────────────────┘
-│  · Deduplication    │
-└────────┬────────────┘
-         │ filtered results[]
-         ▼
-┌─────────────────────┐
-│  Analyzer           │  difflib similarity + heuristic scoring
-│  (analyzer.py)      │  typosquatting / suspicious TLD / keywords
-└────────┬────────────┘
-         ▼
-┌─────────────────────┐
-│  Reporter           │  DANGER / WARNING / SAFE
-│  (reporter.py)      │  ANSI color CLI report
-└─────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    CLI["CLI (cli.py)"] -->|"GitHub repo URL"| Parser
+
+    subgraph Core Pipeline
+        Parser["GitHub Parser (github_parser.py)\n· URL parsing\n· Official domains"]
+        Searcher["Searcher (searcher.py)\n· 3-query search\n· Deduplication"]
+        Analyzer["Analyzer (analyzer.py)\ndifflib similarity + heuristic scoring\ntyposquatting / suspicious TLD / keywords"]
+        Reporter["Reporter (reporter.py)\nDANGER / WARNING / SAFE\nANSI color CLI report"]
+    end
+
+    subgraph External Services
+        GitHubAPI["GitHub API (public REST API)"]
+        DuckDuckGo["DuckDuckGo (Search Engine)"]
+    end
+
+    Parser <-->|"project_info"| GitHubAPI
+    Parser -->|"project_info + official_domains"| Searcher
+    Searcher <-->|"search queries"| DuckDuckGo
+    Searcher -->|"filtered results[]"| Analyzer
+    Analyzer --> Reporter</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code>$ uv run oss-search-guard https://github.com/lh3/minimap2
@@ -422,6 +419,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#d97706',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

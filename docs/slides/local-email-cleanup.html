@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,27 +300,28 @@
 <p>검증 목표: 헤더만으로도 80%+ 분류 정확도를 달성할 수 있는가?</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────┐     ┌─────────────────────┐
-│   IMAP Server       │     │   Mock Generator     │
-│  (Gmail, etc.)      │     │  (mock_data.py)      │
-└────────┬────────────┘     └────────┬────────────┘
-         │ IMAP FETCH HEADER                │ 12,000 generated
-         ▼                                  ▼
-┌──────────────────────────────────────────────────┐
-│              imap_client.py                      │
-│  Header parsing: From, Subject, List-Unsubscribe,│
-│  X-Mailer, Precedence, Date, Size               │
-└────────────────────┬─────────────────────────────┘
-                     │ upsert
-                     ▼
-            ┌─────────────────┐
-            │   SQLite (WAL)  │  ← Local cache, no external transfer
-            └───┬─────┬───┬───┘
-       ┌────────┘     │   └────────┐
-       ▼              ▼            ▼
- classifier.py   analyzer.py   cleanup.py
- 6 signals       sender stats   dry run →
- score/classify  unsub candidates  delete/archive</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Data Sources
+        A["IMAP Server (Gmail, etc.)"]
+        B["Mock Generator (mock_data.py)"]
+    end
+
+    A -->|"IMAP FETCH HEADER"| C
+    B -->|"12,000 generated"| C
+
+    C["imap_client.py\nHeader parsing: From, Subject,\nList-Unsubscribe, X-Mailer,\nPrecedence, Date, Size"]
+
+    C -->|"upsert"| D["SQLite (WAL)\nLocal cache, no external transfer"]
+
+    subgraph Processing
+        E["classifier.py\n6 signals\nscore/classify"]
+        F["analyzer.py\nsender stats\nunsub candidates"]
+        G["cleanup.py\ndry run →\ndelete/archive"]
+    end
+
+    D --> E
+    D --> F
+    D --> G</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code>╔══════════════════════════════════╗
@@ -408,6 +416,24 @@ Total cleanup: 10,200 emails | 156.6 MB recoverable</code></pre>
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#db2777',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

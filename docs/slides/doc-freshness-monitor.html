@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -294,32 +301,24 @@
 <p><strong>핵심 차별점</strong>: 심볼 수준의 참조 매핑 + 정량 스코어링 + CI 통합</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                         CLI (click)                             │
-│                    scan / check commands                          │
-└──────────┬──────────────────────────────────┬───────────────────┘
-           │                                  │
-           ▼                                  ▼
-┌─────────────────────┐          ┌────────────────────────────────┐
-│  symbol_extractor    │          │         git_tracker            │
-│                      │          │                                │
-│  Extract code symbol │──────▶  │  ① find_symbol_in_code()       │
-│  refs from Markdown/ │ symbols │    find symbol def via git grep │
-│  RST via regex       │         │  ② get_symbol_history()        │
-│                      │          │    collect change history       │
-│  · backtick calls    │          │  ③ get_doc_last_modified()     │
-│  · PascalCase classes│          │    query doc last modified date │
-│  · dotted module path│          └───────────────┬────────────────┘
-│  · file path refs    │                          │
-│  · import statements │                          │ tracking records
-└─────────────────────┘                          ▼
-                                   ┌─────────────────────────┐
-                                   │   scorer → reporter      │
-                                   │   staleness 0-100 score  │
-                                   │   = date diff (max 60pt) │
-                                   │   + commits (max 40pt)   │
-                                   │   → Markdown / JSON output│
-                                   └─────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Interface
+        CLI["CLI (click)<br/>scan / check commands"]
+    end
+
+    subgraph Processing
+        SE["symbol_extractor<br/>Extract code symbol refs<br/>from Markdown/RST via regex<br/><br/>· backtick calls<br/>· PascalCase classes<br/>· dotted module paths<br/>· file path refs<br/>· import statements"]
+        GT["git_tracker<br/><br/>① find_symbol_in_code()<br/>② get_symbol_history()<br/>③ get_doc_last_modified()"]
+    end
+
+    subgraph Output
+        SR["scorer → reporter<br/>staleness 0-100 score<br/>= date diff (max 60pt)<br/>+ commits (max 40pt)<br/>→ Markdown / JSON output"]
+    end
+
+    CLI --> SE
+    CLI --> GT
+    SE -->|"symbols"| GT
+    GT -->|"tracking records"| SR</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>httpx 프로젝트에서 실행한 결과:</strong></p>
@@ -413,6 +412,24 @@ Tracking symbol changes via git log...
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#dc2626',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

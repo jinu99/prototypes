@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -294,44 +301,19 @@
 <table><tr><th>기존 도구</th><th>Decay Detector</th></tr><tr><td>SonarQube: 파일 단위 정적 분석, 추세 없음</td><td>커밋별 결합도/순환 의존성 <strong>시계열 추적</strong></td></tr><tr><td>CodeClimate: 유지보수성 점수, AI 패턴 무관</td><td><strong>commit-revert, rapid-edit</strong> 패턴 감지</td></tr><tr><td>CodeRabbit: PR 단위 diff 리뷰</td><td>장기 아키텍처 침식 <strong>트렌드 경고</strong></td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────┐
-│   CLI (Click)   │  decay-detect scan &lt;repo-path&gt;
-│    cli.py       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐     ┌──────────────────────┐
-│  Git Analyzer   │────▶│  Dependency Parser    │
-│ git_analyzer.py │     │ dependency_parser.py  │
-│                 │     │ (tree-sitter based)   │
-│ · commit list   │     │ · Python import parse │
-│ · file content  │     │ · JS/TS import parse  │
-│ · churn stats   │     └──────────┬───────────┘
-│ · diff files    │                │
-└────────┬────────┘                ▼
-         │              ┌──────────────────────┐
-         │              │   Metrics Engine      │
-         │              │   metrics.py          │
-         │              │ · build dependency    │
-         │              │   graph               │
-         │              │ · edge count calc     │
-         │              │ · detect cyclic deps  │
-         │              └──────────┬───────────┘
-         ▼                         ▼
-┌─────────────────┐     ┌──────────────────────┐
-│Pattern Detector │     │   SQLite Storage      │
-│ · add-delete    │────▶│ · commit_metrics      │
-│ · delete-readd  │     │ · revert_patterns     │
-│ · rapid-edit    │     │ · time-series store   │
-└─────────────────┘     └──────────┬───────────┘
-                                   ▼
-                        ┌──────────────────────┐
-                        │   Visualizer (Rich)   │
-                        │ · coupling bar chart  │
-                        │ · churn rate chart    │
-                        │ · revert pattern table│
-                        │ · health warning      │
-                        └──────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    CLI["CLI (cli.py)"] -->|"decay-detect scan"| GA["Git Analyzer (git_analyzer.py)"]
+
+    subgraph Analysis
+        GA -->|"file content"| DP["Dependency Parser (dependency_parser.py)\ntree-sitter based"]
+        DP -->|"import graph"| ME["Metrics Engine (metrics.py)"]
+        GA -->|"diff files"| PD["Pattern Detector\nadd-delete / delete-readd / rapid-edit"]
+    end
+
+    ME -->|"edge count, cyclic deps"| DB["SQLite Storage"]
+    PD -->|"revert patterns"| DB
+
+    DB --> VIZ["Visualizer (Rich)\ncoupling bar chart / churn rate chart\nrevert pattern table / health warning"]</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code>Analysis complete
@@ -425,6 +407,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#2563eb',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

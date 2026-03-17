@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -298,38 +305,33 @@
 <blockquote><p>AI 코딩 에이전트에 런타임 컨텍스트를 구조화하여 제공하면,<br>추측 기반 디버깅에서 벗어나 <strong>근본 원인 도달 시간을 단축</strong>할 수 있는가?</p></blockquote>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌──────────────────────────────────────────────────┐
-│  AI Agent (Claude Code)                            │
-│  &quot;Show me recent error logs&quot;                       │
-└──────────────┬───────────────────────────────────┘
-               │ JSON-RPC (stdio)
-               ▼
-┌──────────────────────────────────────────────────┐
-│  MCP Server (mcp_server.py)                       │
-│  ┌─────────────────┬──────────────┬────────────┐ │
-│  │ get_recent_logs │ get_http     │ get_process │ │
-│  │     _tool       │ _traffic_tool│ _state_tool │ │
-│  └────────┬────────┴──────┬───────┴──────┬─────┘ │
-└───────────┼───────────────┼──────────────┼───────┘
-            ▼               ▼              ▼
-     ┌────────────┐  ┌───────────┐  ┌───────────┐
-     │  SQLite    │  │  SQLite   │  │  /proc    │
-     │  logs      │  │  http     │  │  filesystem│
-     └─────┬──────┘  └─────┬─────┘  └───────────┘
-           └────────┬──────┘
-                    ▼
-┌──────────────────────────────────────────────────┐
-│  Capture Engine (capture.py)                      │
-│  ┌───────────────────┐  ┌──────────────────────┐ │
-│  │ subprocess wrapper │  │ HTTP Forward Proxy   │ │
-│  │ asyncio PIPE      │  │ HTTP_PROXY auto-inject│ │
-│  └───────────────────┘  └──────────────────────┘ │
-│               └──────┬───────┘                    │
-│                      ▼                            │
-│             ┌──────────────┐                      │
-│             │  Target App  │                      │
-│             └──────────────┘                      │
-└──────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    Agent["AI Agent (Claude Code)"]
+
+    Agent -->|"JSON-RPC (stdio)"| LogsTool
+    Agent -->|"JSON-RPC (stdio)"| HttpTool
+    Agent -->|"JSON-RPC (stdio)"| ProcTool
+
+    subgraph MCP["MCP Server (mcp_server.py)"]
+        LogsTool["get_recent_logs_tool"]
+        HttpTool["get_http_traffic_tool"]
+        ProcTool["get_process_state_tool"]
+    end
+
+    LogsTool --> DBLogs["SQLite logs"]
+    HttpTool --> DBHttp["SQLite http"]
+    ProcTool --> ProcFS["/proc filesystem"]
+
+    subgraph Capture["Capture Engine (capture.py)"]
+        Wrapper["subprocess wrapper (asyncio PIPE)"]
+        Proxy["HTTP Forward Proxy (HTTP_PROXY auto-inject)"]
+        Target["Target App"]
+    end
+
+    Wrapper -->|"store"| DBLogs
+    Proxy -->|"store"| DBHttp
+    Wrapper --> Target
+    Proxy --> Target</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>앱 래핑 → 캡처 → MCP 조회 E2E</h3>
@@ -430,6 +432,24 @@ ZeroDivisionError: division by zero
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#7c3aed',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

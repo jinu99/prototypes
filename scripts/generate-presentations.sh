@@ -82,8 +82,11 @@ generate_one() {
 - spec의 검증 목표 활용
 
 ### Slide 5: Architecture
-- README의 ASCII 다이어그램 그대로 활용
-- 컴포넌트별 역할 한 줄 설명 추가
+- Mermaid 다이어그램으로 작성 (\`\`\`mermaid 코드블록 사용)
+- graph LR 또는 graph TD 사용 (데이터 파이프라인은 LR, 계층은 TD)
+- 노드에 파일명 포함: A[\"Parser (parser.py)\"]
+- subgraph로 관련 컴포넌트 묶기
+- 컴포넌트별 역할 한 줄 설명 추가 (다이어그램 아래에)
 
 ### Slide 6: Demo
 - 실제 실행 결과 하이라이트 (README Demo 섹션 활용)

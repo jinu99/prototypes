@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,35 +300,18 @@
 <blockquote><p><strong>검증 목표</strong>: 배포 후 MTTD(평균 감지 시간)를 5분 이내로 줄일 수 있는가?</p></blockquote>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                          CLI (cli.py)                           │
-│                   argparse: watch / scenarios                   │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ Command parsing
-                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    Demo Runner (demo.py)                         │
-│        Scenario select: healthy │ oom │ crashloop │ error_logs     │
-└──────────────┬──────────────────────────────────┬────────────────┘
-               │ create_deployment()              │ rolling_update()
-               ▼                                  ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                 Simulated Cluster (cluster.py)                   │
-│   Deployment/Pod create → Fault inject (OOM/CrashLoop/Log) → Emit event │
-└──────────────────────────────────────────┬───────────────────────┘
-                                           │ watcher callback
-                                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                   Soak Monitor (monitor.py)                      │
-│   Event receive → Pod status check → Log analysis (PatternMatcher, 9 regex) │
-└──────────────────────────────────────────┬───────────────────────┘
-                                           │ anomaly / pattern_alert
-                                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     Reporter (reporter.py)                       │
-│   ✓ Pod started │ ↻ Rolling Update │ ✖ Issue detected │ ⚠ Anomaly  │
-│   Progress Bar [████░░░░] 40%  │  ALL CLEAR / SOAK FAILED       │
-└──────────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    A["CLI (cli.py)<br/>argparse: watch / scenarios"]
+    B["Demo Runner (demo.py)<br/>Scenario select: healthy | oom | crashloop | error_logs"]
+    C["Simulated Cluster (cluster.py)<br/>Deployment/Pod create → Fault inject → Emit event"]
+    D["Soak Monitor (monitor.py)<br/>Event receive → Pod status check → Log analysis (9 regex)"]
+    E["Reporter (reporter.py)<br/>Pod started | Rolling Update | Issue detected | Anomaly<br/>Progress Bar → ALL CLEAR / SOAK FAILED"]
+
+    A -->|"Command parsing"| B
+    B -->|"create_deployment()"| C
+    B -->|"rolling_update()"| C
+    C -->|"watcher callback"| D
+    D -->|"anomaly / pattern_alert"| E</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>OOMKilled 감지 시나리오</h3>
@@ -418,6 +408,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#059669',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,27 +300,31 @@
 <ul><li>차별점: C4Diagrammer는 코드→다이어그램 방향. 이 도구는 <strong>다이어그램→AI 컨텍스트</strong> 방향</li></ul>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌──────────────────────────────────────────────────────────┐
-│  Input: architecture.mmd + mapping.json                    │
-└────────────┬─────────────────────────┬───────────────────┘
-             ▼                         ▼
-   ┌──────────────────┐    ┌──────────────────┐
-   │  MermaidParser    │    │  MappingConfig   │
-   │  C4/Flowchart    │    │  glob pattern     │
-   │  node+rel extract│    │  service rule mgmt│
-   └────────┬─────────┘    └────────┬─────────┘
-            └──────────┬───────────┘
-                       ▼
-            ┌──────────────────┐
-            │  ContextMapper   │
-            │  file→service map │
-            │  FileContext gen  │
-            └──────┬───────────┘
-         ┌─────────┼──────────┐
-         ▼         ▼          ▼
-   ┌──────────┐ ┌────────┐ ┌──────────────┐
-   │ CLI(7cmd)│ │MCP(4t) │ │CLAUDE.md Gen │
-   └──────────┘ └────────┘ └──────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    INPUT["Input: architecture.mmd + mapping.json"]
+
+    subgraph Parsing
+        PARSER["MermaidParser (parser.py)<br/>C4/Flowchart<br/>node+rel extract"]
+        CONFIG["MappingConfig (config.py)<br/>glob pattern<br/>service rule mgmt"]
+    end
+
+    subgraph Mapping
+        MAPPER["ContextMapper (mapper.py)<br/>file→service map<br/>FileContext gen"]
+    end
+
+    subgraph Delivery
+        CLI["CLI (cli.py)<br/>7 commands"]
+        MCP["MCP Server (server.py)<br/>4 tools"]
+        CLAUDE["CLAUDE.md Gen (generator.py)"]
+    end
+
+    INPUT --> PARSER
+    INPUT --> CONFIG
+    PARSER --> MAPPER
+    CONFIG --> MAPPER
+    MAPPER --> CLI
+    MAPPER --> MCP
+    MAPPER --> CLAUDE</pre>
 <ul><li><strong>MermaidParser</strong>: Regex-based. Supports C4 Context/Container and Flowchart formats</li><li><strong>ContextMapper</strong>: Maps file paths to services via fnmatch. Auto-discovers related services</li><li><strong>MCP Server</strong>: <code>get_file_context</code>, <code>list_services</code>, <code>list_relationships</code>, <code>get_service_context</code></li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -406,6 +417,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#7c3aed',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

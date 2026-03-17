@@ -154,9 +154,13 @@ def md_to_html(md_text: str) -> tuple[str, list[str]]:
                 code_lines.append(lines[i])
                 i += 1
             i += 1  # skip closing ```
-            code_content = escape_html("\n".join(code_lines))
-            cls = f' class="language-{escape_html(lang)}"' if lang else ""
-            html_parts.append(f'<pre><code{cls}>{code_content}</code></pre>')
+            if lang == "mermaid":
+                # Mermaid diagrams: render as-is, mermaid.js will handle it
+                html_parts.append(f'<pre class="mermaid">{"\n".join(code_lines)}</pre>')
+            else:
+                code_content = escape_html("\n".join(code_lines))
+                cls = f' class="language-{escape_html(lang)}"' if lang else ""
+                html_parts.append(f'<pre><code{cls}>{code_content}</code></pre>')
             continue
 
         # Headings
@@ -409,6 +413,13 @@ def generate_article_html(proto: dict) -> str:
     font-size: 0.85em;
     line-height: 1.5;
   }}
+  .article pre.mermaid {{
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }}
   .article code {{
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }}
@@ -626,6 +637,24 @@ def generate_article_html(proto: dict) -> str:
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   }});
 }})();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({{
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {{
+    primaryColor: '#334155',
+    primaryBorderColor: '{cat_color}',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }}
+}});
 </script>
 </body>
 </html>"""

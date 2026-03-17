@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -293,30 +300,24 @@
 <p><strong>우리 접근</strong>: pre-built 테스트 스위트로 <strong>설정 제로, 실행 즉시</strong></p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                         CLI (cli.py)                            │
-│  argparse: endpoint, --model, --mock, --probes, --output        │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ probe selection &amp; execution
-              ┌────────────┼────────────────┐
-              ▼            ▼                ▼
-┌──────────────────┐ ┌──────────────┐ ┌──────────────────┐
-│  structured.py   │ │ multiturn.py │ │  efficiency.py   │
-│ JSON/YAML parsing│ │ 7-turn×2 cases│ │ thinking on/off  │
-│ → success/schema │ │ → repeat/forget│ │ → token compare  │
-└────────┬─────────┘ └──────┬───────┘ └────────┬─────────┘
-         └──────────────────┼───────────────────┘
-                            ▼
-              ┌──────────────────────────┐
-              │  LLMClient (client.py)   │
-              │  OpenAI-compatible wrapper │
-              │  + built-in mock mode     │
-              └────────────┬─────────────┘
-                           ▼
-              ┌──────────────────────────┐
-              │  Reporter (reporter.py)  │
-              │  Rich terminal + JSON file │
-              └──────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    CLI["CLI (cli.py)<br/>argparse: endpoint, --model, --mock, --probes, --output"]
+
+    CLI -->|"probe selection & execution"| S
+    CLI -->|"probe selection & execution"| M
+    CLI -->|"probe selection & execution"| E
+
+    subgraph Probes
+        S["structured.py<br/>JSON/YAML parsing → success/schema"]
+        M["multiturn.py<br/>7-turn×2 cases → repeat/forget"]
+        E["efficiency.py<br/>thinking on/off → token compare"]
+    end
+
+    S --> Client["LLMClient (client.py)<br/>OpenAI-compatible wrapper + built-in mock mode"]
+    M --> Client
+    E --> Client
+
+    Client --> Reporter["Reporter (reporter.py)<br/>Rich terminal + JSON file"]</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code>$ uv run llm-qual-probe http://localhost:11434 --mock
@@ -416,6 +417,24 @@ Output Efficiency Details
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#0891b2',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

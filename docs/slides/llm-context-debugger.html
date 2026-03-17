@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -292,21 +299,15 @@
 <p>차별점: 1. <strong>코드 수정 제로</strong> — <code>base_url</code>만 프록시로 변경 2. <strong>토큰 수준 분해</strong> — tiktoken으로 컴포넌트별 정확한 토큰 카운팅 3. <strong>연속 호출 diff</strong> — 대화가 진행되면서 컨텍스트가 어떻게 변하는지 추적 4. <strong>로컬 실행</strong> — 데이터가 외부로 나가지 않음</p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────┐       ┌──────────────────────────────────────────────┐
-│  OpenAI Client  │       │        FastAPI Proxy (proxy.py:8088)        │
-│                 │  POST │                                              │
-│  base_url =     ├──────▶│  ┌──────────────────┐  ┌─────────────────┐  │
-│  localhost:8088 │       │  │ Token Analyzer   │  │ In-Memory Store │  │
-└─────────────────┘       │  │ (token_counter)  │─▶│ (store.py)      │  │
-                          │  │ tiktoken-based    │  │ CallRecord+diff │  │
-                          │  └──────────────────┘  └────────┬────────┘  │
-                          └──────────────┬──────────────────┼───────────┘
-                            Forward ─────┘                  │
-                            (real mode)                     ▼
-                          ┌──────────────┐       ┌──────────────────────┐
-                          │ OpenAI API   │       │ Dashboard (HTML)     │
-                          │ (upstream)   │       │ bar chart·treemap·diff│
-                          └──────────────┘       └──────────────────────┘</code></pre>
+<pre class="mermaid">graph LR
+    A["OpenAI Client<br/>base_url=localhost:8088"] -->|"POST"| Proxy
+
+    subgraph Proxy["FastAPI Proxy (proxy.py:8088)"]
+        B["Token Analyzer<br/>(token_counter.py)<br/>tiktoken-based"] -->|"CallRecord+diff"| C["In-Memory Store<br/>(store.py)"]
+    end
+
+    Proxy -->|"Forward (real mode)"| D["OpenAI API (upstream)"]
+    C --> E["Dashboard (HTML)<br/>bar chart · treemap · diff"]</pre>
 <ul><li><strong>proxy.py</strong>: Request intercept + mock/real mode switching</li><li><strong>token_counter.py</strong>: Per-message token breakdown, 5-component classification</li><li><strong>store.py</strong>: Call record storage + inter-call diff computation</li><li><strong>dashboard.html</strong>: Real-time visualization with 2s polling</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -393,6 +394,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#0891b2',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

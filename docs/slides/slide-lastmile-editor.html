@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -297,32 +304,35 @@
 <p><strong>코드 소스를 유지하면서 시각적으로 편집하는 도구는 현존하지 않는다</strong></p>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                        Browser (index.html)                     │
-│                                                                 │
-│  ┌──────────────┐   ┌───────────────────┐   ┌───────────────┐  │
-│  │ Slide Preview │   │  Source Editor     │   │  Diff Viewer  │  │
-│  │ (contentedi-  │   │  (textarea,       │   │  (change      │  │
-│  │  table edit)  │   │   real-time sync) │   │   visual.)    │  │
-│  └──────┬───────┘   └────────┬──────────┘   └───────┬───────┘  │
-│         │ blur/drag           │ input (800ms)        │ toggle   │
-└─────────┼────────────────────┼──────────────────────┼──────────┘
-          │                    │                      │
-          ▼                    ▼                      ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Express Server (server.js)                    │
-│                                                                 │
-│  POST /api/edit ──┐                                             │
-│  (block-level     │   ┌──────────────┐   ┌──────────────────┐  │
-│   edit)           ├──▶│  Marp Core   │──▶│ HTML + CSS resp. │  │
-│  POST /api/slide ──┤   │  (render +    │   └──────────────────┘  │
-│  (full save)       │   │  source-line  │                         │
-│                    │   │   map inject) │   ┌──────────────────┐  │
-│  POST /api/style ──┘   └──────────────┘   │  sample.md       │  │
-│  (position adj.)                          │  (source file R/W)│  │
-│                                           └──────────────────┘  │
-│  GET /api/diff ────────▶ diff library ───▶ changes JSON         │
-└─────────────────────────────────────────────────────────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    subgraph Browser["Browser (index.html)"]
+        A["Slide Preview<br/>(contenteditable edit)"]
+        B["Source Editor<br/>(textarea, real-time sync)"]
+        C["Diff Viewer<br/>(change visual.)"]
+    end
+
+    subgraph Server["Express Server (server.js)"]
+        D["POST /api/edit<br/>(block-level edit)"]
+        E["POST /api/slide<br/>(full save)"]
+        F["POST /api/style<br/>(position adj.)"]
+        G["Marp Core<br/>(render + source-line map inject)"]
+        H["HTML + CSS resp."]
+        I["sample.md<br/>(source file R/W)"]
+        J["GET /api/diff"]
+        K["diff library"]
+        L["changes JSON"]
+    end
+
+    A -->|"blur/drag"| D
+    B -->|"input (800ms)"| E
+    C -->|"toggle"| J
+    D --> G
+    E --> G
+    F --> G
+    G --> H
+    G -.-> I
+    J --> K
+    K --> L</pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>3패널 에디터 구성</h3>
@@ -407,6 +417,24 @@ $ curl -X POST localhost:4567/api/edit \
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#dc2626',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

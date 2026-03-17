@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -292,25 +299,20 @@
 <table><tr><th>기존 도구</th><th>한계</th><th>우리 접근</th></tr><tr><td>GitHub 스타터 워크플로우</td><td>수동 선택 필요, 프로젝트 분석 없음</td><td>자동 감지</td></tr><tr><td>Ghygen</td><td>PHP/Laravel 전용</td><td>3개 에코시스템 범용</td></tr><tr><td>github-workflows-kt</td><td>Kotlin DSL, 자동 감지 없음</td><td>파일 스캔 기반 자동</td></tr><tr><td>AI 기반 도구</td><td>API 키 필수, 비용 발생</td><td>로컬 실행, 무료</td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────────┐
-│                         CLI (cli.js)                            │
-│              init / detect / validate command routing              │
-└──────┬──────────────────┬───────────────────┬───────────────────┘
-       │                  │                   │
-       ▼                  ▼                   ▼
-┌──────────────┐  ┌───────────────┐  ┌────────────────┐
-│   Detector   │  │   Generator   │  │   Validator    │
-│ detector.js  │  │ generator.js  │  │  validator.js  │
-├──────────────┤  ├───────────────┤  ├────────────────┤
-│ File scan +  │  │ Detection →   │  │ YAML parsing  │
-│ ecosystem    │  │ to Job config │  │ + GitHub      │
-│ detection    │  │ conversion    │  │ Actions schema│
-└──────────────┘  └───────────────┘  │ validation    │
-       ▲                              └────────────────┘
-       │
-┌──────────────┐
-│  rules.json  │  ← Detection rules (3 ecosystems × tool mapping)
-└──────────────┘</code></pre>
+<pre class="mermaid">graph TD
+    CLI["CLI (cli.js)<br>init / detect / validate command routing"]
+
+    CLI --> Detector
+    CLI --> Generator
+    CLI --> Validator
+
+    subgraph Modules
+        Detector["Detector (detector.js)<br>File scan + ecosystem detection"]
+        Generator["Generator (generator.js)<br>Detection → Job config conversion"]
+        Validator["Validator (validator.js)<br>YAML parsing + GitHub Actions schema validation"]
+    end
+
+    Rules["rules.json<br>Detection rules (3 ecosystems × tool mapping)"] -->|"rule lookup"| Detector</pre>
 <ul><li><strong>Detector</strong>: Identifies toolchain by checking file existence + parsing config files</li><li><strong>Generator</strong>: Converts detection results to GitHub Actions job structure with auto matrix strategy</li><li><strong>Validator</strong>: Validates generated YAML syntax + structural correctness</li><li><strong>rules.json</strong>: Detection rules live outside code — add new ecosystems by editing JSON only</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -410,6 +412,24 @@
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#059669',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

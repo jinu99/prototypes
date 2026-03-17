@@ -114,6 +114,13 @@
     font-size: 0.85em;
     line-height: 1.5;
   }
+  .article pre.mermaid {
+    background: transparent;
+    border: none;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 1em;
+  }
   .article code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
@@ -294,31 +301,32 @@
 <blockquote><p>YAML 설정만으로 멀티소스를 폴링하여 실무적으로 유용한 일일 다이제스트를 생성할 수 있는가?</p></blockquote>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>┌─────────────┐
-│ digest.yaml │  YAML config (source definitions + output settings)
-└──────┬──────┘
-       │
-       ▼
-┌──────────────┐    ┌─────────────────┐
-│   Engine     │───▶│  Plugin Registry │
-│ (poll_all)   │    │                 │
-└──────┬───────┘    │ ┌─────────────┐ │
-       │            │ │ http_check  │ │
-       │            │ │ log_pattern │ │
-       │            │ │ docker_stat │ │
-       │            │ │ prom_mock   │ │
-       │            │ └─────────────┘ │
-       │            └─────────────────┘
-       │
-       ▼
-┌──────────────┐    ┌───────────────┐
-│  Renderer    │───▶│ Jinja2 Template│
-│ (severity    │    │ (digest.md.j2) │
-│  sort+group) │    └───────────────┘
-└──────┬───────┘
-       │
-       ├──▶ 📄 Markdown file
-       └──▶ 📤 Slack webhook</code></pre>
+<pre class="mermaid">graph TD
+    CONFIG["digest.yaml"] -->|"source definitions + output settings"| ENGINE
+
+    subgraph Core
+        ENGINE["Engine (poll_all)"]
+        RENDERER["Renderer (severity sort+group)"]
+        ENGINE --> RENDERER
+    end
+
+    ENGINE -->|"lookup source type"| REGISTRY
+
+    subgraph Plugin Registry
+        REGISTRY["Plugin Registry"]
+        HTTP["http_check"]
+        LOG["log_pattern"]
+        DOCKER["docker_stat"]
+        PROM["prom_mock"]
+        REGISTRY --- HTTP
+        REGISTRY --- LOG
+        REGISTRY --- DOCKER
+        REGISTRY --- PROM
+    end
+
+    RENDERER -->|"render"| TEMPLATE["Jinja2 Template (digest.md.j2)"]
+    RENDERER -->|"output"| MD["Markdown file"]
+    RENDERER -->|"output"| SLACK["Slack webhook"]</pre>
 <ul><li><strong>Engine</strong>: Reads YAML → creates plugin instances → polls all sources</li><li><strong>Plugin</strong>: <code>Protocol</code>-based, extensible by implementing <code>poll() → list[Alert]</code> interface</li><li><strong>Renderer</strong>: Sorts by severity → renders Markdown via Jinja2</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
@@ -414,6 +422,24 @@ Done! ✨</code></pre>
     toggleAllBtn.textContent = allOpen ? '발표 스크립트 전체 닫기' : '발표 스크립트 전체 열기';
   });
 })();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#334155',
+    primaryBorderColor: '#db2777',
+    primaryTextColor: '#e2e8f0',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif'
+  }
+});
 </script>
 </body>
 </html>

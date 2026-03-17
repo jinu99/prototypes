@@ -301,24 +301,24 @@
          ▼                       ▼
 ┌─────────────────┐     ┌─────────────────┐
 │   log_parser    │     │  deploy_events  │
-│  Drain3 템플릿   │     │  파싱 &amp; 정규화    │
-│  추출 + first-  │     │                 │
-│  seen 탐지       │     │                 │
+│ Drain3 Template │     │ Parse &amp;         │
+│ Extract + first-│     │ Normalize       │
+│ seen Detection  │     │                 │
 └────────┬────────┘     └────────┬────────┘
          │         ┌─────┘
          ▼         ▼
 ┌──────────────────────────────────────────┐
-│        db.py (SQLite) — 3 테이블          │
+│        db.py (SQLite) — 3 Tables          │
 │  log_templates │ deploy_events │ correlations │
 └──────────────────┬───────────────────────┘
                    ▼
          ┌─────────────────┐
          │   correlator    │
-         │ 시간 윈도우 매칭   │
+         │ Window Matching │
          └────────┬────────┘
          ┌────────┴────────┐
          ▼                 ▼
-  CLI (터미널 출력)    Web Dashboard</code></pre>
+  CLI (Terminal)       Web Dashboard</code></pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code>$ uv run python cli.py demo

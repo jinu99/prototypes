@@ -302,19 +302,19 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                    FastAPI Server (server.py)                    │
 │                                                                 │
-│  GET /api/matches ─── 타임라인 조회 (필터: source, keyword, …)  │
-│  POST /api/collect/* ─ 수집 트리거                              │
-│  GET/POST/DELETE /api/config/* ─ 설정 관리                      │
+│  GET /api/matches ─── Timeline query (filter: source, keyword, …)│
+│  POST /api/collect/* ─ Trigger collection                       │
+│  GET/POST/DELETE /api/config/* ─ Config management               │
 └────────┬───────────────────┬───────────────────┬────────────────┘
          │                   │                   │
          ▼                   ▼                   ▼
 ┌────────────────┐ ┌────────────────┐ ┌──────────────────────────┐
 │ Reddit         │ │ RSS            │ │ SQLite DB (monitor.db)   │
 │ Collector      │ │ Collector      │ │                          │
-│ (mock 데이터)  │ │ (feedparser)   │ │  matches 테이블          │
-│                │ │                │ │  config 테이블           │
+│ (mock data)    │ │ (feedparser)   │ │  matches table           │
+│                │ │                │ │  config table            │
 └────────────────┘ └────────────────┘ └──────────────────────────┘</code></pre>
-<ul><li><strong>server.py</strong>: FastAPI 엔드포인트 7개, 정적 파일 서빙 겸임</li><li><strong>reddit_collector.py</strong>: mock 데이터 생성 (API 키 불필요)</li><li><strong>rss_collector.py</strong>: feedparser로 실제 RSS 피드 파싱</li><li><strong>db.py</strong>: SQLite WAL 모드, <code>INSERT OR IGNORE</code>로 중복 제거</li></ul>
+<ul><li><strong>server.py</strong>: 7 FastAPI endpoints, also serves static files</li><li><strong>reddit_collector.py</strong>: Generates mock data (no API key required)</li><li><strong>rss_collector.py</strong>: Parses real RSS feeds with feedparser</li><li><strong>db.py</strong>: SQLite WAL mode, deduplication via <code>INSERT OR IGNORE</code></li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>수집 결과</h3>

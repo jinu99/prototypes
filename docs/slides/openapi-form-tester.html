@@ -293,10 +293,10 @@
 <table><tr><th>기존 방식</th><th>이 도구</th></tr><tr><td>Swagger UI에서 JSON 수동 편집</td><td>스키마에서 타입별 폼 자동 생성</td></tr><tr><td>응답 확인 → 별도 도구로 스펙 검증</td><td>응답 수신 즉시 드리프트 테이블 표시</td></tr><tr><td>Postman + Dredd 조합 필요</td><td><code>node cli.js spec.yaml</code> 한 줄로 끝</td></tr></table>
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
-<pre><code>OpenAPI YAML ──▶ Parser (swagger-parser, $ref 역참조) ──▶ /api/spec ──▶ 브라우저 UI
-사용자 폼 입력 ──▶ /api/send (Express 프록시) ──▶ 대상 API ──▶ 응답 수신
-응답 JSON ──▶ /api/validate ──▶ Validator (재귀적 스키마 비교) ──▶ 드리프트 테이블</code></pre>
-<table><tr><th>컴포넌트</th><th>역할</th></tr><tr><td><strong>cli.js</strong></td><td>spec 경로 파싱 → 서버 기동 → 브라우저 자동 오픈</td></tr><tr><td><strong>parser.js</strong></td><td>swagger-parser로 OpenAPI 3.x $ref 해석 및 엔드포인트 추출</td></tr><tr><td><strong>validator.js</strong></td><td>응답 vs 스펙 재귀 비교 — missing / type_mismatch / undocumented 감지</td></tr><tr><td><strong>form-builder.js</strong></td><td>JSON Schema → 동적 폼 렌더링 (중첩 object, array, enum 지원)</td></tr><tr><td><strong>app.js</strong></td><td>사이드바 · 요청 전송 · 응답/드리프트 표시 메인 로직</td></tr></table>
+<pre><code>OpenAPI YAML ──▶ Parser (swagger-parser, $ref dereferencing) ──▶ /api/spec ──▶ Browser UI
+User Form Input ──▶ /api/send (Express proxy) ──▶ Target API ──▶ Response Received
+Response JSON ──▶ /api/validate ──▶ Validator (recursive schema comparison) ──▶ Drift Table</code></pre>
+<table><tr><th>Component</th><th>Role</th></tr><tr><td><strong>cli.js</strong></td><td>Parse spec path → start server → auto-open browser</td></tr><tr><td><strong>parser.js</strong></td><td>Resolve OpenAPI 3.x $ref via swagger-parser and extract endpoints</td></tr><tr><td><strong>validator.js</strong></td><td>Recursive response vs spec comparison — detect missing / type_mismatch / undocumented</td></tr><tr><td><strong>form-builder.js</strong></td><td>JSON Schema → dynamic form rendering (nested object, array, enum support)</td></tr><tr><td><strong>app.js</strong></td><td>Sidebar · request dispatch · response/drift display main logic</td></tr></table>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>동적 폼 생성 → 요청 전송 → 드리프트 감지</strong> 전체 흐름:</p>

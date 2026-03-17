@@ -298,25 +298,25 @@
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌─────────────────────────────────────────────────────────────────┐
 │                    Browser (index.html)                         │
-│  URL 입력 → Scan 버튼 → fetch(/api/scan) → 대시보드 렌더링     │
+│  URL input → Scan button → fetch(/api/scan) → render dashboard   │
 └──────────────────────────────┬──────────────────────────────────┘
                                │ GET /api/scan?url=...
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                 FastAPI Server (main.py)                        │
 │                                                                 │
-│  httpx.AsyncClient로 3개 리소스 동시 fetch:                     │
+│  httpx.AsyncClient fetches 3 resources concurrently:             │
 │     ┌──────────┐  ┌──────────────┐  ┌──────────────┐           │
-│     │ 대상 페이지│  │ /robots.txt  │  │ /sitemap.xml │           │
+│     │ Target Page│  │ /robots.txt  │  │ /sitemap.xml │           │
 │     └────┬─────┘  └──────┬───────┘  └──────┬───────┘           │
 │          ▼               ▼                  ▼                   │
 │   seo_checker      robots_analyzer    phantom_detector          │
-│   (14개 항목)      (AI 크롤러 10종)   (사이트맵 vs 텍스트)      │
+│   (14 checks)     (10 AI crawlers)   (sitemap vs text)         │
 │          └───────────────┼──────────────────┘                   │
 │                          ▼                                      │
 │                   JSON Response                                 │
 └─────────────────────────────────────────────────────────────────┘</code></pre>
-<ul><li><strong>seo_checker</strong>: title, meta, OG, JSON-LD, viewport 등 14개 항목 pass/fail</li><li><strong>robots_analyzer</strong>: 10종 AI 크롤러 차단 여부 + 미차단 크롤러용 robots.txt 스니펫 자동 생성</li><li><strong>phantom_detector</strong>: 사이트맵 URL과 페이지 텍스트 내 경로 패턴 비교 → 팬텀 URL 탐지</li></ul>
+<ul><li><strong>seo_checker</strong>: pass/fail for 14 checks including title, meta, OG, JSON-LD, viewport</li><li><strong>robots_analyzer</strong>: block status of 10 AI crawlers + auto-generated robots.txt snippet for unblocked ones</li><li><strong>phantom_detector</strong>: compares sitemap URLs against path patterns in page text → detects phantom URLs</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>API 응답 예시</strong> (<code>/api/scan?url=github.com</code>):</p>

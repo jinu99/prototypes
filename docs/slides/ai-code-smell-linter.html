@@ -316,7 +316,7 @@
    CLI ────────────▶│  Output     │──▶ JSON / colored text
    scan / diff      │  Formatter  │
                     └─────────────┘</code></pre>
-<ul><li><strong>Parser</strong>: tree-sitter로 Python/JS/TS 소스를 AST로 변환</li><li><strong>Scanner</strong>: 모든 룰을 AST에 대해 실행, 언어별 적용 가능 룰 자동 필터</li><li><strong>Rules</strong>: 각 룰이 BaseRule을 상속, <code>check(tree, source, lang, filepath)</code> 인터페이스</li><li><strong>Output</strong>: JSON 또는 컬러 텍스트 포맷 선택</li></ul>
+<ul><li><strong>Parser</strong>: Converts Python/JS/TS source files into AST via tree-sitter</li><li><strong>Scanner</strong>: Runs all rules against the AST, automatically filters applicable rules per language</li><li><strong>Rules</strong>: Each rule extends BaseRule with a <code>check(tree, source, lang, filepath)</code> interface</li><li><strong>Output</strong>: Choose between JSON or colored text output format</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>Python 스캔 결과</h3>

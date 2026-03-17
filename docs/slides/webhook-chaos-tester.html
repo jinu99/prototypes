@@ -298,7 +298,7 @@
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌─────────────────────────────────────────────────────────────────┐
 │                          CLI (cli.py)                           │
-│              click 기반 명령어: run / demo / echo               │
+│           click-based commands: run / demo / echo               │
 └──────┬──────────────────┬───────────────────────┬───────────────┘
        │                  │                       │
        ▼                  ▼                       ▼
@@ -306,10 +306,10 @@
 │ Loader       │  │ Engine        │  │ Echo Server            │
 │ (loader.py)  │  │ (engine.py)   │  │ (echo_server.py)       │
 │              │  │               │  │                        │
-│ YAML 파싱    │  │ 시나리오 실행 │  │ 테스트용 HTTP 서버     │
-│ → Scenario[] │  │ httpx로 전송  │  │ POST /webhook 수신     │
+│ YAML parsing │  │ Run scenarios │  │ Test HTTP server       │
+│ → Scenario[] │  │ Send via httpx│  │ Receive POST /webhook  │
 └──────────────┘  └───────────────┘  │ --reject-duplicates    │
-                                     │  : 409 중복 거부       │
+                                     │  : 409 reject dups     │
                                      └────────────────────────┘
                           │
                           ▼
@@ -318,7 +318,7 @@
                   │ (report.py)   │
                   │ Markdown/JSON │
                   └───────────────┘</code></pre>
-<p><strong>Loader</strong> → YAML 시나리오 파싱 | <strong>Engine</strong> → 카오스 패턴 실행 + 판정 | <strong>Echo</strong> → 로컬 테스트 타겟 | <strong>Report</strong> → 결과 출력</p>
+<p><strong>Loader</strong> → Parse YAML scenarios | <strong>Engine</strong> → Execute chaos patterns + judge results | <strong>Echo</strong> → Local test target | <strong>Report</strong> → Output results</p>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code class="language-bash">$ uv run webhook-chaos demo

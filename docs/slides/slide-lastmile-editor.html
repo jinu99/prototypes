@@ -302,8 +302,8 @@
 │                                                                 │
 │  ┌──────────────┐   ┌───────────────────┐   ┌───────────────┐  │
 │  │ Slide Preview │   │  Source Editor     │   │  Diff Viewer  │  │
-│  │ (contentedi-  │   │  (textarea,       │   │  (변경사항     │  │
-│  │  table 편집)  │   │   실시간 동기화)  │   │   시각화)     │  │
+│  │ (contentedi-  │   │  (textarea,       │   │  (change      │  │
+│  │  table edit)  │   │   real-time sync) │   │   visual.)    │  │
 │  └──────┬───────┘   └────────┬──────────┘   └───────┬───────┘  │
 │         │ blur/drag           │ input (800ms)        │ toggle   │
 └─────────┼────────────────────┼──────────────────────┼──────────┘
@@ -313,15 +313,15 @@
 │                    Express Server (server.js)                    │
 │                                                                 │
 │  POST /api/edit ──┐                                             │
-│  (블록 단위 편집)  │   ┌──────────────┐   ┌──────────────────┐  │
-│                    ├──▶│  Marp Core   │──▶│  HTML + CSS 응답 │  │
-│  POST /api/slide ──┤   │  (렌더링 +    │   └──────────────────┘  │
-│  (전체 저장)       │   │  source-line  │                         │
-│                    │   │   매핑 주입)  │   ┌──────────────────┐  │
+│  (block-level     │   ┌──────────────┐   ┌──────────────────┐  │
+│   edit)           ├──▶│  Marp Core   │──▶│ HTML + CSS resp. │  │
+│  POST /api/slide ──┤   │  (render +    │   └──────────────────┘  │
+│  (full save)       │   │  source-line  │                         │
+│                    │   │   map inject) │   ┌──────────────────┐  │
 │  POST /api/style ──┘   └──────────────┘   │  sample.md       │  │
-│  (위치 조정)                              │  (원본 파일 R/W) │  │
+│  (position adj.)                          │  (source file R/W)│  │
 │                                           └──────────────────┘  │
-│  GET /api/diff ────────▶ diff 라이브러리 ──▶ 변경사항 JSON       │
+│  GET /api/diff ────────▶ diff library ───▶ changes JSON         │
 └─────────────────────────────────────────────────────────────────┘</code></pre>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>

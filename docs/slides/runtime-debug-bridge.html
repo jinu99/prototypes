@@ -299,8 +299,8 @@
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌──────────────────────────────────────────────────┐
-│  AI 에이전트 (Claude Code)                        │
-│  &quot;최근 에러 로그 보여줘&quot;                           │
+│  AI Agent (Claude Code)                            │
+│  &quot;Show me recent error logs&quot;                       │
 └──────────────┬───────────────────────────────────┘
                │ JSON-RPC (stdio)
                ▼
@@ -321,13 +321,13 @@
 ┌──────────────────────────────────────────────────┐
 │  Capture Engine (capture.py)                      │
 │  ┌───────────────────┐  ┌──────────────────────┐ │
-│  │ subprocess 래핑    │  │ HTTP Forward Proxy   │ │
-│  │ asyncio PIPE      │  │ HTTP_PROXY 자동 주입  │ │
+│  │ subprocess wrapper │  │ HTTP Forward Proxy   │ │
+│  │ asyncio PIPE      │  │ HTTP_PROXY auto-inject│ │
 │  └───────────────────┘  └──────────────────────┘ │
 │               └──────┬───────┘                    │
 │                      ▼                            │
 │             ┌──────────────┐                      │
-│             │  대상 앱     │                      │
+│             │  Target App  │                      │
 │             └──────────────┘                      │
 └──────────────────────────────────────────────────┘</code></pre>
 <div class="speaker-note" data-note-idx="4"></div>

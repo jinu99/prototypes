@@ -297,7 +297,7 @@
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌─────────────────────────────────────────────────────────────┐
 │  Collection Layer                                           │
-│  collector.py (30초 주기)       uptime.py (HTTP retry 2회) │
+│  collector.py (every 30s)       uptime.py (HTTP retry x2)  │
 │   psutil: CPU/Mem/Net            httpbin.org, example.com   │
 └──────────────┬─────────────────────────┬────────────────────┘
                ▼                         ▼
@@ -309,15 +309,15 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  analyzer.py                                                │
 │  CPU ≥ 10% → active / &lt; 10% → idle                         │
-│  시간대별 세그먼트 → EC2 vs Lambda 비용 비교 산출           │
+│  Time-based segments → EC2 vs Lambda cost comparison        │
 └──────────────────────────┬──────────────────────────────────┘
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  server.py — FastAPI :8099                                  │
 │  REST API (7 endpoints) + static/index.html (Chart.js)      │
-│  시계열 차트 │ 세그먼트바 │ 비용비교 │ 업타임 │ 크론       │
+│  Time-series │ Segment bar │ Cost comp │ Uptime │ Cron      │
 └─────────────────────────────────────────────────────────────┘</code></pre>
-<ul><li><strong>수집</strong>: psutil로 30초마다 CPU/메모리/네트워크 → SQLite 적재</li><li><strong>분석</strong>: CPU 10% 임계치로 활성/유휴 분류 → 일별 활성 시간 산출 → Lambda 비용 추정</li><li><strong>표현</strong>: FastAPI + Chart.js 단일 페이지 대시보드</li></ul>
+<ul><li><strong>Collection</strong>: psutil collects CPU/Memory/Network every 30s → stored in SQLite</li><li><strong>Analysis</strong>: Active/Idle classification at 10% CPU threshold → daily active hours → Lambda cost estimation</li><li><strong>Presentation</strong>: FastAPI + Chart.js single-page dashboard</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>비용 분석 API 응답</h3>

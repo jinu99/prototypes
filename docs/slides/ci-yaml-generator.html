@@ -294,7 +294,7 @@
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌─────────────────────────────────────────────────────────────────┐
 │                         CLI (cli.js)                            │
-│              init / detect / validate 명령 라우팅                │
+│              init / detect / validate command routing              │
 └──────┬──────────────────┬───────────────────┬───────────────────┘
        │                  │                   │
        ▼                  ▼                   ▼
@@ -302,16 +302,16 @@
 │   Detector   │  │   Generator   │  │   Validator    │
 │ detector.js  │  │ generator.js  │  │  validator.js  │
 ├──────────────┤  ├───────────────┤  ├────────────────┤
-│ 프로젝트 파일│  │ Detection →   │  │ YAML 파싱     │
-│ 스캔 + 에코  │  │ Job 구성으로  │  │ + GitHub      │
-│ 시스템 감지  │  │ 변환          │  │ Actions 스키마 │
-└──────────────┘  └───────────────┘  │ 검증           │
+│ File scan +  │  │ Detection →   │  │ YAML parsing  │
+│ ecosystem    │  │ to Job config │  │ + GitHub      │
+│ detection    │  │ conversion    │  │ Actions schema│
+└──────────────┘  └───────────────┘  │ validation    │
        ▲                              └────────────────┘
        │
 ┌──────────────┐
-│  rules.json  │  ← 감지 규칙 설정 (3개 에코시스템 × 도구 매핑)
+│  rules.json  │  ← Detection rules (3 ecosystems × tool mapping)
 └──────────────┘</code></pre>
-<ul><li><strong>Detector</strong>: 파일 존재 확인 + 설정 파일 파싱으로 도구 체인 식별</li><li><strong>Generator</strong>: 감지 결과를 GitHub Actions job 구조로 변환, matrix strategy 자동 적용</li><li><strong>Validator</strong>: 생성된 YAML의 문법 + 구조적 유효성 검증</li><li><strong>rules.json</strong>: 감지 규칙이 코드 밖에 있어서 새 에코시스템 추가 시 JSON만 수정</li></ul>
+<ul><li><strong>Detector</strong>: Identifies toolchain by checking file existence + parsing config files</li><li><strong>Generator</strong>: Converts detection results to GitHub Actions job structure with auto matrix strategy</li><li><strong>Validator</strong>: Validates generated YAML syntax + structural correctness</li><li><strong>rules.json</strong>: Detection rules live outside code — add new ecosystems by editing JSON only</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>Node.js 프로젝트 → 완성된 CI 파이프라인</h3>

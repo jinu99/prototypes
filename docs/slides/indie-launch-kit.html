@@ -301,24 +301,24 @@
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                      builder.js (오케스트레이션)                  │
+│                      builder.js (orchestration)                   │
 │                                                                  │
 │  ┌──────────────┐   ┌───────────────┐   ┌─────────────────────┐ │
 │  │  parser.js   │   │ metadata.js   │   │   changelog.js      │ │
-│  │ README → AST │   │ package.json  │   │ git log → 타입별    │ │
-│  │ → 섹션 분류  │   │ → name, ver   │   │   그룹화            │ │
+│  │ README → AST │   │ package.json  │   │ git log → grouped   │ │
+│  │ → classify   │   │ → name, ver   │   │   by type           │ │
 │  └──────┬───────┘   └──────┬────────┘   └──────────┬──────────┘ │
 │         └──────────────────┼───────────────────────┘            │
 │                            ▼                                    │
 │  ┌──────────────────────────────┐  ┌────────────────────────┐   │
 │  │       templates.js           │  │    launch-posts.js     │   │
-│  │ Handlebars × 3 테마 렌더링  │  │ PH / Reddit / HN 초안  │   │
+│  │ Handlebars × 3 theme render  │  │ PH / Reddit / HN drafts│   │
 │  └──────────────┬───────────────┘  └──────────┬─────────────┘   │
 └─────────────────┼─────────────────────────────┼─────────────────┘
                   ▼                             ▼
         dist/index.html              dist/launch-posts/*.md
         dist/changelog.html</code></pre>
-<p>핵심: <code>parser.js</code>가 remark AST로 헤딩 키워드를 매칭해서 Hero/Features/Install/CTA로 자동 분류</p>
+<p>Core: <code>parser.js</code> matches heading keywords via remark AST to auto-classify into Hero/Features/Install/CTA</p>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code class="language-bash">$ node bin/cli.js build --dir ./test-fixtures/sample-project --theme minimal

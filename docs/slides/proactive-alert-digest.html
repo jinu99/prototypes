@@ -295,7 +295,7 @@
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌─────────────┐
-│ digest.yaml │  YAML 설정 (소스 정의 + 출력 설정)
+│ digest.yaml │  YAML config (source definitions + output settings)
 └──────┬──────┘
        │
        ▼
@@ -319,7 +319,7 @@
        │
        ├──▶ 📄 Markdown file
        └──▶ 📤 Slack webhook</code></pre>
-<ul><li><strong>Engine</strong>: YAML 읽고 → 플러그인 인스턴스 생성 → 일괄 폴링</li><li><strong>Plugin</strong>: <code>Protocol</code> 기반, <code>poll() → list[Alert]</code> 인터페이스만 맞추면 확장 가능</li><li><strong>Renderer</strong>: 심각도 정렬 → Jinja2로 마크다운 렌더링</li></ul>
+<ul><li><strong>Engine</strong>: Reads YAML → creates plugin instances → polls all sources</li><li><strong>Plugin</strong>: <code>Protocol</code>-based, extensible by implementing <code>poll() → list[Alert]</code> interface</li><li><strong>Renderer</strong>: Sorts by severity → renders Markdown via Jinja2</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code class="language-bash">$ uv run python cli.py init

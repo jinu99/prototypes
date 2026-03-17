@@ -81,7 +81,7 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. 첫째, 업타
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Collection Layer                                           │
-│  collector.py (30초 주기)       uptime.py (HTTP retry 2회) │
+│  collector.py (every 30s)       uptime.py (HTTP retry x2)  │
 │   psutil: CPU/Mem/Net            httpbin.org, example.com   │
 └──────────────┬─────────────────────────┬────────────────────┘
                ▼                         ▼

@@ -294,27 +294,27 @@
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌──────────────────────────────────────────────────────────┐
-│  입력: architecture.mmd + mapping.json                    │
+│  Input: architecture.mmd + mapping.json                    │
 └────────────┬─────────────────────────┬───────────────────┘
              ▼                         ▼
    ┌──────────────────┐    ┌──────────────────┐
    │  MermaidParser    │    │  MappingConfig   │
-   │  C4/Flowchart    │    │  glob 패턴 매칭   │
-   │  노드+관계 추출   │    │  서비스 룰 관리   │
+   │  C4/Flowchart    │    │  glob pattern     │
+   │  node+rel extract│    │  service rule mgmt│
    └────────┬─────────┘    └────────┬─────────┘
             └──────────┬───────────┘
                        ▼
             ┌──────────────────┐
             │  ContextMapper   │
-            │  파일→서비스 매핑  │
-            │  FileContext 생성 │
+            │  file→service map │
+            │  FileContext gen  │
             └──────┬───────────┘
          ┌─────────┼──────────┐
          ▼         ▼          ▼
    ┌──────────┐ ┌────────┐ ┌──────────────┐
    │ CLI(7cmd)│ │MCP(4t) │ │CLAUDE.md Gen │
    └──────────┘ └────────┘ └──────────────┘</code></pre>
-<ul><li><strong>MermaidParser</strong>: 정규식 기반. C4 Context/Container, Flowchart 두 포맷 지원</li><li><strong>ContextMapper</strong>: fnmatch로 파일 경로 → 서비스 매핑. 관련 서비스 자동 탐색</li><li><strong>MCP Server</strong>: <code>get_file_context</code>, <code>list_services</code>, <code>list_relationships</code>, <code>get_service_context</code></li></ul>
+<ul><li><strong>MermaidParser</strong>: Regex-based. Supports C4 Context/Container and Flowchart formats</li><li><strong>ContextMapper</strong>: Maps file paths to services via fnmatch. Auto-discovers related services</li><li><strong>MCP Server</strong>: <code>get_file_context</code>, <code>list_services</code>, <code>list_relationships</code>, <code>get_service_context</code></li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>파일 하나의 아키텍처 컨텍스트를 실시간으로 조회</strong></p>

@@ -301,13 +301,13 @@
 │                                                             │
 │  ┌───────────┐    ┌────────────┐    ┌───────────────────┐   │
 │  │ index.html│    │  style.css │    │   mock-data.js    │   │
-│  │ (진입점)  │    │ (다크 테마)│    │ (Mock AI 시나리오)│   │
+│  │ (Entry)   │    │(Dark Theme)│    │(Mock AI Scenarios)│   │
 │  └─────┬─────┘    └────────────┘    └────────┬──────────┘   │
 │        │                                     │              │
 │        ▼                                     ▼              │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │                    app.js (핵심 로직)                 │   │
-│  │  cells[] ─── 상태 관리 ─── cellIdCounter             │   │
+│  │                    app.js (Core Logic)                │   │
+│  │  cells[] ─── State Mgmt ─── cellIdCounter            │   │
 │  │     │                                                │   │
 │  │  ┌─────────┐  ┌─────────┐  ┌──────────┐             │   │
 │  │  │ Prompt  │─▶│  Plan   │─▶│  Result  │             │   │
@@ -319,10 +319,10 @@
 │                     ▼                                       │
 │  ┌────────────────────────┐   ┌───────────────────┐        │
 │  │      render.js         │   │   LocalStorage     │        │
-│  │ (셀 DOM 생성·이벤트)   │   │  (상태 영속화)     │        │
+│  │  (Cell DOM &amp; Events)   │   │(State Persistence) │        │
 │  └────────────────────────┘   └───────────────────┘        │
 └─────────────────────────────────────────────────────────────┘</code></pre>
-<ul><li><strong>app.js</strong>: 셀 생성/삭제, 실행 흐름, 플랜 승인, 상태 저장 (216줄)</li><li><strong>render.js</strong>: DOM 생성과 이벤트 바인딩, XSS 방지를 위해 innerHTML 미사용 (156줄)</li><li><strong>mock-data.js</strong>: 사전 정의된 AI 응답 시나리오 (47줄)</li></ul>
+<ul><li><strong>app.js</strong>: Cell create/delete, execution flow, plan approval, state persistence (216 lines)</li><li><strong>render.js</strong>: DOM creation and event binding, no innerHTML for XSS prevention (156 lines)</li><li><strong>mock-data.js</strong>: Predefined AI response scenarios (47 lines)</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>Prompt → Plan Preview → Approve → Streaming Result</h3>

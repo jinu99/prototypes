@@ -302,7 +302,7 @@
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Parser (parser.py)                            │
 │   ~/.claude/projects/**/*.jsonl  ──▶  SessionData                │
-│     ├─ messages[], tool_calls[], token usage 집계                 │
+│     ├─ messages[], tool_calls[], token usage aggregation          │
 └───────────────────────────┬──────────────────────────────────────┘
                             │
                             ▼
@@ -318,9 +318,9 @@
                             ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                   Dashboard (dashboard.py)                        │
-│            Rich 터미널 UI — 요약, 핫스팟, 제안, 등급              │
+│            Rich terminal UI — summary, hotspots, suggestions, grade│
 └──────────────────────────────────────────────────────────────────┘</code></pre>
-<ul><li><strong>Parser</strong>: JSONL을 라인별로 파싱, <code>tool_use</code> 타입에서 tool call 시퀀스 추출, <code>usage</code> 필드에서 토큰 집계</li><li><strong>Analyzer</strong>: 3개의 독립적인 패턴 감지기가 각각 휴리스틱 기반으로 낭비를 식별</li><li><strong>Dashboard</strong>: Rich Panel/Table로 한눈에 보이는 터미널 대시보드 구성</li></ul>
+<ul><li><strong>Parser</strong>: Parses JSONL line by line, extracts tool call sequences from <code>tool_use</code> types, aggregates tokens from <code>usage</code> fields</li><li><strong>Analyzer</strong>: Three independent pattern detectors each identify waste using heuristic-based rules</li><li><strong>Dashboard</strong>: Builds an at-a-glance terminal dashboard with Rich Panel/Table</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p>실제 Claude Code 세션 로그 분석 결과:</p>

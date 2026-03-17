@@ -293,31 +293,31 @@
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌─────────────────┐     ┌──────────────────────────────────────────────────┐
-│  SQL 파일/디렉토리  │     │                  sql-guard CLI                   │
+│  SQL Files/Dirs  │     │                  sql-guard CLI                   │
 │  (.sql)         │     │               (cli.py / Click)                   │
 └────────┬────────┘     │  --dialect, --format, --strict                   │
          │              └──────────────────┬───────────────────────────────┘
          ▼                                 │
 ┌─────────────────┐                        ▼
 │  pre-commit     │───────────▶ ┌─────────────────────┐
-│  hook 트리거     │            │   Analyzer           │
+│  hook trigger    │            │   Analyzer           │
 └─────────────────┘            │   ┌───────────────┐   │
-                               │   │ dialect 감지    │   │
+                               │   │ dialect detect  │   │
                                │   └───────┬───────┘   │
                                │           ▼           │
                                │   ┌───────────────┐   │
                                │   │ sqlglot.parse  │   │
-                               │   │ → AST 생성     │   │
+                               │   │ → AST build    │   │
                                │   └───────┬───────┘   │
                                │           ▼           │
                                │   ┌───────────────┐   │
-                               │   │ 9개 규칙 실행   │   │
+                               │   │ Run 9 rules    │   │
                                │   │ (rules.py)     │   │
                                │   └───────────────┘   │
                                └───────────┬──────────┘
                                            ▼
-                          text / JSON 출력 + exit code (CI 연동)</code></pre>
-<ul><li><strong>rules.py</strong>: 9개 규칙 함수, 각각 AST 노드를 순회하며 패턴 매칭</li><li><strong>analyzer.py</strong>: 파일 읽기 → dialect 자동 감지 → sqlglot 파싱 → 규칙 실행</li><li><strong>cli.py</strong>: Click 기반 CLI, text/JSON 출력, <code>--strict</code> 모드</li></ul>
+                          text / JSON output + exit code (CI integration)</code></pre>
+<ul><li><strong>rules.py</strong>: 9 rule functions, each traversing AST nodes for pattern matching</li><li><strong>analyzer.py</strong>: file read → auto dialect detection → sqlglot parsing → rule execution</li><li><strong>cli.py</strong>: Click-based CLI, text/JSON output, <code>--strict</code> mode</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <pre><code class="language-bash">$ uv run sql-guard samples/postgres_bad.sql

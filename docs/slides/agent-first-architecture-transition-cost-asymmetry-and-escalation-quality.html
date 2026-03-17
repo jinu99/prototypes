@@ -293,13 +293,13 @@
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌──────────────────────────────────────────────────┐
 │                  main.py (CLI)                    │
-│             시뮬레이션 오케스트레이터               │
+│           Simulation Orchestrator                 │
 └────────┬────────────────────────────┬────────────┘
          │                            │
          ▼                            ▼
 ┌──────────────────┐     ┌───────────────────────────┐
 │  scenarios.py     │     │  server.py → dashboard    │
-│  시나리오 ×10     │     │  웹 시각화 (port 8000)     │
+│  Scenarios ×10   │     │  Dashboard (port 8000)    │
 │  ○ simple ×5     │     └───────────────────────────┘
 │  ◉ complex ×3    │                ▲
 │  ◆ edge ×2       │       output/results.json
@@ -307,18 +307,18 @@
     ┌────┴────┐                     │
     ▼         ▼                     │
 ┌────────┐ ┌──────────────┐        │
-│Workflow│ │Agent 엔진     │        │
-│if/else │ │5가지 판단순간 │        │
-│키워드   │ │confidence    │        │
-│매칭    │ │cascade       │        │
+│Workflow│ │Agent Engine  │        │
+│if/else │ │5 Eval Steps  │        │
+│keyword  │ │confidence    │        │
+│matching │ │cascade       │        │
 └───┬────┘ └──────┬───────┘        │
     └──────┬──────┘                │
            ▼                       │
     ┌──────────────┐              │
     │comparator.py │──────────────┘
-    │정확도/FP/FN   │   JSON 결과 저장
+    │Accuracy/FP/FN│   Save JSON Results
     └──────────────┘</code></pre>
-<ul><li><strong>scenarios.py</strong>: 10개 시나리오 + ground truth 정의</li><li><strong>workflow_engine.py</strong>: 카테고리 라우팅 → 키워드 매칭 → 감정 키워드 체크</li><li><strong>agent_engine.py</strong>: 5가지 판단 순간 순차 평가, confidence cascade</li><li><strong>comparator.py</strong>: ground truth 대비 정확도, FP/FN, 민감도 분석</li></ul>
+<ul><li><strong>scenarios.py</strong>: 10 scenarios + ground truth definitions</li><li><strong>workflow_engine.py</strong>: category routing → keyword matching → sentiment keyword check</li><li><strong>agent_engine.py</strong>: 5 decision points sequential evaluation, confidence cascade</li><li><strong>comparator.py</strong>: accuracy vs ground truth, FP/FN, threshold sensitivity analysis</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo--핵심-결과">Demo — 핵심 결과</h2>
 <pre><code>─── ○ [S04] FAQ 질문 (simple) ───

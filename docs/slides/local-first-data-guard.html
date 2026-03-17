@@ -305,20 +305,20 @@
 │             ▼                          ▼                        │
 │  ┌─────────────────────┐   ┌───────────────────────────────┐   │
 │  │   detect.ts          │   │   replicate.ts                │   │
-│  │   (탐지 엔진)        │   │   (복제 엔진)                 │   │
+│  │   (Detection Engine)  │   │   (Replication Engine)        │   │
 │  │                      │   │                               │   │
-│  │  Safari/ITP 감지     │   │  put() → IDB + OPFS 이중기록  │   │
-│  │  persist() 확인      │   │  get() → IDB miss시 OPFS 복구 │   │
-│  │  OPFS 가용성 확인    │   │  recoverAll() → 일괄 복구     │   │
+│  │  Safari/ITP Detection │   │  put() → IDB + OPFS Dual-Write│   │
+│  │  persist() Check      │   │  get() → OPFS Recovery on Miss│   │
+│  │  OPFS Availability    │   │  recoverAll() → Batch Recovery│   │
 │  │  → StorageReport     │   │                               │   │
 │  └─────────────────────┘   └───────────────────────────────┘   │
 │                                                                 │
 │  ┌──────────────────────┐   ┌───────────────────────────────┐   │
 │  │     IndexedDB         │   │     OPFS (Origin Private FS)  │   │
-│  │  (Primary Storage)    │   │  (Backup — 파일 기반)         │   │
+│  │  (Primary Storage)    │   │  (Backup — File-Based)        │   │
 │  └──────────────────────┘   └───────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘</code></pre>
-<ul><li><strong>detect.ts</strong>: Safari/ITP 감지, persist() 확인, OPFS 가용성 → safe/warning/danger 등급 산출</li><li><strong>replicate.ts</strong>: dual-write(이중 기록) + read-repair(읽기 시 자동 복구) 패턴</li></ul>
+<ul><li><strong>detect.ts</strong>: Safari/ITP detection, persist() check, OPFS availability → safe/warning/danger rating</li><li><strong>replicate.ts</strong>: dual-write + read-repair (auto-recovery on read) pattern</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>복구 시나리오 — 핵심 흐름</h3>

@@ -304,21 +304,21 @@
          ▼                        ▼
 ┌─────────────────┐      ┌─────────────────┐
 │   diff_parser   │      │  spec_checker   │
-│ git diff HEAD~N │      │ markdown 파싱    │
+│ git diff HEAD~N │      │ markdown parsing │
 │ → ChangedFile[] │      │ → Requirement[] │
 └────────┬────────┘      └────────┬────────┘
          │                        │
          ▼                        ▼
 ┌─────────────────────────────────────────────┐
 │              ast_analyzer (tree-sitter)      │
-│  Python 소스 → Symbol[] + ImportInfo[]       │
+│  Python source → Symbol[] + ImportInfo[]      │
 └──────┬──────────────────────────┬───────────┘
        │                          │
        ▼                          ▼
 ┌─────────────────┐      ┌─────────────────┐
 │  impact_graph   │      │  spec_checker   │
-│ 1-hop downstream│      │ 키워드 매칭      │
-│ 영향 추적        │      │ → MatchResult[] │
+│ 1-hop downstream│      │ keyword matching │
+│ impact tracking  │      │ → MatchResult[] │
 └────────┬────────┘      └────────┬────────┘
          │                        │
          ▼                        ▼
@@ -326,7 +326,7 @@
 │              display (rich)                  │
 │  Impact Tree  │  Alignment Table             │
 └─────────────────────────────────────────────┘</code></pre>
-<ul><li><strong>ast_analyzer</strong>: tree-sitter로 함수/클래스/import/호출 관계를 구조적으로 추출하는 핵심 엔진</li><li><strong>두 파이프라인</strong> (<code>diff</code>, <code>spec-check</code>)이 ast_analyzer를 공유하는 구조</li></ul>
+<ul><li><strong>ast_analyzer</strong>: Core engine that structurally extracts function/class/import/call relationships using tree-sitter</li><li><strong>Two pipelines</strong> (<code>diff</code>, <code>spec-check</code>) share the ast_analyzer module</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3><code>diff</code> — 변경 영향 추적</h3>

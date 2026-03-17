@@ -297,29 +297,29 @@
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌──────────────────┐    ┌──────────────────────────┐
-│  GGUF 파일       │    │  Sample Profile (프리셋)  │
-│  (바이너리 파싱) │    │  Llama-7B, Mixtral, Phi-2│
+│  GGUF Files      │    │  Sample Profile (Presets) │
+│  (Binary Parsing)│    │  Llama-7B, Mixtral, Phi-2│
 └────────┬─────────┘    └────────────┬─────────────┘
          │                          │
          ▼                          ▼
 ┌────────────────────────────────────────────┐
 │         vram_calculator.py                 │
 │  Weights + KV Cache + Activation + OH     │
-│  MoE offloading 시나리오 계산             │
+│  MoE offloading scenario calculation      │
 └──────────────────┬─────────────────────────┘
                    │
                    ▼
 ┌────────────────────────────────────────────┐
 │         planner.py                         │
-│  단일/멀티 모델 추정 · 그리드 서치 · 검증  │
+│  Single/Multi model est · Grid search · Val │
 └──────────┬─────────────────┬───────────────┘
            ▼                 ▼
    ┌─────────────┐   ┌───────────────┐
    │ server.py   │   │ main.py (CLI) │
-   │ Web UI +    │   │ 테이블 출력   │
-   │ REST API    │   │ 검증 결과     │
+   │ Web UI +    │   │ Table output  │
+   │ REST API    │   │ Validation    │
    └─────────────┘   └───────────────┘</code></pre>
-<ul><li><strong>gguf_parser</strong>: GGUF 바이너리에서 모델 구조 메타데이터 추출 (v2/v3 지원)</li><li><strong>vram_calculator</strong>: 4개 컴포넌트별 메모리 수식 계산 엔진</li><li><strong>planner</strong>: 멀티 모델 합산, 그리드 서치, llama.cpp 검증 오케스트레이션</li></ul>
+<ul><li><strong>gguf_parser</strong>: Extracts model structure metadata from GGUF binaries (v2/v3 support)</li><li><strong>vram_calculator</strong>: Per-component memory formula calculation engine (4 components)</li><li><strong>planner</strong>: Multi-model aggregation, grid search, llama.cpp validation orchestration</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>llama.cpp 레퍼런스 검증 — 7/7 Pass</strong></p>

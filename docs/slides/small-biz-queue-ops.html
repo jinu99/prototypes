@@ -297,22 +297,22 @@
 <div class="speaker-note" data-note-idx="3"></div>
 <h2 id="architecture">Architecture</h2>
 <pre><code>┌──────────────────────────────────────────────────────────────────┐
-│                        클라이언트 (Browser)                       │
+│                         Client (Browser)                          │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐ │
 │  │ index.html │  │ join.html  │  │ admin.html │  │  kds.html  │ │
-│  │  홈 / QR   │  │ 대기 등록  │  │ 매장 관리  │  │  KDS 뷰   │ │
+│  │  Home / QR │  │ Join Queue │  │ Shop Admin │  │  KDS View  │ │
 │  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘ │
 │        └───────────┬────┴───────────────┴───────┬───────┘        │
 │              REST API (fetch)            SSE (EventSource)       │
 └──────────────────┬───────────────────────────┬───────────────────┘
                    ▼                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  server.js → routes.js (CRUD) ──broadcast──▶ sse.js (실시간)    │
+│  server.js → routes.js (CRUD) ──broadcast──▶ sse.js (Realtime)  │
 │                  │                                               │
 │                  ▼                                               │
 │             db.js (SQLite)                                       │
 └─────────────────────────────────────────────────────────────────┘</code></pre>
-<ul><li><strong>routes.js</strong>: 대기열 CRUD + QR 생성 — 상태 변경 시 자동 broadcast</li><li><strong>sse.js</strong>: SSE 클라이언트 관리 — 20줄로 실시간 푸시 구현</li><li><strong>db.js</strong>: SQLite 초기화 — 상태 전이 타임스탬프 자동 기록</li></ul>
+<ul><li><strong>routes.js</strong>: Queue CRUD + QR generation — auto-broadcast on status change</li><li><strong>sse.js</strong>: SSE client management — realtime push in 20 lines</li><li><strong>db.js</strong>: SQLite initialization — automatic state transition timestamps</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>핵심 Flow: 등록 → 관리 → 실시간 갱신</h3>

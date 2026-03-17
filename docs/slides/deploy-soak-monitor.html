@@ -297,29 +297,29 @@
 │                          CLI (cli.py)                           │
 │                   argparse: watch / scenarios                   │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ 명령 파싱
+                           │ Command parsing
                            ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                    Demo Runner (demo.py)                         │
-│        시나리오 선택: healthy │ oom │ crashloop │ error_logs      │
+│        Scenario select: healthy │ oom │ crashloop │ error_logs     │
 └──────────────┬──────────────────────────────────┬────────────────┘
                │ create_deployment()              │ rolling_update()
                ▼                                  ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                 Simulated Cluster (cluster.py)                   │
-│   Deployment/Pod 생성 → 장애 주입 (OOM/CrashLoop/Log) → Event 발행  │
+│   Deployment/Pod create → Fault inject (OOM/CrashLoop/Log) → Emit event │
 └──────────────────────────────────────────┬───────────────────────┘
                                            │ watcher callback
                                            ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                   Soak Monitor (monitor.py)                      │
-│   Event 수신 → Pod 상태 확인 → 로그 분석 (PatternMatcher, 9개 정규식)  │
+│   Event receive → Pod status check → Log analysis (PatternMatcher, 9 regex) │
 └──────────────────────────────────────────┬───────────────────────┘
                                            │ anomaly / pattern_alert
                                            ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Reporter (reporter.py)                       │
-│   ✓ Pod 시작 │ ↻ Rolling Update │ ✖ 이상 징후 │ ⚠ Anomaly         │
+│   ✓ Pod started │ ↻ Rolling Update │ ✖ Issue detected │ ⚠ Anomaly  │
 │   Progress Bar [████░░░░] 40%  │  ALL CLEAR / SOAK FAILED       │
 └──────────────────────────────────────────────────────────────────┘</code></pre>
 <div class="speaker-note" data-note-idx="4"></div>

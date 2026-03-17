@@ -300,11 +300,11 @@
 │  │  Card    │ │    Card      │ │Models Tbl│ │&amp; Load Check   │  │
 │  └────┬─────┘ └──────┬───────┘ └────┬─────┘ └───────┬───────┘  │
 │       └──────────────┴──────────────┴───────────────┘           │
-│                       fetch (2초 자동 갱신)                      │
+│                       fetch (auto-refresh 2s)                    │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌───────────────────────────────────────────────────────────────────┐
-│                    FastAPI Server (7개 엔드포인트)                 │
+│                    FastAPI Server (7 endpoints)                   │
 └──────┬──────────────────┬──────────────────┬─────────────────────┘
        ▼                  ▼                  ▼
 ┌──────────────┐ ┌────────────────┐ ┌──────────────────────┐
@@ -312,7 +312,7 @@
 │ nvidia-smi   │ │ Ollama REST    │ │ weights + KV cache   │
 │ + mock       │ │ API + mock     │ │ + CUDA overhead      │
 └──────────────┘ └────────────────┘ └──────────────────────┘</code></pre>
-<ul><li><strong>gpu_monitor</strong>: nvidia-smi 파싱. GPU 없으면 RTX 4090 mock fallback</li><li><strong>ollama_client</strong>: Ollama API 연동. 미실행 시 mock fallback</li><li><strong>vram_estimator</strong>: 8개 아키텍처 × 16개 양자화 레벨 지원</li></ul>
+<ul><li><strong>gpu_monitor</strong>: nvidia-smi parsing. Falls back to RTX 4090 mock if no GPU</li><li><strong>ollama_client</strong>: Ollama API integration. Falls back to mock if not running</li><li><strong>vram_estimator</strong>: Supports 8 architectures × 16 quantization levels</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <p><strong>VRAM 추정 API 호출 예시</strong> (LLaMA 8B, Q4_K_M, context 4096):</p>

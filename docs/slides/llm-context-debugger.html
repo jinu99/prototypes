@@ -298,16 +298,16 @@
 │  base_url =     ├──────▶│  ┌──────────────────┐  ┌─────────────────┐  │
 │  localhost:8088 │       │  │ Token Analyzer   │  │ In-Memory Store │  │
 └─────────────────┘       │  │ (token_counter)  │─▶│ (store.py)      │  │
-                          │  │ tiktoken 기반     │  │ CallRecord+diff │  │
+                          │  │ tiktoken-based    │  │ CallRecord+diff │  │
                           │  └──────────────────┘  └────────┬────────┘  │
                           └──────────────┬──────────────────┼───────────┘
                             Forward ─────┘                  │
-                            (real 모드)                     ▼
+                            (real mode)                     ▼
                           ┌──────────────┐       ┌──────────────────────┐
                           │ OpenAI API   │       │ Dashboard (HTML)     │
-                          │ (upstream)   │       │ 바차트 · 트리맵 · diff│
+                          │ (upstream)   │       │ bar chart·treemap·diff│
                           └──────────────┘       └──────────────────────┘</code></pre>
-<ul><li><strong>proxy.py</strong>: 요청 인터셉트 + mock/real 모드 전환</li><li><strong>token_counter.py</strong>: 메시지별 토큰 분해, 5개 컴포넌트 분류</li><li><strong>store.py</strong>: 호출 기록 저장 + 호출 간 diff 계산</li><li><strong>dashboard.html</strong>: 2초 폴링 실시간 시각화</li></ul>
+<ul><li><strong>proxy.py</strong>: Request intercept + mock/real mode switching</li><li><strong>token_counter.py</strong>: Per-message token breakdown, 5-component classification</li><li><strong>store.py</strong>: Call record storage + inter-call diff computation</li><li><strong>dashboard.html</strong>: Real-time visualization with 2s polling</li></ul>
 <div class="speaker-note" data-note-idx="4"></div>
 <h2 id="demo">Demo</h2>
 <h3>프록시 콘솔 출력</h3>

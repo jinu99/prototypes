@@ -80,26 +80,26 @@ RAG 파이프라인이 보편화되면서, 모두가 retrieval 정확도나 프�
 
 ```
 ┌─────────────────┐
-│   PDF 파일      │
+│   PDF File      │
 └────────┬────────┘
          ▼
 ┌─────────────────────────────────────────────────────┐
 │  extractor.py  (PyMuPDF)                            │
-│  PDF → TextBlock (텍스트 + 좌표 + 폰트 + 색상)     │
+│  PDF → TextBlock (text + coords + font + color)     │
 └────────┬────────────────────────────────────────────┘
          ▼
 ┌─────────────────────────────────────────────────────┐
-│  detector.py  (노이즈 감지 엔진)                    │
+│  detector.py  (Noise Detection Engine)              │
 │  ┌───────────────┐ ┌──────────────┐ ┌────────────┐  │
 │  │ Watermark     │ │ Header/Footer│ │ OCR        │  │
-│  │ 큰폰트+중앙  │ │ 상단/하단    │ │ Artifact   │  │
-│  │ +다수페이지   │ │ +패턴매칭    │ │ regex 감지 │  │
+│  │ Lg font+Ctr  │ │ Top/Bottom   │ │ Artifact   │  │
+│  │ +Multi-page  │ │ +Pattern     │ │ regex det. │  │
 │  └───────────────┘ └──────────────┘ └────────────┘  │
 └────────┬────────────────────────────────────────────┘
          ▼
 ┌─────────────────────────────────────────────────────┐
-│  cleaner.py → 블록 단위 필터링 → 정제 텍스트 + diff │
-│  chunker.py → paragraph 기반 분할 → 청킹 통계       │
+│  cleaner.py → Block-level filter → Clean text + diff │
+│  chunker.py → Paragraph-based split → Chunk stats    │
 └─────────────────────────────────────────────────────┘
 ```
 

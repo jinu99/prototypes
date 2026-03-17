@@ -98,24 +98,24 @@ uv run 한 줄이면 돌아간다.
 ┌─────────────────────────────────────────────────────────────────┐
 │                    FastAPI Server (server.py)                    │
 │                                                                 │
-│  GET /api/matches ─── 타임라인 조회 (필터: source, keyword, …)  │
-│  POST /api/collect/* ─ 수집 트리거                              │
-│  GET/POST/DELETE /api/config/* ─ 설정 관리                      │
+│  GET /api/matches ─── Timeline query (filter: source, keyword, …)│
+│  POST /api/collect/* ─ Trigger collection                       │
+│  GET/POST/DELETE /api/config/* ─ Config management               │
 └────────┬───────────────────┬───────────────────┬────────────────┘
          │                   │                   │
          ▼                   ▼                   ▼
 ┌────────────────┐ ┌────────────────┐ ┌──────────────────────────┐
 │ Reddit         │ │ RSS            │ │ SQLite DB (monitor.db)   │
 │ Collector      │ │ Collector      │ │                          │
-│ (mock 데이터)  │ │ (feedparser)   │ │  matches 테이블          │
-│                │ │                │ │  config 테이블           │
+│ (mock data)    │ │ (feedparser)   │ │  matches table           │
+│                │ │                │ │  config table            │
 └────────────────┘ └────────────────┘ └──────────────────────────┘
 ```
 
-- **server.py**: FastAPI 엔드포인트 7개, 정적 파일 서빙 겸임
-- **reddit_collector.py**: mock 데이터 생성 (API 키 불필요)
-- **rss_collector.py**: feedparser로 실제 RSS 피드 파싱
-- **db.py**: SQLite WAL 모드, `INSERT OR IGNORE`로 중복 제거
+- **server.py**: 7 FastAPI endpoints, also serves static files
+- **reddit_collector.py**: Generates mock data (no API key required)
+- **rss_collector.py**: Parses real RSS feeds with feedparser
+- **db.py**: SQLite WAL mode, deduplication via `INSERT OR IGNORE`
 
 <!--
 구조는 의도적으로 단순하게 잡았다. FastAPI 서버 하나가 API와 정적 파일 서빙을 다 처리한다.

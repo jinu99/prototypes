@@ -81,27 +81,27 @@ backgroundColor: #fafafa
 ┌─────────────────────┐     ┌──────────────────────┐
 │  GitHub Parser      │────▶│  GitHub API          │
 │  (github_parser.py) │◀────│  (public REST API)   │
-│  · URL 파싱          │     └──────────────────────┘
-│  · 공식 도메인 추출    │
+│  · URL parsing      │     └──────────────────────┘
+│  · Official domains │
 └────────┬────────────┘
          │ project_info + official_domains
          ▼
 ┌─────────────────────┐     ┌──────────────────────┐
 │  Searcher           │────▶│  DuckDuckGo          │
-│  (searcher.py)      │◀────│  (검색 엔진)          │
-│  · 3종 쿼리 검색      │     └──────────────────────┘
-│  · 중복 제거          │
+│  (searcher.py)      │◀────│  (Search Engine)     │
+│  · 3-query search   │     └──────────────────────┘
+│  · Deduplication    │
 └────────┬────────────┘
          │ filtered results[]
          ▼
 ┌─────────────────────┐
-│  Analyzer           │  difflib 유사도 + 휴리스틱 점수
-│  (analyzer.py)      │  typosquatting / 의심 TLD / 키워드
+│  Analyzer           │  difflib similarity + heuristic scoring
+│  (analyzer.py)      │  typosquatting / suspicious TLD / keywords
 └────────┬────────────┘
          ▼
 ┌─────────────────────┐
 │  Reporter           │  DANGER / WARNING / SAFE
-│  (reporter.py)      │  ANSI 컬러 CLI 리포트
+│  (reporter.py)      │  ANSI color CLI report
 └─────────────────────┘
 ```
 

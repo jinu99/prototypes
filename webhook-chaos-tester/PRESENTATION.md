@@ -84,7 +84,7 @@ Stripe, GitHub, Slack — 다 웹훅으로 이벤트를 전달한다.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                          CLI (cli.py)                           │
-│              click 기반 명령어: run / demo / echo               │
+│           click-based commands: run / demo / echo               │
 └──────┬──────────────────┬───────────────────────┬───────────────┘
        │                  │                       │
        ▼                  ▼                       ▼
@@ -92,10 +92,10 @@ Stripe, GitHub, Slack — 다 웹훅으로 이벤트를 전달한다.
 │ Loader       │  │ Engine        │  │ Echo Server            │
 │ (loader.py)  │  │ (engine.py)   │  │ (echo_server.py)       │
 │              │  │               │  │                        │
-│ YAML 파싱    │  │ 시나리오 실행 │  │ 테스트용 HTTP 서버     │
-│ → Scenario[] │  │ httpx로 전송  │  │ POST /webhook 수신     │
+│ YAML parsing │  │ Run scenarios │  │ Test HTTP server       │
+│ → Scenario[] │  │ Send via httpx│  │ Receive POST /webhook  │
 └──────────────┘  └───────────────┘  │ --reject-duplicates    │
-                                     │  : 409 중복 거부       │
+                                     │  : 409 reject dups     │
                                      └────────────────────────┘
                           │
                           ▼
@@ -106,7 +106,7 @@ Stripe, GitHub, Slack — 다 웹훅으로 이벤트를 전달한다.
                   └───────────────┘
 ```
 
-**Loader** → YAML 시나리오 파싱 | **Engine** → 카오스 패턴 실행 + 판정 | **Echo** → 로컬 테스트 타겟 | **Report** → 결과 출력
+**Loader** → Parse YAML scenarios | **Engine** → Execute chaos patterns + judge results | **Echo** → Local test target | **Report** → Output results
 
 <!--
 구조는 꽤 직관적이다. CLI가 진입점이고, Loader가 YAML 시나리오를 파싱하고, Engine이 실제로 HTTP 요청을 카오스 패턴에 맞게 보내고, Report가 결과를 정리한다. Echo Server는 테스트 타겟이 없을 때 로컬에서 띄우는 가짜 서버인데, reject-duplicates 모드를 지원해서 "멱등성을 구현한 서버"와 "안 한 서버"를 둘 다 시뮬레이션할 수 있다. 전체 의존성이 httpx, pyyaml, click 세 개뿐이고, 각 모듈이 300줄 미만이다.

@@ -92,33 +92,33 @@ AI 코딩 에이전트가 보편화되면서 새로운 종류의 시크릿 유�
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        CLI (main.py)                            │
-│                  scan │ wrap │ demo 명령 분기                    │
+│                  scan │ wrap │ demo command routing               │
 └───────┬─────────────────┬───────────────────────────────────────┘
         │                 │
         ▼                 ▼
 ┌───────────────┐   ┌──────────────────────────────────────────┐
 │  SecretRegistry│   │          Scrubber (scrubber.py)          │
 │ (registry.py) │   │                                          │
-│               │   │  subprocess.Popen ─▶ selectors 기반      │
-│ .env 파싱     │   │  stdout/stderr 실시간 스트림 인터셉트     │
+│               │   │  subprocess.Popen ─▶ selectors-based     │
+│ .env parsing  │   │  real-time stdout/stderr stream intercept │
 │ credentials   │   │                                          │
-│  .json 파싱   │   │  ┌─ 라인 단위 처리 ──────────────────┐   │
+│  .json parsing │   │  ┌─ line-by-line processing ─────────┐   │
 │               │   │  │         SecretDetector            │   │
 │  ┌──────────┐ │   │  │        (detector.py)              │   │
 │  │ key=value│──────▶ │                                   │   │
-│  │  수집    │ │   │  │  1️⃣ Registry 매칭 (정확 일치)     │   │
-│  └──────────┘ │   │  │  2️⃣ Pattern 매칭 (regex)         │   │
-└───────────────┘   │  │  3️⃣ Entropy 탐지 (Shannon)       │   │
+│  │ collection│ │   │  │  1️⃣ Registry match (exact match)  │   │
+│  └──────────┘ │   │  │  2️⃣ Pattern match (regex)        │   │
+└───────────────┘   │  │  3️⃣ Entropy detection (Shannon)  │   │
                     │  │                                   │   │
-                    │  │  탐지 → "***" 마스킹              │   │
+                    │  │  detected → "***" masking         │   │
                     │  └───────────────────────────────────┘   │
                     └─────────┬──────────────────┬─────────────┘
                               │                  │
                               ▼                  ▼
                     ┌──────────────┐   ┌──────────────────┐
-                    │  마스킹된    │   │  .scrubber_log   │
+                    │   Masked     │   │  .scrubber_log   │
                     │  stdout/stderr│   │   .json          │
-                    │  (실시간 출력)│   │  (탐지 이력 기록) │
+                    │ (real-time)  │   │ (detection log)  │
                     └──────────────┘   └──────────────────┘
 ```
 

@@ -90,21 +90,21 @@ reddit, Hacker News, geeknews 같은 개발자 커뮤니티에서 이런 얘기�
          ▼                        ▼
 ┌─────────────────┐      ┌─────────────────┐
 │   diff_parser   │      │  spec_checker   │
-│ git diff HEAD~N │      │ markdown 파싱    │
+│ git diff HEAD~N │      │ markdown parsing │
 │ → ChangedFile[] │      │ → Requirement[] │
 └────────┬────────┘      └────────┬────────┘
          │                        │
          ▼                        ▼
 ┌─────────────────────────────────────────────┐
 │              ast_analyzer (tree-sitter)      │
-│  Python 소스 → Symbol[] + ImportInfo[]       │
+│  Python source → Symbol[] + ImportInfo[]      │
 └──────┬──────────────────────────┬───────────┘
        │                          │
        ▼                          ▼
 ┌─────────────────┐      ┌─────────────────┐
 │  impact_graph   │      │  spec_checker   │
-│ 1-hop downstream│      │ 키워드 매칭      │
-│ 영향 추적        │      │ → MatchResult[] │
+│ 1-hop downstream│      │ keyword matching │
+│ impact tracking  │      │ → MatchResult[] │
 └────────┬────────┘      └────────┬────────┘
          │                        │
          ▼                        ▼
@@ -114,8 +114,8 @@ reddit, Hacker News, geeknews 같은 개발자 커뮤니티에서 이런 얘기�
 └─────────────────────────────────────────────┘
 ```
 
-- **ast_analyzer**: tree-sitter로 함수/클래스/import/호출 관계를 구조적으로 추출하는 핵심 엔진
-- **두 파이프라인** (`diff`, `spec-check`)이 ast_analyzer를 공유하는 구조
+- **ast_analyzer**: Core engine that structurally extracts function/class/import/call relationships using tree-sitter
+- **Two pipelines** (`diff`, `spec-check`) share the ast_analyzer module
 
 <!--
 아키텍처는 두 개의 파이프라인이 하나의 AST 분석 엔진을 공유하는 구조다. diff 파이프라인은 git diff를 파싱해서 변경된 파일과 라인을 뽑고, 거기에 AST 분석을 결합해서 어떤 심볼이 바뀌었는지, 그 심볼을 호출하는 downstream은 뭔지를 추적한다. spec-check 파이프라인은 markdown 스펙을 파싱해서 코드 심볼과 매칭한다. 공통 엔진을 공유하니까 모듈 6개로 꽤 깔끔하게 떨어진다.

@@ -89,8 +89,8 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  AI 에이전트 (Claude Code)                        │
-│  "최근 에러 로그 보여줘"                           │
+│  AI Agent (Claude Code)                            │
+│  "Show me recent error logs"                       │
 └──────────────┬───────────────────────────────────┘
                │ JSON-RPC (stdio)
                ▼
@@ -111,13 +111,13 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
 ┌──────────────────────────────────────────────────┐
 │  Capture Engine (capture.py)                      │
 │  ┌───────────────────┐  ┌──────────────────────┐ │
-│  │ subprocess 래핑    │  │ HTTP Forward Proxy   │ │
-│  │ asyncio PIPE      │  │ HTTP_PROXY 자동 주입  │ │
+│  │ subprocess wrapper │  │ HTTP Forward Proxy   │ │
+│  │ asyncio PIPE      │  │ HTTP_PROXY auto-inject│ │
 │  └───────────────────┘  └──────────────────────┘ │
 │               └──────┬───────┘                    │
 │                      ▼                            │
 │             ┌──────────────┐                      │
-│             │  대상 앱     │                      │
+│             │  Target App  │                      │
 │             └──────────────┘                      │
 └──────────────────────────────────────────────────┘
 ```

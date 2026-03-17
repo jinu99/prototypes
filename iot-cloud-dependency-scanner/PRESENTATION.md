@@ -80,25 +80,25 @@ Home Assistant 같은 셀프호스팅 대안은 있지만,
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          cli.py (진입점)                            │
-│              scan │ capture │ report │ run (전체 워크플로우)          │
+│                        cli.py (Entry Point)                         │
+│              scan │ capture │ report │ run (Full Workflow)           │
 └──────┬──────────────┬──────────────┬────────────────────────────────┘
        │              │              │
        ▼              ▼              ▼
 ┌──────────────┐ ┌──────────────┐ ┌──────────────────────────────────┐
 │ scanner.py   │ │dns_capture.py│ │          analyzer.py             │
 │ ARP + mDNS   │ │ Passive DNS  │ │  Cloud Dependency Score (0-100)  │
-│ + SSDP       │ │  Sniffing    │ │  = 쿼리빈도(40) + EP다양성(30)   │
-│  (scapy)     │ │  (scapy)     │ │    + 클라우드비율(30)            │
+│ + SSDP       │ │  Sniffing    │ │  = QueryFreq(40)+EP Diversity(30)│
+│  (scapy)     │ │  (scapy)     │ │    + CloudRatio(30)              │
 └──────────────┘ └──────────────┘ └──────────────┬───────────────────┘
                                                  │
                     ┌────────────────────────────┐│┌─────────────────┐
                     │ alternatives_db.py         │▼│   report.py     │
-                    │ 19개 제조사→로컬 대안 매핑  │→│ CLI + HTML 출력 │
+                    │ 19 Vendors → Local Alt Map  │→│ CLI+HTML Output │
                     └────────────────────────────┘ └─────────────────┘
 ```
 
-**데이터 흐름**: Scan(기기 발견) → Capture(DNS 스니핑) → Analyze(점수 산출) → Report
+**Data Flow**: Scan(Device Discovery) → Capture(DNS Sniffing) → Analyze(Scoring) → Report
 
 <!--
 구조는 단순하다. 왼쪽에서 기기를 찾고, 가운데서 DNS 트래픽을 캡처하고, 오른쪽에서 분석한다. 점수는 세 가지 요소로 구성된다. DNS 쿼리 빈도가 40점, 엔드포인트 다양성이 30점, 클라우드 비율이 30점. 이 세 개를 합쳐서 0에서 100 사이의 의존도 점수를 만든다. 그리고 19개 제조사에 대해 로컬 대안 DB를 하드코딩해놨다. 마지막에 CLI 테이블이랑 HTML 리포트로 출력된다.

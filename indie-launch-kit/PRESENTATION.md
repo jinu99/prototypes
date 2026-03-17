@@ -84,18 +84,18 @@ AI/LLM 없이, 순수 결정론적 파싱+템플릿으로 어디까지 갈 수 �
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                      builder.js (오케스트레이션)                  │
+│                      builder.js (orchestration)                   │
 │                                                                  │
 │  ┌──────────────┐   ┌───────────────┐   ┌─────────────────────┐ │
 │  │  parser.js   │   │ metadata.js   │   │   changelog.js      │ │
-│  │ README → AST │   │ package.json  │   │ git log → 타입별    │ │
-│  │ → 섹션 분류  │   │ → name, ver   │   │   그룹화            │ │
+│  │ README → AST │   │ package.json  │   │ git log → grouped   │ │
+│  │ → classify   │   │ → name, ver   │   │   by type           │ │
 │  └──────┬───────┘   └──────┬────────┘   └──────────┬──────────┘ │
 │         └──────────────────┼───────────────────────┘            │
 │                            ▼                                    │
 │  ┌──────────────────────────────┐  ┌────────────────────────┐   │
 │  │       templates.js           │  │    launch-posts.js     │   │
-│  │ Handlebars × 3 테마 렌더링  │  │ PH / Reddit / HN 초안  │   │
+│  │ Handlebars × 3 theme render  │  │ PH / Reddit / HN drafts│   │
 │  └──────────────┬───────────────┘  └──────────┬─────────────┘   │
 └─────────────────┼─────────────────────────────┼─────────────────┘
                   ▼                             ▼
@@ -103,7 +103,7 @@ AI/LLM 없이, 순수 결정론적 파싱+템플릿으로 어디까지 갈 수 �
         dist/changelog.html
 ```
 
-핵심: `parser.js`가 remark AST로 헤딩 키워드를 매칭해서 Hero/Features/Install/CTA로 자동 분류
+Core: `parser.js` matches heading keywords via remark AST to auto-classify into Hero/Features/Install/CTA
 
 <!--
 구조는 꽤 단순하다. 입력이 셋이다. README, package.json, git log. parser.js가 README를 remark으로 AST 파싱하고, 헤딩 텍스트의 키워드 패턴 매칭으로 섹션을 분류한다. "Features"라는 헤딩이 나오면 features 섹션으로, "Install"이면 install 섹션으로. 이 분류된 데이터를 Handlebars 템플릿에 넣으면 HTML이 나온다. 사람으로 치면, README를 읽고 "아 이 부분이 기능 설명이구나, 이 부분이 설치 방법이구나" 하고 이해하는 과정을 코드로 옮긴 거다.

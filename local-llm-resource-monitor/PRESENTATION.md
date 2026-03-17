@@ -83,11 +83,11 @@ Reddit의 LocalLLaMA 커뮤니티에서 이런 얘기가 계속 나온다. 모�
 │  │  Card    │ │    Card      │ │Models Tbl│ │& Load Check   │  │
 │  └────┬─────┘ └──────┬───────┘ └────┬─────┘ └───────┬───────┘  │
 │       └──────────────┴──────────────┴───────────────┘           │
-│                       fetch (2초 자동 갱신)                      │
+│                       fetch (auto-refresh 2s)                    │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌───────────────────────────────────────────────────────────────────┐
-│                    FastAPI Server (7개 엔드포인트)                 │
+│                    FastAPI Server (7 endpoints)                   │
 └──────┬──────────────────┬──────────────────┬─────────────────────┘
        ▼                  ▼                  ▼
 ┌──────────────┐ ┌────────────────┐ ┌──────────────────────┐
@@ -97,9 +97,9 @@ Reddit의 LocalLLaMA 커뮤니티에서 이런 얘기가 계속 나온다. 모�
 └──────────────┘ └────────────────┘ └──────────────────────┘
 ```
 
-- **gpu_monitor**: nvidia-smi 파싱. GPU 없으면 RTX 4090 mock fallback
-- **ollama_client**: Ollama API 연동. 미실행 시 mock fallback
-- **vram_estimator**: 8개 아키텍처 × 16개 양자화 레벨 지원
+- **gpu_monitor**: nvidia-smi parsing. Falls back to RTX 4090 mock if no GPU
+- **ollama_client**: Ollama API integration. Falls back to mock if not running
+- **vram_estimator**: Supports 8 architectures × 16 quantization levels
 
 <!--
 구조는 단순하다. 브라우저가 2초마다 FastAPI 서버를 폴링하고, 서버는 세 가지 모듈에서 데이터를 가져온다. gpu_monitor는 nvidia-smi를 파싱하고, ollama_client는 Ollama API를 호출하고, vram_estimator가 핵심 추정 로직을 담당한다. 설계 원칙은 하나다. GPU나 Ollama가 없어도 mock fallback으로 돌아가게. 그래야 어떤 환경에서든 바로 시연할 수 있으니까.

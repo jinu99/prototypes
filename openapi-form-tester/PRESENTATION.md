@@ -75,18 +75,18 @@ API를 만들 때 보통 스펙을 먼저 쓴다. OpenAPI YAML 같은 걸로. �
 ## Architecture
 
 ```
-OpenAPI YAML ──▶ Parser (swagger-parser, $ref 역참조) ──▶ /api/spec ──▶ 브라우저 UI
-사용자 폼 입력 ──▶ /api/send (Express 프록시) ──▶ 대상 API ──▶ 응답 수신
-응답 JSON ──▶ /api/validate ──▶ Validator (재귀적 스키마 비교) ──▶ 드리프트 테이블
+OpenAPI YAML ──▶ Parser (swagger-parser, $ref dereferencing) ──▶ /api/spec ──▶ Browser UI
+User Form Input ──▶ /api/send (Express proxy) ──▶ Target API ──▶ Response Received
+Response JSON ──▶ /api/validate ──▶ Validator (recursive schema comparison) ──▶ Drift Table
 ```
 
-| 컴포넌트 | 역할 |
+| Component | Role |
 |----------|------|
-| **cli.js** | spec 경로 파싱 → 서버 기동 → 브라우저 자동 오픈 |
-| **parser.js** | swagger-parser로 OpenAPI 3.x $ref 해석 및 엔드포인트 추출 |
-| **validator.js** | 응답 vs 스펙 재귀 비교 — missing / type_mismatch / undocumented 감지 |
-| **form-builder.js** | JSON Schema → 동적 폼 렌더링 (중첩 object, array, enum 지원) |
-| **app.js** | 사이드바 · 요청 전송 · 응답/드리프트 표시 메인 로직 |
+| **cli.js** | Parse spec path → start server → auto-open browser |
+| **parser.js** | Resolve OpenAPI 3.x $ref via swagger-parser and extract endpoints |
+| **validator.js** | Recursive response vs spec comparison — detect missing / type_mismatch / undocumented |
+| **form-builder.js** | JSON Schema → dynamic form rendering (nested object, array, enum support) |
+| **app.js** | Sidebar · request dispatch · response/drift display main logic |
 
 <!--
 구조는 꽤 단순하다. CLI가 진입점이고, Express 서버가 세 가지 API를 제공한다. 스펙 조회, 요청 프록시, 드리프트 검증. 프론트엔드는 vanilla JS로 세 모듈로 나뉜다. 핵심은 validator.js인데, 재귀적으로 스키마를 순회하면서 실제 응답과 비교한다. 필드가 빠졌는지, 타입이 다른지, 스펙에 없는 필드가 있는지. 이 세 가지를 잡아낸다.

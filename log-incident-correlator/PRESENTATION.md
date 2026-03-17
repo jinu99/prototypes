@@ -85,24 +85,24 @@ HN이나 Reddit에서 이 주제가 계속 나온다. 크게 세 가지다. 첫�
          ▼                       ▼
 ┌─────────────────┐     ┌─────────────────┐
 │   log_parser    │     │  deploy_events  │
-│  Drain3 템플릿   │     │  파싱 & 정규화    │
-│  추출 + first-  │     │                 │
-│  seen 탐지       │     │                 │
+│ Drain3 Template │     │ Parse &         │
+│ Extract + first-│     │ Normalize       │
+│ seen Detection  │     │                 │
 └────────┬────────┘     └────────┬────────┘
          │         ┌─────┘
          ▼         ▼
 ┌──────────────────────────────────────────┐
-│        db.py (SQLite) — 3 테이블          │
+│        db.py (SQLite) — 3 Tables          │
 │  log_templates │ deploy_events │ correlations │
 └──────────────────┬───────────────────────┘
                    ▼
          ┌─────────────────┐
          │   correlator    │
-         │ 시간 윈도우 매칭   │
+         │ Window Matching │
          └────────┬────────┘
          ┌────────┴────────┐
          ▼                 ▼
-  CLI (터미널 출력)    Web Dashboard
+  CLI (Terminal)       Web Dashboard
 ```
 
 <!--

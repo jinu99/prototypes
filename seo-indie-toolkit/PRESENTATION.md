@@ -78,28 +78,28 @@ Reddit이나 GeekNews에서 이런 얘기가 계속 나온다. SEO 도구가 좋
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│                      입력 (Input)                           │
-│  URL / sitemap.xml ──▶ cli.js 또는 server.js               │
+│                      Input                                  │
+│  URL / sitemap.xml ──▶ cli.js or server.js                 │
 └────────────────────────────┬───────────────────────────────┘
                              ▼
 ┌────────────────────────────────────────────────────────────┐
-│               crawler.js (이중 크롤링)                      │
+│               crawler.js (Dual Crawling)                    │
 │  HTTP Raw Fetch ──┐              ┌── Playwright Rendering  │
 │  (Googlebot UA)   ├─ Promise.all ┤  (Chromium headless)    │
-│  → 정적 HTML      ┘              └→ 렌더링 HTML             │
+│  → Static HTML    ┘              └→ Rendered HTML           │
 └────────────────────────────┬───────────────────────────────┘
                              ▼
 ┌────────────────────────────────────────────────────────────┐
-│               analyzer.js (비교 분석)                       │
+│               analyzer.js (Comparative Analysis)            │
 │  extractSeoElements() × 2 → compareSeo()                   │
-│  → js_dependent / mismatch / missing 판정                   │
+│  → js_dependent / mismatch / missing verdict                │
 │  → severity: high / medium / low                            │
 └────────────────────────────┬───────────────────────────────┘
                              ▼
 ┌────────────────────────────────────────────────────────────┐
-│               reporter.js (리포트 생성)                     │
-│  CLI: 심각도별 정렬 + 한국어 해결 방법                       │
-│  JSON: 웹 UI용 구조화 응답 + advice 포함                    │
+│               reporter.js (Report Generation)               │
+│  CLI: Sorted by severity + actionable advice               │
+│  JSON: Structured response for Web UI + advice included    │
 └────────────────────────────────────────────────────────────┘
 ```
 

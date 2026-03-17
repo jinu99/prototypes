@@ -84,17 +84,17 @@ Reddit LocalLLaMA나 Hacker News를 보면 같은 이야기가 반복된다. 모
          │                       │
          ▼                       ▼
 ┌────────────────────────────────────────────┐
-│  shard_map.py — index.json → key→shard 매핑 │
+│  shard_map.py — index.json → key→shard map  │
 └────────────────┬───────────────────────────┘
                  ▼
 ┌────────────────────────────────────────────┐
-│  adapter.py — LoRA key ↔ base key 자동 매핑  │
+│  adapter.py — LoRA key ↔ base key auto map   │
 └────────────────┬───────────────────────────┘
                  ▼
 ┌────────────────────────────────────────────┐
-│  merge.py — 텐서 단위 스트리밍               │
+│  merge.py — per-tensor streaming             │
 │  W = safe_open(key) → W' = W + scale*B@A   │
-│  → save_file → del W, A, B (메모리 해제)     │
+│  → save_file → del W, A, B (free memory)     │
 └────────────────┬───────────────────────────┘
                  ▼
 ┌────────────────────────────────────────────┐

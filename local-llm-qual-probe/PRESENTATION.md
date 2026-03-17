@@ -88,25 +88,25 @@ JSON 출력이 깨진다, 멀티턴 대화가 붕괴된다, thinking을 꺼도 �
 │                         CLI (cli.py)                            │
 │  argparse: endpoint, --model, --mock, --probes, --output        │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ probe 선택 & 실행
+                           │ probe selection & execution
               ┌────────────┼────────────────┐
               ▼            ▼                ▼
 ┌──────────────────┐ ┌──────────────┐ ┌──────────────────┐
 │  structured.py   │ │ multiturn.py │ │  efficiency.py   │
-│ JSON/YAML 파싱   │ │ 7턴×2 시나리오│ │ thinking on/off  │
-│ → 성공률/스키마  │ │ → 반복/망각   │ │ → 토큰 비교      │
+│ JSON/YAML parsing│ │ 7-turn×2 cases│ │ thinking on/off  │
+│ → success/schema │ │ → repeat/forget│ │ → token compare  │
 └────────┬─────────┘ └──────┬───────┘ └────────┬─────────┘
          └──────────────────┼───────────────────┘
                             ▼
               ┌──────────────────────────┐
               │  LLMClient (client.py)   │
-              │  OpenAI-호환 API wrapper  │
-              │  + mock 모드 내장         │
+              │  OpenAI-compatible wrapper │
+              │  + built-in mock mode     │
               └────────────┬─────────────┘
                            ▼
               ┌──────────────────────────┐
               │  Reporter (reporter.py)  │
-              │  Rich 터미널 + JSON 파일  │
+              │  Rich terminal + JSON file │
               └──────────────────────────┘
 ```
 

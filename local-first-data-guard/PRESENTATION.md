@@ -87,23 +87,23 @@ Reddit r/webdev과 Hacker News에서 이 얘기가 계속 반복된다. Safari�
 │             ▼                          ▼                        │
 │  ┌─────────────────────┐   ┌───────────────────────────────┐   │
 │  │   detect.ts          │   │   replicate.ts                │   │
-│  │   (탐지 엔진)        │   │   (복제 엔진)                 │   │
+│  │   (Detection Engine)  │   │   (Replication Engine)        │   │
 │  │                      │   │                               │   │
-│  │  Safari/ITP 감지     │   │  put() → IDB + OPFS 이중기록  │   │
-│  │  persist() 확인      │   │  get() → IDB miss시 OPFS 복구 │   │
-│  │  OPFS 가용성 확인    │   │  recoverAll() → 일괄 복구     │   │
+│  │  Safari/ITP Detection │   │  put() → IDB + OPFS Dual-Write│   │
+│  │  persist() Check      │   │  get() → OPFS Recovery on Miss│   │
+│  │  OPFS Availability    │   │  recoverAll() → Batch Recovery│   │
 │  │  → StorageReport     │   │                               │   │
 │  └─────────────────────┘   └───────────────────────────────┘   │
 │                                                                 │
 │  ┌──────────────────────┐   ┌───────────────────────────────┐   │
 │  │     IndexedDB         │   │     OPFS (Origin Private FS)  │   │
-│  │  (Primary Storage)    │   │  (Backup — 파일 기반)         │   │
+│  │  (Primary Storage)    │   │  (Backup — File-Based)        │   │
 │  └──────────────────────┘   └───────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-- **detect.ts**: Safari/ITP 감지, persist() 확인, OPFS 가용성 → safe/warning/danger 등급 산출
-- **replicate.ts**: dual-write(이중 기록) + read-repair(읽기 시 자동 복구) 패턴
+- **detect.ts**: Safari/ITP detection, persist() check, OPFS availability → safe/warning/danger rating
+- **replicate.ts**: dual-write + read-repair (auto-recovery on read) pattern
 
 <!--
 구조는 두 개의 모듈로 나뉜다. detect.ts가 탐지 엔진이고, replicate.ts가 복제 엔진이다. 탐지 엔진은 Safari 여부, ITP 버전, persist() 승인 상태, OPFS 가용성을 확인해서 스토리지별로 safe, warning, danger 등급을 매긴다. 복제 엔진은 데이터를 쓸 때 IndexedDB와 OPFS에 동시에 쓰고, 읽을 때 IndexedDB에 없으면 OPFS에서 자동 복구한다. 분산 시스템에서 쓰는 read-repair 패턴을 브라우저 스토리지에 적용한 거다.

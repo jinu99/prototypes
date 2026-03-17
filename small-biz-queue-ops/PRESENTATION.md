@@ -84,26 +84,26 @@ backgroundColor: #fafafa
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        클라이언트 (Browser)                       │
+│                         Client (Browser)                          │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐ │
 │  │ index.html │  │ join.html  │  │ admin.html │  │  kds.html  │ │
-│  │  홈 / QR   │  │ 대기 등록  │  │ 매장 관리  │  │  KDS 뷰   │ │
+│  │  Home / QR │  │ Join Queue │  │ Shop Admin │  │  KDS View  │ │
 │  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘ │
 │        └───────────┬────┴───────────────┴───────┬───────┘        │
 │              REST API (fetch)            SSE (EventSource)       │
 └──────────────────┬───────────────────────────┬───────────────────┘
                    ▼                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  server.js → routes.js (CRUD) ──broadcast──▶ sse.js (실시간)    │
+│  server.js → routes.js (CRUD) ──broadcast──▶ sse.js (Realtime)  │
 │                  │                                               │
 │                  ▼                                               │
 │             db.js (SQLite)                                       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-- **routes.js**: 대기열 CRUD + QR 생성 — 상태 변경 시 자동 broadcast
-- **sse.js**: SSE 클라이언트 관리 — 20줄로 실시간 푸시 구현
-- **db.js**: SQLite 초기화 — 상태 전이 타임스탬프 자동 기록
+- **routes.js**: Queue CRUD + QR generation — auto-broadcast on status change
+- **sse.js**: SSE client management — realtime push in 20 lines
+- **db.js**: SQLite initialization — automatic state transition timestamps
 
 <!--
 아키텍처는 의도적으로 단순하게 잡았다. Node.js 내장 http 모듈 위에 routes, sse, db 세 개 모듈만 올린다. 프론트엔드는 4개의 HTML 파일이 REST API로 데이터를 주고받고, SSE로 실시간 업데이트를 받는다. SSE 모듈은 20줄짜리인데, 이게 전체 실시간 기능을 담당한다. Express도 안 쓰고, WebSocket도 안 쓴다. 매장 대기열 관리에 복잡한 양방향 통신이 필요하지 않으니까. SSE가 이 문제에 맞는 적정 기술이다.

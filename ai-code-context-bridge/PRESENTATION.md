@@ -77,20 +77,20 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  입력: architecture.mmd + mapping.json                    │
+│  Input: architecture.mmd + mapping.json                    │
 └────────────┬─────────────────────────┬───────────────────┘
              ▼                         ▼
    ┌──────────────────┐    ┌──────────────────┐
    │  MermaidParser    │    │  MappingConfig   │
-   │  C4/Flowchart    │    │  glob 패턴 매칭   │
-   │  노드+관계 추출   │    │  서비스 룰 관리   │
+   │  C4/Flowchart    │    │  glob pattern     │
+   │  node+rel extract│    │  service rule mgmt│
    └────────┬─────────┘    └────────┬─────────┘
             └──────────┬───────────┘
                        ▼
             ┌──────────────────┐
             │  ContextMapper   │
-            │  파일→서비스 매핑  │
-            │  FileContext 생성 │
+            │  file→service map │
+            │  FileContext gen  │
             └──────┬───────────┘
          ┌─────────┼──────────┐
          ▼         ▼          ▼
@@ -99,8 +99,8 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
    └──────────┘ └────────┘ └──────────────┘
 ```
 
-- **MermaidParser**: 정규식 기반. C4 Context/Container, Flowchart 두 포맷 지원
-- **ContextMapper**: fnmatch로 파일 경로 → 서비스 매핑. 관련 서비스 자동 탐색
+- **MermaidParser**: Regex-based. Supports C4 Context/Container and Flowchart formats
+- **ContextMapper**: Maps file paths to services via fnmatch. Auto-discovers related services
 - **MCP Server**: `get_file_context`, `list_services`, `list_relationships`, `get_service_context`
 
 <!--

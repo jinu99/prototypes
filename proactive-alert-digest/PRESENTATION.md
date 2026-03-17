@@ -89,7 +89,7 @@ Keep이나 OneUptime은 좋은 도구인데, 소규모 환경에서 배포하려
 
 ```
 ┌─────────────┐
-│ digest.yaml │  YAML 설정 (소스 정의 + 출력 설정)
+│ digest.yaml │  YAML config (source definitions + output settings)
 └──────┬──────┘
        │
        ▼
@@ -115,9 +115,9 @@ Keep이나 OneUptime은 좋은 도구인데, 소규모 환경에서 배포하려
        └──▶ 📤 Slack webhook
 ```
 
-- **Engine**: YAML 읽고 → 플러그인 인스턴스 생성 → 일괄 폴링
-- **Plugin**: `Protocol` 기반, `poll() → list[Alert]` 인터페이스만 맞추면 확장 가능
-- **Renderer**: 심각도 정렬 → Jinja2로 마크다운 렌더링
+- **Engine**: Reads YAML → creates plugin instances → polls all sources
+- **Plugin**: `Protocol`-based, extensible by implementing `poll() → list[Alert]` interface
+- **Renderer**: Sorts by severity → renders Markdown via Jinja2
 
 <!--
 구조는 꽤 직관적이다. YAML에서 설정을 읽고, 플러그인 레지스트리에서 해당 소스 타입을 찾아서 폴링한다.

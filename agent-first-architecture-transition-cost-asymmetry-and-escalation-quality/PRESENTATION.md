@@ -75,13 +75,13 @@ backgroundColor: #fafafa
 ```
 ┌──────────────────────────────────────────────────┐
 │                  main.py (CLI)                    │
-│             시뮬레이션 오케스트레이터               │
+│           Simulation Orchestrator                 │
 └────────┬────────────────────────────┬────────────┘
          │                            │
          ▼                            ▼
 ┌──────────────────┐     ┌───────────────────────────┐
 │  scenarios.py     │     │  server.py → dashboard    │
-│  시나리오 ×10     │     │  웹 시각화 (port 8000)     │
+│  Scenarios ×10   │     │  Dashboard (port 8000)    │
 │  ○ simple ×5     │     └───────────────────────────┘
 │  ◉ complex ×3    │                ▲
 │  ◆ edge ×2       │       output/results.json
@@ -89,23 +89,23 @@ backgroundColor: #fafafa
     ┌────┴────┐                     │
     ▼         ▼                     │
 ┌────────┐ ┌──────────────┐        │
-│Workflow│ │Agent 엔진     │        │
-│if/else │ │5가지 판단순간 │        │
-│키워드   │ │confidence    │        │
-│매칭    │ │cascade       │        │
+│Workflow│ │Agent Engine  │        │
+│if/else │ │5 Eval Steps  │        │
+│keyword  │ │confidence    │        │
+│matching │ │cascade       │        │
 └───┬────┘ └──────┬───────┘        │
     └──────┬──────┘                │
            ▼                       │
     ┌──────────────┐              │
     │comparator.py │──────────────┘
-    │정확도/FP/FN   │   JSON 결과 저장
+    │Accuracy/FP/FN│   Save JSON Results
     └──────────────┘
 ```
 
-- **scenarios.py**: 10개 시나리오 + ground truth 정의
-- **workflow_engine.py**: 카테고리 라우팅 → 키워드 매칭 → 감정 키워드 체크
-- **agent_engine.py**: 5가지 판단 순간 순차 평가, confidence cascade
-- **comparator.py**: ground truth 대비 정확도, FP/FN, 민감도 분석
+- **scenarios.py**: 10 scenarios + ground truth definitions
+- **workflow_engine.py**: category routing → keyword matching → sentiment keyword check
+- **agent_engine.py**: 5 decision points sequential evaluation, confidence cascade
+- **comparator.py**: accuracy vs ground truth, FP/FN, threshold sensitivity analysis
 
 <!--
 구조는 의도적으로 단순하게 잡았다. 시뮬레이션 로직이 핵심이라 프레임워크 없이 Python 표준 라이브러리와 JSON만으로 충분했다. scenarios.py에서 시나리오 10개를 정의하고, 두 엔진이 각각 처리한 다음, comparator.py가 정답 대비 정확도를 계산한다. 결과는 CLI로 바로 볼 수도 있고, JSON으로 저장해서 대시보드에서 시각화할 수도 있다.

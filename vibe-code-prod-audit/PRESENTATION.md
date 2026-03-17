@@ -89,27 +89,27 @@ backgroundColor: #fafafa
 │                       │                             │
 │          ┌────────────┼────────────┐                │
 │          ▼            ▼            ▼                │
-│    Route 추출    Middleware    Error Handler         │
-│   (@app.get,     검출         검출                  │
+│  Route Extraction  Middleware     Error Handler      │
+│   (@app.get,       Detection     Detection           │
 │    @router.post)                                    │
 └───────────────────────┬─────────────────────────────┘
                         │
                         ▼
 ┌─────────────────────────────────────────────────────┐
 │           Checklist (checklist.py)                   │
-│  9개 항목 평가 (가중치 기반 점수화: 0-100)          │
+│  9 items evaluated (weighted scoring: 0-100)        │
 │  Structure(20) │ Reliability(35) │ Quality(20)      │
 │  Security(20)  │ Deployment(5)                      │
 └───────────────────────┬─────────────────────────────┘
                         │
               ┌─────────┴─────────┐
               ▼                   ▼
-┌──────────────────┐  ┌────────────────────────┐
-│  Terminal Report  │  │  Generator (generator.py)│
-│  (컬러 바, 점수)  │  │  실패 항목별 보완 코드:  │
-│  또는 --json     │  │  health.py, test_api.py, │
-│                  │  │  Dockerfile, config.py   │
-└──────────────────┘  └────────────────────────┘
+┌──────────────────────┐  ┌──────────────────────────────┐
+│  Terminal Report     │  │  Generator (generator.py)     │
+│  (color bar, score)  │  │  Fix code per failed item:    │
+│  or --json           │  │  health.py, test_api.py,      │
+│                      │  │  Dockerfile, config.py        │
+└──────────────────────┘  └──────────────────────────────┘
 ```
 
 <!--

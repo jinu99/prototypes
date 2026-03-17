@@ -84,13 +84,13 @@ HN이나 GitHub에서 이런 얘기가 계속 나온다. 크게 세 가지인데
 │                                                             │
 │  ┌───────────┐    ┌────────────┐    ┌───────────────────┐   │
 │  │ index.html│    │  style.css │    │   mock-data.js    │   │
-│  │ (진입점)  │    │ (다크 테마)│    │ (Mock AI 시나리오)│   │
+│  │ (Entry)   │    │(Dark Theme)│    │(Mock AI Scenarios)│   │
 │  └─────┬─────┘    └────────────┘    └────────┬──────────┘   │
 │        │                                     │              │
 │        ▼                                     ▼              │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │                    app.js (핵심 로직)                 │   │
-│  │  cells[] ─── 상태 관리 ─── cellIdCounter             │   │
+│  │                    app.js (Core Logic)                │   │
+│  │  cells[] ─── State Mgmt ─── cellIdCounter            │   │
 │  │     │                                                │   │
 │  │  ┌─────────┐  ┌─────────┐  ┌──────────┐             │   │
 │  │  │ Prompt  │─▶│  Plan   │─▶│  Result  │             │   │
@@ -102,14 +102,14 @@ HN이나 GitHub에서 이런 얘기가 계속 나온다. 크게 세 가지인데
 │                     ▼                                       │
 │  ┌────────────────────────┐   ┌───────────────────┐        │
 │  │      render.js         │   │   LocalStorage     │        │
-│  │ (셀 DOM 생성·이벤트)   │   │  (상태 영속화)     │        │
+│  │  (Cell DOM & Events)   │   │(State Persistence) │        │
 │  └────────────────────────┘   └───────────────────┘        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **app.js**: 셀 생성/삭제, 실행 흐름, 플랜 승인, 상태 저장 (216줄)
-- **render.js**: DOM 생성과 이벤트 바인딩, XSS 방지를 위해 innerHTML 미사용 (156줄)
-- **mock-data.js**: 사전 정의된 AI 응답 시나리오 (47줄)
+- **app.js**: Cell create/delete, execution flow, plan approval, state persistence (216 lines)
+- **render.js**: DOM creation and event binding, no innerHTML for XSS prevention (156 lines)
+- **mock-data.js**: Predefined AI response scenarios (47 lines)
 
 <!--
 전체 구조는 꽤 단순하다. 백엔드 없이 브라우저에서만 동작하는 SPA다. app.js가 핵심 로직을 담당하고, render.js가 DOM을 그린다. 의존성이 하나도 없다. React도 안 썼다. vanilla JS로 전부 처리한다. 이게 프로토타입의 장점이다. 검증하려는 것만 빠르게 만들고 나머지는 다 쳐낸 거다. 상태는 LocalStorage에 JSON으로 저장해서 새로고침해도 유지된다.

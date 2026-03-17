@@ -90,32 +90,33 @@ Reddit, Hacker News, GeekNews에서 비슷한 얘기가 계속 올라온다. 셋
 ┌─────────────────┐     ┌──────────────────────┐
 │  Git Analyzer   │────▶│  Dependency Parser    │
 │ git_analyzer.py │     │ dependency_parser.py  │
-│                 │     │ (tree-sitter 기반)    │
-│ · commit 목록   │     │ · Python import 파싱  │
-│ · 파일 내용     │     │ · JS/TS import 파싱   │
-│ · churn 통계    │     └──────────┬───────────┘
-│ · diff 파일     │                │
+│                 │     │ (tree-sitter based)   │
+│ · commit list   │     │ · Python import parse │
+│ · file content  │     │ · JS/TS import parse  │
+│ · churn stats   │     └──────────┬───────────┘
+│ · diff files    │                │
 └────────┬────────┘                ▼
          │              ┌──────────────────────┐
          │              │   Metrics Engine      │
          │              │   metrics.py          │
-         │              │ · 의존성 그래프 구축   │
-         │              │ · edge count 계산     │
-         │              │ · 순환 의존성 탐지     │
+         │              │ · build dependency    │
+         │              │   graph               │
+         │              │ · edge count calc     │
+         │              │ · detect cyclic deps  │
          │              └──────────┬───────────┘
          ▼                         ▼
 ┌─────────────────┐     ┌──────────────────────┐
 │Pattern Detector │     │   SQLite Storage      │
 │ · add-delete    │────▶│ · commit_metrics      │
 │ · delete-readd  │     │ · revert_patterns     │
-│ · rapid-edit    │     │ · 시계열 저장/조회     │
+│ · rapid-edit    │     │ · time-series store   │
 └─────────────────┘     └──────────┬───────────┘
                                    ▼
                         ┌──────────────────────┐
                         │   Visualizer (Rich)   │
-                        │ · 결합도 bar chart    │
+                        │ · coupling bar chart  │
                         │ · churn rate chart    │
-                        │ · revert 패턴 테이블  │
+                        │ · revert pattern table│
                         │ · health warning      │
                         └──────────────────────┘
 ```

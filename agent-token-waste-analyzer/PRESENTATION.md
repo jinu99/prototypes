@@ -95,7 +95,7 @@ AI 코딩 도구가 좋은데, 같은 파일을 계속 다시 읽고, 검색 결
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Parser (parser.py)                            │
 │   ~/.claude/projects/**/*.jsonl  ──▶  SessionData                │
-│     ├─ messages[], tool_calls[], token usage 집계                 │
+│     ├─ messages[], tool_calls[], token usage aggregation          │
 └───────────────────────────┬──────────────────────────────────────┘
                             │
                             ▼
@@ -111,13 +111,13 @@ AI 코딩 도구가 좋은데, 같은 파일을 계속 다시 읽고, 검색 결
                             ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                   Dashboard (dashboard.py)                        │
-│            Rich 터미널 UI — 요약, 핫스팟, 제안, 등급              │
+│            Rich terminal UI — summary, hotspots, suggestions, grade│
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-- **Parser**: JSONL을 라인별로 파싱, `tool_use` 타입에서 tool call 시퀀스 추출, `usage` 필드에서 토큰 집계
-- **Analyzer**: 3개의 독립적인 패턴 감지기가 각각 휴리스틱 기반으로 낭비를 식별
-- **Dashboard**: Rich Panel/Table로 한눈에 보이는 터미널 대시보드 구성
+- **Parser**: Parses JSONL line by line, extracts tool call sequences from `tool_use` types, aggregates tokens from `usage` fields
+- **Analyzer**: Three independent pattern detectors each identify waste using heuristic-based rules
+- **Dashboard**: Builds an at-a-glance terminal dashboard with Rich Panel/Table
 
 <!--
 구조는 단순하다. Parser가 JSONL 로그를 읽어서 구조화하고, Analyzer가 세 가지 패턴 감지기를 돌리고, Dashboard가 결과를 보여준다.

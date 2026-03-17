@@ -92,7 +92,7 @@ HN이랑 Reddit에서 이 주제로 꽤 강한 시그널이 나온다.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         CLI (cli.js)                            │
-│              init / detect / validate 명령 라우팅                │
+│              init / detect / validate command routing              │
 └──────┬──────────────────┬───────────────────┬───────────────────┘
        │                  │                   │
        ▼                  ▼                   ▼
@@ -100,21 +100,21 @@ HN이랑 Reddit에서 이 주제로 꽤 강한 시그널이 나온다.
 │   Detector   │  │   Generator   │  │   Validator    │
 │ detector.js  │  │ generator.js  │  │  validator.js  │
 ├──────────────┤  ├───────────────┤  ├────────────────┤
-│ 프로젝트 파일│  │ Detection →   │  │ YAML 파싱     │
-│ 스캔 + 에코  │  │ Job 구성으로  │  │ + GitHub      │
-│ 시스템 감지  │  │ 변환          │  │ Actions 스키마 │
-└──────────────┘  └───────────────┘  │ 검증           │
+│ File scan +  │  │ Detection →   │  │ YAML parsing  │
+│ ecosystem    │  │ to Job config │  │ + GitHub      │
+│ detection    │  │ conversion    │  │ Actions schema│
+└──────────────┘  └───────────────┘  │ validation    │
        ▲                              └────────────────┘
        │
 ┌──────────────┐
-│  rules.json  │  ← 감지 규칙 설정 (3개 에코시스템 × 도구 매핑)
+│  rules.json  │  ← Detection rules (3 ecosystems × tool mapping)
 └──────────────┘
 ```
 
-- **Detector**: 파일 존재 확인 + 설정 파일 파싱으로 도구 체인 식별
-- **Generator**: 감지 결과를 GitHub Actions job 구조로 변환, matrix strategy 자동 적용
-- **Validator**: 생성된 YAML의 문법 + 구조적 유효성 검증
-- **rules.json**: 감지 규칙이 코드 밖에 있어서 새 에코시스템 추가 시 JSON만 수정
+- **Detector**: Identifies toolchain by checking file existence + parsing config files
+- **Generator**: Converts detection results to GitHub Actions job structure with auto matrix strategy
+- **Validator**: Validates generated YAML syntax + structural correctness
+- **rules.json**: Detection rules live outside code — add new ecosystems by editing JSON only
 
 <!--
 구조는 꽤 단순하다. CLI가 명령을 라우팅하고, 세 개의 모듈이 각자 역할을 한다.

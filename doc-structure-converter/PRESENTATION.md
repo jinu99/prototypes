@@ -88,8 +88,8 @@ backgroundColor: #fafafa
         ▼                    ▼            ▼
 ┌──────────────────────────────────────────────────────────┐
 │                   Parser (parser.js)                      │
-│  Markdown ──▶ remark + GFM ──▶ AST ──▶ Block 식별        │
-│                                 breakable 판정:           │
+│  Markdown ──▶ remark + GFM ──▶ AST ──▶ Block Detection    │
+│                                 breakable check:          │
 │                                 table/code/image → false  │
 └───────┬──────────────────────────────────────────────────┘
         │
@@ -97,7 +97,7 @@ backgroundColor: #fafafa
 ┌──────────────────────┐     ┌─────────────────────────┐
 │  Typst Generator     │     │  Compare (compare.js)    │
 │  (typst-gen.js)      │     │  Pandoc PDF (before)     │
-│  AST → Typst 마크업   │     │        vs                │
+│  AST → Typst markup  │     │        vs                │
 │  + breakable hints   │     │  docconv PDF (after)     │
 └───────┬──────────────┘     └─────────┬───────────────┘
         │                              │

@@ -80,21 +80,21 @@ Reddit이랑 Hacker News에서 이런 얘기가 계속 나온다. AI 코딩 도�
 │  base_url =     ├──────▶│  ┌──────────────────┐  ┌─────────────────┐  │
 │  localhost:8088 │       │  │ Token Analyzer   │  │ In-Memory Store │  │
 └─────────────────┘       │  │ (token_counter)  │─▶│ (store.py)      │  │
-                          │  │ tiktoken 기반     │  │ CallRecord+diff │  │
+                          │  │ tiktoken-based    │  │ CallRecord+diff │  │
                           │  └──────────────────┘  └────────┬────────┘  │
                           └──────────────┬──────────────────┼───────────┘
                             Forward ─────┘                  │
-                            (real 모드)                     ▼
+                            (real mode)                     ▼
                           ┌──────────────┐       ┌──────────────────────┐
                           │ OpenAI API   │       │ Dashboard (HTML)     │
-                          │ (upstream)   │       │ 바차트 · 트리맵 · diff│
+                          │ (upstream)   │       │ bar chart·treemap·diff│
                           └──────────────┘       └──────────────────────┘
 ```
 
-- **proxy.py**: 요청 인터셉트 + mock/real 모드 전환
-- **token_counter.py**: 메시지별 토큰 분해, 5개 컴포넌트 분류
-- **store.py**: 호출 기록 저장 + 호출 간 diff 계산
-- **dashboard.html**: 2초 폴링 실시간 시각화
+- **proxy.py**: Request intercept + mock/real mode switching
+- **token_counter.py**: Per-message token breakdown, 5-component classification
+- **store.py**: Call record storage + inter-call diff computation
+- **dashboard.html**: Real-time visualization with 2s polling
 
 <!--
 구조는 3개 파일이 핵심이다. proxy.py가 FastAPI로 요청을 받아서, token_counter.py가 tiktoken으로 메시지를 분해하고, store.py가 기록을 쌓으면서 호출 간 diff를 계산한다. 대시보드는 단일 HTML 파일이고 2초 간격으로 폴링한다. mock 모드가 있어서 API 키 없이도 테스트할 수 있고, real 모드면 원래 OpenAI API로 그대로 전달한다.

@@ -71,35 +71,35 @@ Hacker News나 Reddit에서 이 주제가 꾸준히 올라온다. SQL 변경사�
 
 ```
 ┌─────────────────┐     ┌──────────────────────────────────────────────────┐
-│  SQL 파일/디렉토리  │     │                  sql-guard CLI                   │
+│  SQL Files/Dirs  │     │                  sql-guard CLI                   │
 │  (.sql)         │     │               (cli.py / Click)                   │
 └────────┬────────┘     │  --dialect, --format, --strict                   │
          │              └──────────────────┬───────────────────────────────┘
          ▼                                 │
 ┌─────────────────┐                        ▼
 │  pre-commit     │───────────▶ ┌─────────────────────┐
-│  hook 트리거     │            │   Analyzer           │
+│  hook trigger    │            │   Analyzer           │
 └─────────────────┘            │   ┌───────────────┐   │
-                               │   │ dialect 감지    │   │
+                               │   │ dialect detect  │   │
                                │   └───────┬───────┘   │
                                │           ▼           │
                                │   ┌───────────────┐   │
                                │   │ sqlglot.parse  │   │
-                               │   │ → AST 생성     │   │
+                               │   │ → AST build    │   │
                                │   └───────┬───────┘   │
                                │           ▼           │
                                │   ┌───────────────┐   │
-                               │   │ 9개 규칙 실행   │   │
+                               │   │ Run 9 rules    │   │
                                │   │ (rules.py)     │   │
                                │   └───────────────┘   │
                                └───────────┬──────────┘
                                            ▼
-                          text / JSON 출력 + exit code (CI 연동)
+                          text / JSON output + exit code (CI integration)
 ```
 
-- **rules.py**: 9개 규칙 함수, 각각 AST 노드를 순회하며 패턴 매칭
-- **analyzer.py**: 파일 읽기 → dialect 자동 감지 → sqlglot 파싱 → 규칙 실행
-- **cli.py**: Click 기반 CLI, text/JSON 출력, `--strict` 모드
+- **rules.py**: 9 rule functions, each traversing AST nodes for pattern matching
+- **analyzer.py**: file read → auto dialect detection → sqlglot parsing → rule execution
+- **cli.py**: Click-based CLI, text/JSON output, `--strict` mode
 
 <!--
 구조는 세 파일이 전부다. rules.py에 9개 규칙 함수가 있고, 각 함수는 AST 노드를 순회하면서 안티패턴을 찾는다. analyzer.py가 SQL 파일을 읽고, 파일명이나 주석에서 dialect를 자동 감지한 다음, sqlglot으로 파싱하고 규칙을 실행한다. cli.py는 Click으로 만든 진입점이다. 전체 코드가 400줄 이하다. 규칙 하나를 추가하려면 함수 하나만 작성하면 되는 구조다.

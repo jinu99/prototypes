@@ -117,10 +117,10 @@ ESLint나 Pylint는 로컬이지만 AI 특유 패턴을 잡는 룰이 없다.
                     └─────────────┘
 ```
 
-- **Parser**: tree-sitter로 Python/JS/TS 소스를 AST로 변환
-- **Scanner**: 모든 룰을 AST에 대해 실행, 언어별 적용 가능 룰 자동 필터
-- **Rules**: 각 룰이 BaseRule을 상속, `check(tree, source, lang, filepath)` 인터페이스
-- **Output**: JSON 또는 컬러 텍스트 포맷 선택
+- **Parser**: Converts Python/JS/TS source files into AST via tree-sitter
+- **Scanner**: Runs all rules against the AST, automatically filters applicable rules per language
+- **Rules**: Each rule extends BaseRule with a `check(tree, source, lang, filepath)` interface
+- **Output**: Choose between JSON or colored text output format
 
 <!--
 구조는 꽤 단순하다.

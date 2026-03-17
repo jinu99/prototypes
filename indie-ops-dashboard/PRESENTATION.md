@@ -93,19 +93,19 @@ Reddit이나 Hacker News에서 이런 얘기가 계속 나온다. 첫째, 업타
 ┌─────────────────────────────────────────────────────────────┐
 │  analyzer.py                                                │
 │  CPU ≥ 10% → active / < 10% → idle                         │
-│  시간대별 세그먼트 → EC2 vs Lambda 비용 비교 산출           │
+│  Time-based segments → EC2 vs Lambda cost comparison        │
 └──────────────────────────┬──────────────────────────────────┘
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  server.py — FastAPI :8099                                  │
 │  REST API (7 endpoints) + static/index.html (Chart.js)      │
-│  시계열 차트 │ 세그먼트바 │ 비용비교 │ 업타임 │ 크론       │
+│  Time-series │ Segment bar │ Cost comp │ Uptime │ Cron      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **수집**: psutil로 30초마다 CPU/메모리/네트워크 → SQLite 적재
-- **분석**: CPU 10% 임계치로 활성/유휴 분류 → 일별 활성 시간 산출 → Lambda 비용 추정
-- **표현**: FastAPI + Chart.js 단일 페이지 대시보드
+- **Collection**: psutil collects CPU/Memory/Network every 30s → stored in SQLite
+- **Analysis**: Active/Idle classification at 10% CPU threshold → daily active hours → Lambda cost estimation
+- **Presentation**: FastAPI + Chart.js single-page dashboard
 
 <!--
 구조는 세 겹이다. 수집 레이어에서 psutil로 30초마다 시스템 메트릭을 긁어서 SQLite에 넣는다. 분석 레이어에서 CPU 사용률 10% 기준으로 활성과 유휴를 나누고, 그 비율로 Lambda 전환 비용을 계산한다. 표현 레이어는 FastAPI에 Chart.js 단일 HTML이다. 전체가 Python 파일 7개, 외부 의존성은 psutil과 aiosqlite 정도다. 꽤 가볍다.

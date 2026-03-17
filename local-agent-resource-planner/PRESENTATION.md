@@ -75,33 +75,33 @@ LocalLLaMA 서브레딧에서 이런 얘기가 계속 나온다. GPU 24기가로
 
 ```
 ┌──────────────────┐    ┌──────────────────────────┐
-│  GGUF 파일       │    │  Sample Profile (프리셋)  │
-│  (바이너리 파싱) │    │  Llama-7B, Mixtral, Phi-2│
+│  GGUF Files      │    │  Sample Profile (Presets) │
+│  (Binary Parsing)│    │  Llama-7B, Mixtral, Phi-2│
 └────────┬─────────┘    └────────────┬─────────────┘
          │                          │
          ▼                          ▼
 ┌────────────────────────────────────────────┐
 │         vram_calculator.py                 │
 │  Weights + KV Cache + Activation + OH     │
-│  MoE offloading 시나리오 계산             │
+│  MoE offloading scenario calculation      │
 └──────────────────┬─────────────────────────┘
                    │
                    ▼
 ┌────────────────────────────────────────────┐
 │         planner.py                         │
-│  단일/멀티 모델 추정 · 그리드 서치 · 검증  │
+│  Single/Multi model est · Grid search · Val │
 └──────────┬─────────────────┬───────────────┘
            ▼                 ▼
    ┌─────────────┐   ┌───────────────┐
    │ server.py   │   │ main.py (CLI) │
-   │ Web UI +    │   │ 테이블 출력   │
-   │ REST API    │   │ 검증 결과     │
+   │ Web UI +    │   │ Table output  │
+   │ REST API    │   │ Validation    │
    └─────────────┘   └───────────────┘
 ```
 
-- **gguf_parser**: GGUF 바이너리에서 모델 구조 메타데이터 추출 (v2/v3 지원)
-- **vram_calculator**: 4개 컴포넌트별 메모리 수식 계산 엔진
-- **planner**: 멀티 모델 합산, 그리드 서치, llama.cpp 검증 오케스트레이션
+- **gguf_parser**: Extracts model structure metadata from GGUF binaries (v2/v3 support)
+- **vram_calculator**: Per-component memory formula calculation engine (4 components)
+- **planner**: Multi-model aggregation, grid search, llama.cpp validation orchestration
 
 <!--
 구조는 크게 세 층이다. 맨 아래에 GGUF 파서가 바이너리 파일을 읽어서 모델 구조를 추출하고, 가운데에 VRAM 계산기가 가중치, KV 캐시, 활성화, 오버헤드를 각각 수식으로 산출한다. 그 위에 플래너가 멀티 모델 합산이나 그리드 서치를 처리한다. 외부 의존성 없이 Python 표준 라이브러리만 사용한 게 특징이다. struct 모듈로 바이너리를 파싱하고, http.server로 웹 서버를 띄운다.

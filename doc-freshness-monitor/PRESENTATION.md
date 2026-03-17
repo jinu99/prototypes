@@ -80,29 +80,29 @@ Hacker News나 Reddit을 보면 이 얘기가 계속 나온다. 문서를 열심
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         CLI (click)                             │
-│                    scan / check 커맨드                           │
+│                    scan / check commands                          │
 └──────────┬──────────────────────────────────┬───────────────────┘
            │                                  │
            ▼                                  ▼
 ┌─────────────────────┐          ┌────────────────────────────────┐
 │  symbol_extractor    │          │         git_tracker            │
 │                      │          │                                │
-│  Markdown/RST 문서   │──────▶  │  ① find_symbol_in_code()       │
-│  에서 regex 패턴으로  │ symbols │    git grep으로 심볼 정의 파일   │
-│  코드 심볼 참조 추출  │         │  ② get_symbol_history()        │
-│                      │          │    git log로 변경 이력 수집     │
-│  · backtick 함수호출 │          │  ③ get_doc_last_modified()     │
-│  · PascalCase 클래스 │          │    문서 최종 수정일 조회        │
-│  · dotted 모듈 경로  │          └───────────────┬────────────────┘
-│  · 파일 경로 참조    │                          │
-│  · import 구문       │                          │ tracking records
+│  Extract code symbol │──────▶  │  ① find_symbol_in_code()       │
+│  refs from Markdown/ │ symbols │    find symbol def via git grep │
+│  RST via regex       │         │  ② get_symbol_history()        │
+│                      │          │    collect change history       │
+│  · backtick calls    │          │  ③ get_doc_last_modified()     │
+│  · PascalCase classes│          │    query doc last modified date │
+│  · dotted module path│          └───────────────┬────────────────┘
+│  · file path refs    │                          │
+│  · import statements │                          │ tracking records
 └─────────────────────┘                          ▼
                                    ┌─────────────────────────┐
                                    │   scorer → reporter      │
-                                   │   staleness 0-100 산출   │
-                                   │   = 날짜 차이 (최대 60점) │
-                                   │   + 커밋 수 (최대 40점)   │
-                                   │   → Markdown / JSON 출력  │
+                                   │   staleness 0-100 score  │
+                                   │   = date diff (max 60pt) │
+                                   │   + commits (max 40pt)   │
+                                   │   → Markdown / JSON output│
                                    └─────────────────────────┘
 ```
 

@@ -75,22 +75,22 @@ backgroundColor: #fafafa
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Coding Agent (Aider 등)                     │
+│              Coding Agent (Aider etc.)                    │
 │        OPENAI_API_BASE=http://localhost:8400/v1          │
 └────────────────────────┬────────────────────────────────┘
-                         │ OpenAI-호환 API 요청
+                         │ OpenAI-compatible API Request
                          ▼
 ┌─────────────────────────────────────────────────────────┐
 │                 proxy.py (FastAPI :8400)                  │
 │                                                          │
 │   analyzer.py          loop_detector.py                  │
-│   ├ 파일 삭제 감지      ├ 동일 도구 연속 3회 감지         │
-│   ├ 빈 파일 쓰기 감지   └ 세션별 호출 이력 추적           │
-│   ├ 80%+ 코드 소실                                       │
-│   └ 위험 shell 명령     db.py (SQLite)                   │
-│                         ├ sessions / tool_calls 테이블   │
-│   차단 시 → ⚠️ BLOCKED  └ dashboard.html에서 조회        │
-│   정상 시 → 원본 전달                                     │
+│   ├ File deletion       ├ Same tool 3x consecutive       │
+│   ├ Empty file write    └ Per-session call tracking       │
+│   ├ 80%+ code loss                                       │
+│   └ Dangerous shell cmd db.py (SQLite)                   │
+│                         ├ sessions / tool_calls tables   │
+│   On block → ⚠️ BLOCKED └ Queried from dashboard.html   │
+│   On pass  → Forward original                            │
 └────────────────────────┬────────────────────────────────┘
                          ▼
 ┌─────────────────────────────────────────────────────────┐

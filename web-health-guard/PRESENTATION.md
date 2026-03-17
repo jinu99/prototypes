@@ -81,29 +81,29 @@ backgroundColor: #fafafa
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Browser (index.html)                         │
-│  URL 입력 → Scan 버튼 → fetch(/api/scan) → 대시보드 렌더링     │
+│  URL input → Scan button → fetch(/api/scan) → render dashboard   │
 └──────────────────────────────┬──────────────────────────────────┘
                                │ GET /api/scan?url=...
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                 FastAPI Server (main.py)                        │
 │                                                                 │
-│  httpx.AsyncClient로 3개 리소스 동시 fetch:                     │
+│  httpx.AsyncClient fetches 3 resources concurrently:             │
 │     ┌──────────┐  ┌──────────────┐  ┌──────────────┐           │
-│     │ 대상 페이지│  │ /robots.txt  │  │ /sitemap.xml │           │
+│     │ Target Page│  │ /robots.txt  │  │ /sitemap.xml │           │
 │     └────┬─────┘  └──────┬───────┘  └──────┬───────┘           │
 │          ▼               ▼                  ▼                   │
 │   seo_checker      robots_analyzer    phantom_detector          │
-│   (14개 항목)      (AI 크롤러 10종)   (사이트맵 vs 텍스트)      │
+│   (14 checks)     (10 AI crawlers)   (sitemap vs text)         │
 │          └───────────────┼──────────────────┘                   │
 │                          ▼                                      │
 │                   JSON Response                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-- **seo_checker**: title, meta, OG, JSON-LD, viewport 등 14개 항목 pass/fail
-- **robots_analyzer**: 10종 AI 크롤러 차단 여부 + 미차단 크롤러용 robots.txt 스니펫 자동 생성
-- **phantom_detector**: 사이트맵 URL과 페이지 텍스트 내 경로 패턴 비교 → 팬텀 URL 탐지
+- **seo_checker**: pass/fail for 14 checks including title, meta, OG, JSON-LD, viewport
+- **robots_analyzer**: block status of 10 AI crawlers + auto-generated robots.txt snippet for unblocked ones
+- **phantom_detector**: compares sitemap URLs against path patterns in page text → detects phantom URLs
 
 <!--
 구조는 꽤 단순하다. 브라우저에서 URL을 보내면 FastAPI 서버가 세 개의 리소스를 asyncio.gather로 동시에 가져온다. 대상 페이지, robots.txt, sitemap.xml. 그리고 각각을 세 개의 분석 모듈에 넘긴다. seo_checker가 HTML을 파싱해서 14개 항목을 체크하고, robots_analyzer가 robots.txt에서 AI 크롤러 차단 상태를 분석하고, phantom_detector가 사이트맵과 텍스트 패턴을 비교한다. 이걸 JSON으로 합쳐서 프론트엔드 대시보드에 뿌린다.

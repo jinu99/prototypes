@@ -80,23 +80,23 @@ HN이랑 r/selfhosted에서 같은 얘기가 반복적으로 나온다. 이메�
 │   IMAP Server       │     │   Mock Generator     │
 │  (Gmail, etc.)      │     │  (mock_data.py)      │
 └────────┬────────────┘     └────────┬────────────┘
-         │ IMAP FETCH HEADER                │ 12,000개 생성
+         │ IMAP FETCH HEADER                │ 12,000 generated
          ▼                                  ▼
 ┌──────────────────────────────────────────────────┐
 │              imap_client.py                      │
-│  헤더 파싱: From, Subject, List-Unsubscribe,     │
+│  Header parsing: From, Subject, List-Unsubscribe,│
 │  X-Mailer, Precedence, Date, Size               │
 └────────────────────┬─────────────────────────────┘
                      │ upsert
                      ▼
             ┌─────────────────┐
-            │   SQLite (WAL)  │  ← 로컬 캐시, 외부 전송 없음
+            │   SQLite (WAL)  │  ← Local cache, no external transfer
             └───┬─────┬───┬───┘
        ┌────────┘     │   └────────┐
        ▼              ▼            ▼
  classifier.py   analyzer.py   cleanup.py
- 6개 시그널       발신자 통계    dry run →
- 스코어링 분류    구독해지 후보  실제 삭제/아카이브
+ 6 signals       sender stats   dry run →
+ score/classify  unsub candidates  delete/archive
 ```
 
 <!--

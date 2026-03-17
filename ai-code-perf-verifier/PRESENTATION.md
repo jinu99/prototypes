@@ -93,24 +93,24 @@ AI 코딩 도구가 빠르게 퍼지고 있다. 근데 AI가 만든 코드가 �
 │   Diff Parser       │◀──────────────────────────▶│    Git     │
 │  (diff_parser.py)   │                            │ Repository │
 └──────────┬──────────┘
-           │ 변경된 .py 파일 + 라인 번호
+           │ Changed .py files + line numbers
            ▼
 ┌─────────────────────┐
-│   AST Analyzer      │    Python AST 파싱으로
-│  (ast_analyzer.py)  │    변경 라인 → 함수/메서드 매핑
+│   AST Analyzer      │    Maps changed lines to
+│  (ast_analyzer.py)  │    functions/methods via Python AST
 └──────────┬──────────┘
-           │ 변경된 함수 목록
+           │ List of changed functions
            ▼
 ┌─────────────────────┐    git show ref:file    ┌────────────────┐
 │   Benchmarker       │◀───────────────────────▶│ Before Source  │
 │  (benchmarker.py)   │    time.perf_counter    └────────────────┘
 │                     │    tracemalloc
 └──────────┬──────────┘
-           │ before/after 벤치마크 결과
+           │ before/after benchmark results
            ▼
 ┌─────────────────────┐
-│   Reporter          │    Rich 테이블 출력
-│  (reporter.py)      │    exit code: 0=OK, 1=회귀
+│   Reporter          │    Rich table output
+│  (reporter.py)      │    exit code: 0=OK, 1=regression
 └─────────────────────┘
 ```
 

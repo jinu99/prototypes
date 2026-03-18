@@ -160,6 +160,7 @@ Community Sources                 Pipeline (cron-automated)                    O
 |-----------|-------------|-------|
 | [community-keyword-monitor](./community-keyword-monitor) | 멀티플랫폼 커뮤니티(Reddit, RSS)에서 키워드를 모니터링하고 통합 타임라인으로 확인하는 대시보드 | Python |
 | [indie-ops-dashboard](./indie-ops-dashboard) | 솔로 개발자를 위한 경량 인프라 운영 대시보드 — 서버 리소스 패턴 분석 + 비용 최적화 인사이트 | Python |
+| [indie-revenue-attribution](./indie-revenue-attribution) | 인디 개발자를 위한 채널별 매출 어트리뷰션 대시보드 — UTM-to-payment 매칭으로 진짜 CAC와 ROI를 한눈에 | Python |
 | [local-email-cleanup](./local-email-cleanup) | IMAP 헤더 메타데이터만으로 뉴스레터·마케팅·알림 이메일을 자동 분류하고 정리 제안을 생성하는 CLI 도구 | Python |
 | [small-biz-queue-ops](./small-biz-queue-ops) | QR 코드 기반 매장 대기열 관리 시스템 — 실시간 대기 순서 표시, 매장 관리, KDS 뷰 | Node.js |
 
@@ -184,4 +185,4 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 ---
 
-**Total: 47 prototypes** | Auto-updated by prototype-pipeline
+**Total: 48 prototypes** | Auto-updated by prototype-pipeline

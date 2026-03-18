@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indie Revenue Attribution</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+    --text: #e4e4e7; --muted: #8b8d98; --accent: #6366f1;
+    --green: #22c55e; --red: #ef4444; --yellow: #eab308;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 24px; }
+  h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 24px; }
+  .grid { display: grid; gap: 20px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .stat-label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-value { font-size: 1.75rem; font-weight: 700; margin-top: 4px; }
+  .stat-sub { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+  h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: rgba(99,102,241,0.05); }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 500; }
+  .pill-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .pill-red { background: rgba(239,68,68,0.15); color: var(--red); }
+  .pill-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .pill-muted { background: rgba(139,141,152,0.15); color: var(--muted); }
+  .bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 4px; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+  .chart-wrap { position: relative; height: 260px; }
+  .actions { display: flex; gap: 8px; margin-bottom: 20px; }
+  .btn { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+  .btn:hover { opacity: 0.9; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); }
+  .channel-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+  .cost-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 6px; width: 80px; font-size: 0.8rem; text-align: right; }
+  .cost-input:focus { outline: none; border-color: var(--accent); }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--green); color: white; padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; display: none; }
+  @media (max-width: 900px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>Indie Revenue Attribution</h1>
+<p class="subtitle">First-touch UTM attribution &middot; Channel ROI &middot; True CAC</p>
+
+<div class="actions">
+  <button class="btn" onclick="runMatch()">Run Attribution</button>
+  <button class="btn btn-outline" onclick="refresh()">Refresh Data</button>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-4" id="summary" style="margin-bottom: 20px;"></div>
+
+<!-- Charts Row -->
+<div class="grid grid-2" style="margin-bottom: 20px;">
+  <div class="card">
+    <h2>Revenue by Channel</h2>
+    <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>ROI by Channel</h2>
+    <div class="chart-wrap"><canvas id="roiChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Attribution Table -->
+<div class="card" style="margin-bottom: 20px;">
+  <h2>Channel Attribution &amp; True CAC</h2>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Channel</th><th>Payments</th><th>Revenue</th><th>% Share</th>
+          <th>Ad Spend ($)</th><th>Tool Cost ($)</th><th>Hours</th><th>Rate ($/hr)</th>
+          <th>True CAC</th><th>ROI</th>
+        </tr>
+      </thead>
+      <tbody id="channelTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Payments -->
+<div class="card">
+  <h2>Recent Payments</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Customer</th><th>Product</th><th>Amount</th><th>Channel</th><th>UTM Source</th></tr></thead>
+    <tbody id="paymentsTable"></tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#22c55e','#06b6d4','#f97316','#64748b'];
+let revenueChart, roiChart;
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.textContent;
+}
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'textContent') e.textContent = v;
+    else if (k === 'className') e.className = v;
+    else if (k.startsWith('data-')) e.setAttribute(k, v);
+    else if (k === 'style') Object.assign(e.style, v);
+    else e[k] = v;
+  });
+  if (children) children.forEach(c => { if (c) e.appendChild(c); });
+  return e;
+}
+
+async function refresh() {
+  const res = await fetch('/api/dashboard');
+  const data = await res.json();
+  renderSummary(data.summary);
+  renderCharts(data.channels);
+  renderTable(data.channels);
+  await renderPayments();
+}
+
+async function runMatch() {
+  const res = await fetch('/api/match', { method: 'POST' });
+  const data = await res.json();
+  showToast('Matched ' + data.matched + ' of ' + data.total + ' payments');
+  await refresh();
+}
+
+function renderSummary(s) {
+  const container = document.getElementById('summary');
+  container.replaceChildren();
+  const items = [
+    { label: 'Total Revenue', value: s.total_revenue_display, sub: s.total_payments + ' payments' },
+    { label: 'Customers', value: String(s.total_customers), sub: '' },
+    { label: 'Total Costs', value: '$' + s.total_costs.toLocaleString(), sub: 'ad + tools + time' },
+    { label: 'Blended CAC', value: '$' + s.blended_cac.toFixed(2), sub: 'all channels' },
+  ];
+  items.forEach(item => {
+    const card = el('div', { className: 'card' }, [
+      el('div', { className: 'stat-label', textContent: item.label }),
+      el('div', { className: 'stat-value', textContent: item.value }),
+      item.sub ? el('div', { className: 'stat-sub', textContent: item.sub }) : null,
+    ]);
+    container.appendChild(card);
+  });
+}
+
+function renderCharts(channels) {
+  const labels = channels.map(c => c.channel);
+  const revenues = channels.map(c => c.revenue_cents / 100);
+  const rois = channels.map(c => c.roi_pct ?? 0);
+
+  if (revenueChart) revenueChart.destroy();
+  if (roiChart) roiChart.destroy();
+
+  revenueChart = new Chart(document.getElementById('revenueChart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: revenues, backgroundColor: COLORS.slice(0, labels.length), borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#8b8d98', padding: 12, font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => '$' + ctx.parsed.toLocaleString() + ' (' + channels[ctx.dataIndex].pct_of_total + '%)' } }
+      }
+    }
+  });
+
+  const roiColors = rois.map(r => r >= 0 ? '#22c55e' : '#ef4444');
+  roiChart = new Chart(document.getElementById('roiChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'ROI %', data: rois, backgroundColor: roiColors, borderRadius: 6, barPercentage: 0.6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      scales: {
+        x: { grid: { color: '#2a2d3a' }, ticks: { color: '#8b8d98', callback: v => v + '%' } },
+        y: { grid: { display: false }, ticks: { color: '#e4e4e7', font: { size: 12 } } }
+      },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => 'ROI: ' + ctx.parsed.x.toFixed(1) + '%' } } }
+    }
+  });
+}
+
+function renderTable(channels) {
+  const tbody = document.getElementById('channelTable');
+  tbody.replaceChildren();
+
+  channels.forEach((c, i) => {
+    const tr = document.createElement('tr');
+
+    // Channel name with color dot
+    const tdCh = document.createElement('td');
+    const dot = el('span', { className: 'channel-dot', style: { background: COLORS[i] } });
+    tdCh.appendChild(dot);
+    tdCh.appendChild(document.createTextNode(c.channel));
+    tr.appendChild(tdCh);
+
+    // Payments
+    tr.appendChild(el('td', { textContent: String(c.payments) }));
+    // Revenue
+    tr.appendChild(el('td', { textContent: c.revenue_display }));
+
+    // % Share with bar
+    const tdPct = document.createElement('td');
+    tdPct.appendChild(el('div', { textContent: c.pct_of_total + '%' }));
+    const bar = el('div', { className: 'bar' }, [
+      el('div', { className: 'bar-fill', style: { width: c.pct_of_total + '%' } })
+    ]);
+    tdPct.appendChild(bar);
+    tr.appendChild(tdPct);
+
+    // Cost inputs
+    const costFields = [
+      { field: 'ad_spend', value: c.costs.ad_spend },
+      { field: 'tool_cost', value: c.costs.tool_cost },
+      { field: 'hours_spent', value: c.costs.hours_spent },
+      { field: 'hourly_rate', value: c.costs.hourly_rate },
+    ];
+    costFields.forEach(cf => {
+      const td = document.createElement('td');
+      const input = el('input', {
+        className: 'cost-input', type: 'number', value: String(cf.value),
+      });
+      input.setAttribute('data-channel', c.channel);
+      input.setAttribute('data-field', cf.field);
+      input.addEventListener('change', handleCostChange);
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+
+    // True CAC
+    tr.appendChild(el('td', null, [el('strong', { textContent: '$' + c.true_cac.toFixed(2) })]));
+
+    // ROI pill
+    const tdRoi = document.createElement('td');
+    let pillClass, pillText;
+    if (c.roi_pct === null) { pillClass = 'pill pill-muted'; pillText = 'N/A (no cost)'; }
+    else if (c.roi_pct >= 100) { pillClass = 'pill pill-green'; pillText = c.roi_pct + '%'; }
+    else if (c.roi_pct >= 0) { pillClass = 'pill pill-yellow'; pillText = c.roi_pct + '%'; }
+    else { pillClass = 'pill pill-red'; pillText = c.roi_pct + '%'; }
+    tdRoi.appendChild(el('span', { className: pillClass, textContent: pillText }));
+    tr.appendChild(tdRoi);
+
+    tbody.appendChild(tr);
+  });
+}
+
+async function handleCostChange(e) {
+  const channel = e.target.getAttribute('data-channel');
+  const row = e.target.closest('tr');
+  const inputs = row.querySelectorAll('.cost-input');
+  const body = {};
+  inputs.forEach(inp => { body[inp.getAttribute('data-field')] = parseFloat(inp.value) || 0; });
+  await fetch('/api/costs/' + encodeURIComponent(channel), {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  });
+  showToast('Updated costs for ' + channel);
+  await refresh();
+}
+
+async function renderPayments() {
+  const res = await fetch('/api/payments');
+  const payments = await res.json();
+  const tbody = document.getElementById('paymentsTable');
+  tbody.replaceChildren();
+
+  payments.slice(0, 20).forEach(p => {
+    const tr = document.createElement('tr');
+    const date = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const ch = p.matched_channel || 'unmatched';
+    [date, p.customer_email || '-', p.product_name, '$' + (p.amount_cents / 100).toFixed(2)].forEach(text => {
+      tr.appendChild(el('td', { textContent: text }));
+    });
+    const tdCh = document.createElement('td');
+    tdCh.appendChild(el('span', { className: 'pill pill-green', textContent: ch }));
+    tr.appendChild(tdCh);
+    tr.appendChild(el('td', { textContent: p.utm_source || '-' }));
+    tbody.appendChild(tr);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+refresh();
+</script>
+</body>
+</html>

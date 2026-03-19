@@ -1,0 +1,7 @@
+*.db
+*.db-wal
+*.db-shm
+indie-prod-monitor
+screenshots/
+__pycache__/
+.venv/

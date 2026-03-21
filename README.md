@@ -183,7 +183,8 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [lora-streaming-merge](./lora-streaming-merge) | 16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI | Python |
 | [oncall-gap-predetector](./oncall-gap-predetector) | Docker Compose + Prometheus config 정적 분석으로 모니터링 사각지대를 자동 탐지하는 CLI 도구 | Python |
 | [proactive-alert-digest](./proactive-alert-digest) | YAML 설정만으로 멀티소스 모니터링 → "오늘 아침에 뭘 봐야 하는지" 한 장짜리 다이제스트 생성 | Python |
+| [wasm-boundary-diagnostic](./wasm-boundary-diagnostic) | wasm-bindgen 글루 코드의 정적 분석으로 JS↔WASM 경계 함수의 직렬화 비용을 자동 식별하고 최적화를 추천하는 CLI 도구 | Python |
 
 ---
 
-**Total: 49 prototypes** | Auto-updated by prototype-pipeline
+**Total: 50 prototypes** | Auto-updated by prototype-pipeline

@@ -182,9 +182,10 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [local-feed-relevance-engine](./local-feed-relevance-engine) | 로컬 임베딩(all-MiniLM-L6-v2)으로 RSS 피드 기사의 관심도를 스코어링하고, 읽기/스킵 피드백으로 개인화하는 엔진 | Python |
 | [lora-streaming-merge](./lora-streaming-merge) | 16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI | Python |
 | [oncall-gap-predetector](./oncall-gap-predetector) | Docker Compose + Prometheus config 정적 분석으로 모니터링 사각지대를 자동 탐지하는 CLI 도구 | Python |
+| [personal-web-archive-search](./personal-web-archive-search) | URL을 입력하면 본문을 추출하여 로컬 SQLite FTS5로 한국어+영어 전문 검색을 제공하는 프로토타입 | Node.js |
 | [proactive-alert-digest](./proactive-alert-digest) | YAML 설정만으로 멀티소스 모니터링 → "오늘 아침에 뭘 봐야 하는지" 한 장짜리 다이제스트 생성 | Python |
 | [wasm-boundary-diagnostic](./wasm-boundary-diagnostic) | wasm-bindgen 글루 코드의 정적 분석으로 JS↔WASM 경계 함수의 직렬화 비용을 자동 식별하고 최적화를 추천하는 CLI 도구 | Python |
 
 ---
 
-**Total: 50 prototypes** | Auto-updated by prototype-pipeline
+**Total: 51 prototypes** | Auto-updated by prototype-pipeline

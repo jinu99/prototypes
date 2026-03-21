@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Archive Search</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a0a; color: #e0e0e0;
+    min-height: 100vh;
+  }
+  .container { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+
+  header { text-align: center; margin-bottom: 32px; }
+  h1 { font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; }
+
+  /* Search box */
+  .search-box {
+    display: flex; gap: 8px; margin-bottom: 24px;
+  }
+  .search-box input {
+    flex: 1; padding: 12px 16px; font-size: 15px;
+    background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+    color: #fff; outline: none; transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: #4a9eff; }
+  .search-box button {
+    padding: 12px 20px; font-size: 14px; font-weight: 500;
+    background: #4a9eff; color: #fff; border: none; border-radius: 8px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .search-box button:hover { background: #3a8eef; }
+
+  /* Add URL */
+  .add-section {
+    display: flex; gap: 8px; margin-bottom: 32px;
+  }
+  .add-section input {
+    flex: 1; padding: 10px 14px; font-size: 13px;
+    background: #1a1a1a; border: 1px solid #282828; border-radius: 6px;
+    color: #999; outline: none;
+  }
+  .add-section input:focus { border-color: #444; color: #fff; }
+  .add-section button {
+    padding: 10px 16px; font-size: 13px;
+    background: #222; color: #888; border: 1px solid #333; border-radius: 6px;
+    cursor: pointer;
+  }
+  .add-section button:hover { background: #2a2a2a; color: #aaa; }
+
+  /* Status */
+  .status {
+    text-align: center; padding: 8px; margin-bottom: 16px;
+    font-size: 13px; border-radius: 6px; display: none;
+  }
+  .status.error { display: block; background: #2a1515; color: #ff6b6b; }
+  .status.success { display: block; background: #152a15; color: #6bff6b; }
+  .status.loading { display: block; background: #1a1a2a; color: #6b6bff; }
+
+  /* Results */
+  .results-info {
+    font-size: 13px; color: #666; margin-bottom: 16px;
+  }
+  .result {
+    padding: 16px; margin-bottom: 12px;
+    background: #111; border: 1px solid #222; border-radius: 8px;
+    transition: border-color 0.2s;
+  }
+  .result:hover { border-color: #333; }
+  .result-title {
+    font-size: 15px; font-weight: 500; margin-bottom: 4px;
+  }
+  .result-title a { color: #4a9eff; text-decoration: none; }
+  .result-title a:hover { text-decoration: underline; }
+  .result-url {
+    font-size: 12px; color: #555; margin-bottom: 8px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .result-snippet {
+    font-size: 13px; color: #999; line-height: 1.6;
+  }
+  .result-snippet .highlight {
+    background: #4a9eff33; color: #7bc0ff; padding: 1px 2px;
+    border-radius: 2px;
+  }
+  .result-meta {
+    display: flex; gap: 12px; margin-top: 8px;
+    font-size: 11px; color: #444;
+  }
+  .result-meta span { display: flex; align-items: center; gap: 4px; }
+
+  /* Stats bar */
+  .stats-bar {
+    text-align: center; margin-top: 40px; padding-top: 20px;
+    border-top: 1px solid #1a1a1a; font-size: 12px; color: #444;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Web Archive Search</h1>
+    <p class="subtitle">개인 웹 아카이브 — 한국어+영어 전문 검색</p>
+  </header>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="검색어 입력 (한국어/영어)..." autocomplete="off">
+    <button onclick="doSearch()">검색</button>
+  </div>
+
+  <div class="add-section">
+    <input type="url" id="urlInput" placeholder="URL을 입력하여 아카이브에 추가...">
+    <button onclick="doAdd()">+ 추가</button>
+  </div>
+
+  <div id="status" class="status"></div>
+  <div id="resultsInfo" class="results-info"></div>
+  <div id="results"></div>
+  <div id="statsBar" class="stats-bar"></div>
+</div>
+
+<script>
+  const searchInput = document.getElementById('searchInput');
+  const urlInput = document.getElementById('urlInput');
+  const statusEl = document.getElementById('status');
+  const resultsInfo = document.getElementById('resultsInfo');
+  const resultsEl = document.getElementById('results');
+  const statsBar = document.getElementById('statsBar');
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doSearch();
+  });
+  urlInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doAdd();
+  });
+
+  function showStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + type;
+    if (type !== 'loading') {
+      setTimeout(function() { statusEl.className = 'status'; }, 4000);
+    }
+  }
+
+  function escHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // Safely render snippet: only allow <mark> tags from FTS5, escape everything else
+  function renderSnippet(snippet) {
+    if (!snippet) return '';
+    // Split on <mark> and </mark>, escape everything else
+    var parts = snippet.split(/(<mark>|<\/mark>)/g);
+    var result = '';
+    var inMark = false;
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i] === '<mark>') {
+        result += '<span class="highlight">';
+        inMark = true;
+      } else if (parts[i] === '</mark>') {
+        result += '</span>';
+        inMark = false;
+      } else {
+        result += escHtml(parts[i]);
+      }
+    }
+    return result;
+  }
+
+  function renderResult(r) {
+    var div = document.createElement('div');
+    div.className = 'result';
+
+    var titleDiv = document.createElement('div');
+    titleDiv.className = 'result-title';
+    var a = document.createElement('a');
+    a.href = r.url;
+    a.target = '_blank';
+    a.textContent = r.title || '(제목 없음)';
+    titleDiv.appendChild(a);
+    div.appendChild(titleDiv);
+
+    var urlDiv = document.createElement('div');
+    urlDiv.className = 'result-url';
+    urlDiv.textContent = r.url;
+    div.appendChild(urlDiv);
+
+    var snippetDiv = document.createElement('div');
+    snippetDiv.className = 'result-snippet';
+    // Snippet from FTS5 only contains <mark> tags which we control
+    var safeSnippet = renderSnippet(r.snippet || r.excerpt || '');
+    snippetDiv.innerHTML = safeSnippet;
+    div.appendChild(snippetDiv);
+
+    var metaDiv = document.createElement('div');
+    metaDiv.className = 'result-meta';
+    var langSpan = document.createElement('span');
+    langSpan.textContent = r.lang === 'ko' ? 'KO 한국어' : 'EN English';
+    metaDiv.appendChild(langSpan);
+    if (r.added_at) {
+      var dateSpan = document.createElement('span');
+      dateSpan.textContent = r.added_at;
+      metaDiv.appendChild(dateSpan);
+    }
+    if (r.site_name) {
+      var siteSpan = document.createElement('span');
+      siteSpan.textContent = r.site_name;
+      metaDiv.appendChild(siteSpan);
+    }
+    div.appendChild(metaDiv);
+
+    return div;
+  }
+
+  async function doSearch() {
+    var q = searchInput.value.trim();
+    if (q.length < 2) {
+      showStatus('2글자 이상 입력해주세요', 'error');
+      return;
+    }
+    resultsInfo.textContent = '검색 중...';
+    resultsEl.textContent = '';
+
+    try {
+      var resp = await fetch('/api/search?q=' + encodeURIComponent(q));
+      var data = await resp.json();
+      if (!resp.ok) throw new Error(data.error);
+
+      if (data.results.length === 0) {
+        resultsInfo.textContent = '결과 없음';
+        var p = document.createElement('p');
+        p.style.cssText = 'text-align:center;color:#555;padding:40px 0';
+        p.textContent = '검색 결과가 없습니다.';
+        resultsEl.appendChild(p);
+      } else {
+        resultsInfo.textContent = '"' + data.query + '" — ' + data.results.length + '건';
+        data.results.forEach(function(r) {
+          resultsEl.appendChild(renderResult(r));
+        });
+      }
+    } catch (err) {
+      showStatus('검색 실패: ' + err.message, 'error');
+      resultsInfo.textContent = '';
+    }
+  }
+
+  async function doAdd() {
+    var url = urlInput.value.trim();
+    if (!url) return;
+    showStatus('페이지를 가져오는 중...', 'loading');
+
+    try {
+      var resp = await fetch('/api/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url }),
+      });
+      var data = await resp.json();
+      if (!resp.ok) throw new Error(data.error);
+
+      showStatus('추가 완료: "' + data.title + '" (' + data.lang + ', ' + data.contentLength + '자)', 'success');
+      urlInput.value = '';
+      loadStats();
+    } catch (err) {
+      showStatus('추가 실패: ' + err.message, 'error');
+    }
+  }
+
+  async function loadStats() {
+    try {
+      var resp = await fetch('/api/stats');
+      var data = await resp.json();
+      statsBar.textContent = '아카이브: ' + data.total + '개 페이지';
+    } catch (e) { /* ignore */ }
+  }
+
+  loadStats();
+  searchInput.focus();
+</script>
+</body>
+</html>

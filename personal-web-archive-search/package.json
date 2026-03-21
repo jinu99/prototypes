@@ -1,0 +1,20 @@
+{
+  "name": "personal-web-archive-search",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "better-sqlite3": "^12.8.0",
+    "linkedom": "^0.18.12",
+    "node-fetch": "^2.7.0",
+    "playwright": "^1.58.2"
+  }
+}

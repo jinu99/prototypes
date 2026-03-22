@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+*.egg-info/
+screenshots/
+demo_report*.html
+uv.lock
+.python-version

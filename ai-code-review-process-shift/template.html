@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Code Review — {{ session_id }}</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --text-dim: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922; --orange: #db6d28;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header .meta { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+  .stat .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat .label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  .segment { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+  .segment-header { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .segment-header:hover { background: rgba(88,166,255,0.05); }
+  .segment-header .idx { background: var(--accent); color: var(--bg); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .segment-header .prompt-preview { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .segment-header .badges { display: flex; gap: 6px; flex-shrink: 0; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+  .badge-files { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-tools { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .badge-warn { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .badge-error { background: rgba(248,81,73,0.15); color: var(--red); }
+  .chevron { color: var(--text-dim); transition: transform 0.2s; font-size: 12px; }
+  .segment.open .chevron { transform: rotate(90deg); }
+
+  .segment-body { display: none; padding: 16px; }
+  .segment.open .segment-body { display: block; }
+
+  .prompt-full { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 13px; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px; max-height: 200px; overflow-y: auto; }
+
+  .changes-title { font-size: 13px; font-weight: 600; color: var(--text-dim); margin: 12px 0 8px; }
+
+  .file-change { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+  .file-change .fc-header { background: rgba(88,166,255,0.08); padding: 6px 12px; font-size: 12px; font-family: monospace; display: flex; justify-content: space-between; }
+  .fc-type { font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+  .fc-type-edit { background: rgba(210,153,34,0.2); color: var(--yellow); }
+  .fc-type-write { background: rgba(63,185,80,0.2); color: var(--green); }
+  .fc-type-bash { background: rgba(219,109,40,0.2); color: var(--orange); }
+  .diff { padding: 8px 12px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  .diff-old { background: rgba(248,81,73,0.1); color: var(--red); }
+  .diff-new { background: rgba(63,185,80,0.1); color: var(--green); }
+  .diff-cmd { background: rgba(219,109,40,0.08); color: var(--orange); }
+
+  .mismatches { margin-top: 12px; }
+  .mismatch { border-left: 3px solid var(--yellow); background: rgba(210,153,34,0.08); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 6px; font-size: 13px; }
+  .mismatch.error { border-left-color: var(--red); background: rgba(248,81,73,0.08); }
+  .mismatch .rule { font-weight: 600; margin-bottom: 2px; }
+  .mismatch .detail { color: var(--text-dim); font-size: 12px; }
+
+  .no-changes { color: var(--text-dim); font-style: italic; font-size: 13px; }
+  footer { text-align: center; color: var(--text-dim); font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  .filters { display: flex; gap: 8px; margin-bottom: 16px; }
+  .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .filter-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .segment.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>AI Code Review Report</h1>
+    <div class="meta">Session: {{ session_id }} &middot; {{ total_segments }} prompts &middot; {{ total_changes }} file changes &middot; {{ total_mismatches }} mismatches</div>
+  </header>
+
+  <div class="summary">
+    <div class="stat"><div class="num">{{ total_segments }}</div><div class="label">Prompts</div></div>
+    <div class="stat"><div class="num">{{ total_changes }}</div><div class="label">File Changes</div></div>
+    <div class="stat"><div class="num">{{ total_mismatches }}</div><div class="label">Mismatches</div></div>
+    <div class="stat"><div class="num">{{ segments_with_changes }}</div><div class="label">Active Prompts</div></div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterSegments('all')">All</button>
+    <button class="filter-btn" onclick="filterSegments('active')">With Changes</button>
+    <button class="filter-btn" onclick="filterSegments('mismatch')">Mismatches Only</button>
+  </div>
+
+  {% for seg in segments %}
+  <div class="segment{% if seg.mismatches %} open{% endif %}" data-has-changes="{{ 'yes' if seg.file_changes else 'no' }}" data-has-mismatch="{{ 'yes' if seg.mismatches else 'no' }}">
+    <div class="segment-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="idx">{{ loop.index }}</div>
+      <div class="prompt-preview">{{ seg.prompt_preview }}</div>
+      <div class="badges">
+        {% if seg.file_changes %}<span class="badge badge-files">{{ seg.file_changes|length }} files</span>{% endif %}
+        {% if seg.tool_calls %}<span class="badge badge-tools">{{ seg.tool_calls|length }} tools</span>{% endif %}
+        {% for m in seg.mismatches %}
+          <span class="badge badge-{{ m.severity }}">{{ m.rule_name }}</span>
+        {% endfor %}
+      </div>
+      <span class="chevron">&#9654;</span>
+    </div>
+    <div class="segment-body">
+      <div class="prompt-full">{{ seg.prompt_text }}</div>
+
+      {% if seg.file_changes %}
+      <div class="changes-title">File Changes ({{ seg.file_changes|length }})</div>
+      {% for fc in seg.file_changes %}
+      <div class="file-change">
+        <div class="fc-header">
+          <span>{{ fc.file_path }}</span>
+          <span class="fc-type fc-type-{{ fc.change_type }}">{{ fc.change_type }}</span>
+        </div>
+        {% if fc.old_string %}<div class="diff diff-old">- {{ fc.old_string }}</div>{% endif %}
+        {% if fc.new_string %}<div class="diff diff-new">+ {{ fc.new_string }}</div>{% endif %}
+        {% if fc.command %}<div class="diff diff-cmd">$ {{ fc.command }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="no-changes">No file changes in this segment</div>
+      {% endif %}
+
+      {% if seg.mismatches %}
+      <div class="mismatches">
+        <div class="changes-title">Mismatches ({{ seg.mismatches|length }})</div>
+        {% for m in seg.mismatches %}
+        <div class="mismatch {{ m.severity }}">
+          <div class="rule">{{ m.description }}</div>
+          <div class="detail">{{ m.detail }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <footer>Generated by ai-review &middot; Prompt→Code Mapping Analyzer</footer>
+</div>
+<script>
+function filterSegments(mode) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.segment').forEach(s => {
+    if (mode === 'all') { s.classList.remove('hidden'); }
+    else if (mode === 'active') { s.classList.toggle('hidden', s.dataset.hasChanges !== 'yes'); }
+    else if (mode === 'mismatch') { s.classList.toggle('hidden', s.dataset.hasMismatch !== 'yes'); }
+  });
+}
+</script>
+</body>
+</html>

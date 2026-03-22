@@ -178,6 +178,7 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 | Prototype | Description | Stack |
 |-----------|-------------|-------|
+| [ai-code-review-process-shift](./ai-code-review-process-shift) | Claude Code 세션 로그에서 프롬프트→코드변경 인과관계를 추적하고, 의도 불일치를 감지하는 리뷰 도구 | Python |
 | [dark-path-detector](./dark-path-detector) | 코드에서 관측성이 누락된 에러 경로(dark path)를 찾아내는 정적 분석 CLI 도구 | Node.js |
 | [docs](./docs) | (설명 없음) | Other |
 | [email-workflow](./email-workflow) | IMAP EXAMINE 모드로 이메일을 읽고, 로컬 LLM(Ollama) 또는 키워드 규칙으로 분류하는 CLI 도구 | Python |
@@ -191,4 +192,4 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 ---
 
-**Total: 54 prototypes** | Auto-updated by prototype-pipeline
+**Total: 55 prototypes** | Auto-updated by prototype-pipeline

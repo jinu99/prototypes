@@ -96,6 +96,7 @@ Community Sources                 Pipeline (cron-automated)                    O
 |-----------|-------------|-------|
 | [agent-first-architecture-transition-cost-asymmetry-and-escalation-quality](./agent-first-architecture-transition-cost-asymmetry-and-escalation-quality) | Agent의 confidence 기반 에스컬레이션이 Workflow의 규칙 기반 에스컬레이션보다 품질이 높다는 가설을 시뮬레이션으로 검증한다. | Python |
 | [agentic-coding-workspace](./agentic-coding-workspace) | 셀 기반 인터페이스에서 AI 에이전트 플랜을 사전 검토·수정하고 셀 단위로 재실행하는 코딩 워크스페이스 프로토타입 | Node.js |
+| [agent-knowledge-loop](./agent-knowledge-loop) | 에이전트 세션 로그에서 실패-해결 패턴을 자동 추출하여 에이전트-독립적 규칙 파일로 동기화하는 CLI 파이프라인 | Python |
 | [agent-platformization-control-plane-and-tool-composition-infra](./agent-platformization-control-plane-and-tool-composition-infra) | (설명 없음) | Python |
 | [agent-token-waste-analyzer](./agent-token-waste-analyzer) | Claude Code 세션 로그를 분석하여 토큰 낭비 패턴을 식별하고 최적화 제안을 제공하는 터미널 대시보드 CLI | Python |
 | [ai-code-context-bridge](./ai-code-context-bridge) | Mermaid 아키텍처 다이어그램을 파싱하여 AI 코딩 에이전트에게 파일별 구조화된 컨텍스트를 제공하는 MCP 서버 & CLI | Python |
@@ -189,4 +190,4 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 ---
 
-**Total: 52 prototypes** | Auto-updated by prototype-pipeline
+**Total: 53 prototypes** | Auto-updated by prototype-pipeline

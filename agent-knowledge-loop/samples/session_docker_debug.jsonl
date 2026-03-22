@@ -1,0 +1,8 @@
+{"role": "user", "content": "Docker 컨테이너가 시작 후 바로 종료됩니다. docker ps -a로 보면 Exited (1) 상태입니다."}
+{"role": "assistant", "content": "로그를 확인해보겠습니다.", "tool_calls": [{"name": "bash", "args": "docker logs my-app"}]}
+{"role": "tool", "content": "Error: Cannot find module '/app/server.js'\n    at Module._resolveFilename\n    at Module._load"}
+{"role": "assistant", "content": "server.js 파일이 컨테이너 내부에 없습니다. Dockerfile의 COPY 명령어를 확인해보겠습니다.", "tool_calls": [{"name": "read", "args": "Dockerfile"}]}
+{"role": "tool", "content": "FROM node:18\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY src/ ./src/\nCMD [\"node\", \"server.js\"]"}
+{"role": "assistant", "content": "문제를 찾았습니다. COPY src/ ./src/ 로 소스를 src/ 디렉토리에 복사하지만, CMD는 /app/server.js를 찾고 있습니다. CMD를 node src/server.js로 바꾸거나 COPY . . 으로 변경해야 합니다."}
+{"role": "user", "content": "CMD를 수정했더니 동작합니다! 감사합니다."}
+{"role": "assistant", "content": "Dockerfile에서 COPY 경로와 CMD 경로가 일치하는지 항상 확인하는 것이 좋습니다. WORKDIR, COPY, CMD 세 가지가 서로 정합성이 맞아야 합니다."}

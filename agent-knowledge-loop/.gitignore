@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+*.db
+output/
+screenshots/
+*.pyc
+.python-version

@@ -1,0 +1,10 @@
+{"role": "user", "content": "git pull을 했는데 CONFLICT가 발생했어요. 어떻게 해결하나요?"}
+{"role": "assistant", "content": "충돌 파일을 확인해보겠습니다.", "tool_calls": [{"name": "bash", "args": "git status"}]}
+{"role": "tool", "content": "On branch feature/login\nYou have unmerged paths.\n  (fix conflicts and run \"git commit\")\n\nUnmerged paths:\n  both modified:   src/auth.py"}
+{"role": "assistant", "content": "src/auth.py에 충돌이 있습니다. 파일 내용을 확인해보겠습니다.", "tool_calls": [{"name": "read", "args": "src/auth.py"}]}
+{"role": "tool", "content": "<<<<<<< HEAD\ndef authenticate(user, password):\n    return check_ldap(user, password)\n=======\ndef authenticate(user, password):\n    return check_oauth(user, password)\n>>>>>>> main"}
+{"role": "assistant", "content": "HEAD(현재 브랜치)에서는 LDAP 인증을, main에서는 OAuth 인증을 사용하도록 변경했습니다. 두 변경 중 하나를 선택하거나 둘 다 지원하도록 병합해야 합니다."}
+{"role": "user", "content": "둘 다 지원하고 싶어요. 환경변수로 선택하게 해주세요."}
+{"role": "assistant", "content": "환경변수 기반으로 인증 방식을 선택하도록 수정하겠습니다.", "tool_calls": [{"name": "edit", "args": {"file": "src/auth.py", "content": "import os\n\ndef authenticate(user, password):\n    method = os.getenv('AUTH_METHOD', 'oauth')\n    if method == 'ldap':\n        return check_ldap(user, password)\n    return check_oauth(user, password)"}}]}
+{"role": "user", "content": "완벽합니다. git add하고 commit 하면 되나요?"}
+{"role": "assistant", "content": "네, git add src/auth.py && git commit 으로 충돌 해결을 완료하면 됩니다. 참고로 merge conflict 해결 시 <<<<<<< 마커가 남아있지 않은지 꼭 확인하세요. 마커가 남은 채로 커밋하면 코드가 깨집니다."}

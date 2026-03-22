@@ -184,8 +184,9 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [oncall-gap-predetector](./oncall-gap-predetector) | Docker Compose + Prometheus config 정적 분석으로 모니터링 사각지대를 자동 탐지하는 CLI 도구 | Python |
 | [personal-web-archive-search](./personal-web-archive-search) | URL을 입력하면 본문을 추출하여 로컬 SQLite FTS5로 한국어+영어 전문 검색을 제공하는 프로토타입 | Node.js |
 | [proactive-alert-digest](./proactive-alert-digest) | YAML 설정만으로 멀티소스 모니터링 → "오늘 아침에 뭘 봐야 하는지" 한 장짜리 다이제스트 생성 | Python |
+| [rag-poison-defense](./rag-poison-defense) | Embedding-based trust scoring middleware that defends RAG systems against knowledge base poisoning attacks. | Python |
 | [wasm-boundary-diagnostic](./wasm-boundary-diagnostic) | wasm-bindgen 글루 코드의 정적 분석으로 JS↔WASM 경계 함수의 직렬화 비용을 자동 식별하고 최적화를 추천하는 CLI 도구 | Python |
 
 ---
 
-**Total: 51 prototypes** | Auto-updated by prototype-pipeline
+**Total: 52 prototypes** | Auto-updated by prototype-pipeline

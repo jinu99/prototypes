@@ -1,0 +1,15 @@
+[project]
+name = "sql-query-perf-advisor"
+version = "0.1.0"
+description = "Offline SQL query performance analyzer for PostgreSQL"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.3.1",
+    "rich>=14.3.3",
+]
+
+[tool.setuptools.packages.find]
+include = ["sql_perf_advisor*"]
+
+[project.scripts]
+sql-perf = "sql_perf_advisor.cli:main"

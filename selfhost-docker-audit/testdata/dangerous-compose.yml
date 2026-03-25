@@ -1,0 +1,13 @@
+services:
+  vuln-app:
+    image: nginx:latest
+    privileged: true
+    network_mode: host
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    environment:
+      - API_KEY=sk-1234567890abcdef
+      - DATABASE_URL=mysql://root:supersecret@db:3306/app
+    ports:
+      - "8080:80"

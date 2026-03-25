@@ -1,0 +1,32 @@
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+DOCKER     all  --  0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+MASQUERADE  all  --  172.18.0.0/16        0.0.0.0/0
+MASQUERADE  all  --  172.19.0.0/16        0.0.0.0/0
+MASQUERADE  tcp  --  172.18.0.2           172.18.0.2           tcp dpt:3000
+MASQUERADE  tcp  --  172.18.0.3           172.18.0.3           tcp dpt:80
+MASQUERADE  tcp  --  172.19.0.2           172.19.0.2           tcp dpt:3001
+MASQUERADE  tcp  --  172.19.0.3           172.19.0.3           tcp dpt:80
+MASQUERADE  tcp  --  172.19.0.4           172.19.0.4           tcp dpt:5432
+MASQUERADE  tcp  --  172.20.0.2           172.20.0.2           tcp dpt:3000
+
+Chain DOCKER (2 references)
+target     prot opt source               destination
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+DNAT       tcp  --  0.0.0.0/0            127.0.0.1            tcp dpt:8321 to:172.18.0.2:3000
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:3001 to:172.19.0.2:3001
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:9965 to:172.19.0.3:80
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:5432 to:172.19.0.4:5432
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:3000 to:172.20.0.2:3000
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:8123 to:172.21.0.2:8123

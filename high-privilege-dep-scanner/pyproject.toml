@@ -1,0 +1,11 @@
+[project]
+name = "high-privilege-dep-scanner"
+version = "0.1.0"
+description = "AST-based Python dependency privilege scanner with blast radius scoring"
+requires-python = ">=3.12"
+dependencies = [
+    "pipdeptree>=2.34.0",
+]
+
+[project.scripts]
+dep-scan = "src.cli:main"

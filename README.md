@@ -182,6 +182,7 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [dark-path-detector](./dark-path-detector) | 코드에서 관측성이 누락된 에러 경로(dark path)를 찾아내는 정적 분석 CLI 도구 | Node.js |
 | [docs](./docs) | (설명 없음) | Other |
 | [email-workflow](./email-workflow) | IMAP EXAMINE 모드로 이메일을 읽고, 로컬 LLM(Ollama) 또는 키워드 규칙으로 분류하는 CLI 도구 | Python |
+| [high-privilege-dep-scanner](./high-privilege-dep-scanner) | AST 기반 정적 분석으로 Python 의존성의 권한 수준을 스코어링하고 blast radius를 시각화하는 CLI 도구 | Python |
 | [local-feed-relevance-engine](./local-feed-relevance-engine) | 로컬 임베딩(all-MiniLM-L6-v2)으로 RSS 피드 기사의 관심도를 스코어링하고, 읽기/스킵 피드백으로 개인화하는 엔진 | Python |
 | [lora-streaming-merge](./lora-streaming-merge) | 16GB RAM 환경에서 safetensors lazy loading을 활용한 텐서 단위 스트리밍 LoRA 머지 CLI | Python |
 | [oncall-gap-predetector](./oncall-gap-predetector) | Docker Compose + Prometheus config 정적 분석으로 모니터링 사각지대를 자동 탐지하는 CLI 도구 | Python |
@@ -194,4 +195,4 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 ---
 
-**Total: 57 prototypes** | Auto-updated by prototype-pipeline
+**Total: 58 prototypes** | Auto-updated by prototype-pipeline

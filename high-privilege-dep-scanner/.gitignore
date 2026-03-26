@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+screenshots/
+*.egg-info/
+dist/
+dep-privilege-report.html
+dep-privilege-report.json
+.python-version

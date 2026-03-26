@@ -1,0 +1,20 @@
+{
+  "name": "silent-failure-detector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "demo": "node src/run-demo.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "express": "^5.2.1",
+    "js-yaml": "^4.1.1",
+    "playwright": "^1.58.2"
+  }
+}

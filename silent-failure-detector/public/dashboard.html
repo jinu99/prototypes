@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silent Failure Detector — Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e1e4e8; min-height: 100vh; }
+    .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 18px; font-weight: 600; }
+    .header h1 span { color: #f85149; }
+    .header .actions { display: flex; gap: 8px; }
+    .btn { padding: 6px 14px; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 13px; transition: background 0.15s; }
+    .btn:hover { background: #30363d; }
+    .btn.danger { border-color: #f85149; color: #f85149; }
+    .btn.danger:hover { background: #f8514920; }
+    .btn.primary { background: #238636; border-color: #238636; color: #fff; }
+    .btn.primary:hover { background: #2ea043; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+    .stat-card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; }
+    .stat-card .value.red { color: #f85149; }
+    .stat-card .value.yellow { color: #d29922; }
+    .stat-card .value.green { color: #3fb950; }
+
+    .section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; margin-bottom: 24px; }
+    .section-header { padding: 12px 16px; border-bottom: 1px solid #30363d; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+    .section-header .badge { background: #f8514930; color: #f85149; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 16px; color: #8b949e; font-weight: 500; border-bottom: 1px solid #30363d; }
+    td { padding: 8px 16px; border-bottom: 1px solid #21262d; }
+    tr:hover td { background: #1c2128; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+    .tag.method-post { background: #238636; color: #fff; }
+    .tag.method-put { background: #1f6feb; color: #fff; }
+    .tag.method-get { background: #8b949e; color: #fff; }
+    .mono { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; }
+    .truncate { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .expected { color: #3fb950; }
+    .actual { color: #f85149; }
+    .time { color: #8b949e; }
+    .empty { padding: 40px; text-align: center; color: #484f58; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid #30363d; margin-bottom: 24px; }
+    .tab { padding: 10px 16px; cursor: pointer; font-size: 14px; color: #8b949e; border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .tab:hover { color: #c9d1d9; }
+    .tab.active { color: #e1e4e8; border-bottom-color: #f78166; }
+
+    .endpoint-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .bar-bg { flex: 1; height: 20px; background: #21262d; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #f85149; border-radius: 4px; transition: width 0.3s; }
+    .bar-label { font-size: 12px; color: #8b949e; min-width: 30px; text-align: right; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .fade-in { animation: fadeIn 0.2s ease; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>&#9679;</span> Silent Failure Detector</h1>
+    <div class="actions">
+      <button class="btn primary" onclick="runDemo()">Run Demo</button>
+      <button class="btn" onclick="refresh()">Refresh</button>
+      <button class="btn danger" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="stats-grid" id="statsCards"></div>
+    <div class="tabs">
+      <div class="tab active" data-tab="failures" onclick="switchTab(this)">Failure Log</div>
+      <div class="tab" data-tab="endpoints" onclick="switchTab(this)">Endpoint Stats</div>
+      <div class="tab" data-tab="rules" onclick="switchTab(this)">Rules</div>
+    </div>
+    <div id="tab-failures" class="tab-content">
+      <div class="section">
+        <div class="section-header">
+          Recent Silent Failures
+          <span class="badge" id="totalBadge">0</span>
+        </div>
+        <div id="failureTable"></div>
+      </div>
+    </div>
+    <div id="tab-endpoints" class="tab-content" style="display:none;">
+      <div class="section">
+        <div class="section-header">Failures by Endpoint</div>
+        <div id="endpointStats" style="padding:16px;"></div>
+      </div>
+    </div>
+    <div id="tab-rules" class="tab-content" style="display:none;">
+      <div class="section">
+        <div class="section-header">Active Assertion Rules</div>
+        <div id="rulesTable"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function fetchJson(url, opts) {
+      const res = await fetch(url, opts);
+      return res.json();
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      var d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function buildStatsCards(total, endpoints, lastSeen, ruleCount) {
+      var container = document.getElementById('statsCards');
+      container.textContent = '';
+      var cards = [
+        { label: 'Total Failures', value: total, cls: total > 0 ? 'red' : 'green' },
+        { label: 'Affected Endpoints', value: endpoints, cls: endpoints > 0 ? 'yellow' : 'green' },
+        { label: 'Last Detected', value: lastSeen, cls: '', small: true },
+        { label: 'Active Rules', value: ruleCount, cls: '' },
+      ];
+      cards.forEach(function(c) {
+        var card = document.createElement('div');
+        card.className = 'stat-card fade-in';
+        var lbl = document.createElement('div');
+        lbl.className = 'label';
+        lbl.textContent = c.label;
+        var val = document.createElement('div');
+        val.className = 'value' + (c.cls ? ' ' + c.cls : '');
+        if (c.small) val.style.fontSize = '16px';
+        val.textContent = c.value;
+        card.appendChild(lbl);
+        card.appendChild(val);
+        container.appendChild(card);
+      });
+    }
+
+    function buildFailureTable(failures) {
+      var container = document.getElementById('failureTable');
+      container.textContent = '';
+      if (failures.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'No silent failures detected. Click "Run Demo" to generate sample data.';
+        container.appendChild(empty);
+        return;
+      }
+      var table = document.createElement('table');
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Time', 'Method', 'Path', 'Rule', 'Expected', 'Actual'].forEach(function(h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      failures.forEach(function(f) {
+        var tr = document.createElement('tr');
+        tr.className = 'fade-in';
+
+        var tdTime = document.createElement('td');
+        tdTime.className = 'time mono';
+        tdTime.textContent = f.timestamp;
+        tr.appendChild(tdTime);
+
+        var tdMethod = document.createElement('td');
+        var methodTag = document.createElement('span');
+        methodTag.className = 'tag method-' + f.method.toLowerCase();
+        methodTag.textContent = f.method;
+        tdMethod.appendChild(methodTag);
+        tr.appendChild(tdMethod);
+
+        var tdPath = document.createElement('td');
+        tdPath.className = 'mono';
+        tdPath.textContent = f.path;
+        tr.appendChild(tdPath);
+
+        var tdRule = document.createElement('td');
+        tdRule.textContent = f.rule_name;
+        tr.appendChild(tdRule);
+
+        var tdExp = document.createElement('td');
+        tdExp.className = 'expected mono truncate';
+        tdExp.textContent = f.expected || '';
+        tdExp.title = f.expected || '';
+        tr.appendChild(tdExp);
+
+        var tdAct = document.createElement('td');
+        tdAct.className = 'actual mono truncate';
+        tdAct.textContent = f.actual || '';
+        tdAct.title = f.actual || '';
+        tr.appendChild(tdAct);
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+
+    function buildEndpointStats(stats) {
+      var container = document.getElementById('endpointStats');
+      container.textContent = '';
+      if (stats.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'No data yet.';
+        container.appendChild(empty);
+        return;
+      }
+      var maxCount = Math.max.apply(null, stats.map(function(s) { return s.count; }));
+      stats.forEach(function(s) {
+        var row = document.createElement('div');
+        row.className = 'endpoint-bar fade-in';
+
+        var tag = document.createElement('span');
+        tag.className = 'tag method-' + s.method.toLowerCase();
+        tag.textContent = s.method;
+        row.appendChild(tag);
+
+        var pathEl = document.createElement('span');
+        pathEl.className = 'mono';
+        pathEl.style.minWidth = '140px';
+        pathEl.textContent = s.path;
+        row.appendChild(pathEl);
+
+        var barBg = document.createElement('div');
+        barBg.className = 'bar-bg';
+        var barFill = document.createElement('div');
+        barFill.className = 'bar-fill';
+        barFill.style.width = (s.count / maxCount * 100).toFixed(0) + '%';
+        barBg.appendChild(barFill);
+        row.appendChild(barBg);
+
+        var label = document.createElement('span');
+        label.className = 'bar-label';
+        label.textContent = s.count;
+        row.appendChild(label);
+
+        container.appendChild(row);
+      });
+    }
+
+    function buildRulesTable(rules) {
+      var container = document.getElementById('rulesTable');
+      container.textContent = '';
+      var table = document.createElement('table');
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Rule Name', 'Endpoint', 'Assertions'].forEach(function(h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      rules.forEach(function(r) {
+        var tr = document.createElement('tr');
+        tr.className = 'fade-in';
+        var td1 = document.createElement('td');
+        td1.textContent = r.name;
+        tr.appendChild(td1);
+        var td2 = document.createElement('td');
+        td2.className = 'mono';
+        td2.textContent = r.endpoint;
+        tr.appendChild(td2);
+        var td3 = document.createElement('td');
+        td3.textContent = r.assertions;
+        tr.appendChild(td3);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+
+    async function refresh() {
+      var failData = await fetchJson('/api/failures');
+      var statsData = await fetchJson('/api/stats');
+      var rulesData = await fetchJson('/api/rules');
+
+      var total = failData.total;
+      var endpoints = statsData.stats.length;
+      var lastSeen = failData.failures[0] ? failData.failures[0].timestamp : '—';
+
+      buildStatsCards(total, endpoints, lastSeen, rulesData.rules.length);
+      document.getElementById('totalBadge').textContent = total;
+      buildFailureTable(failData.failures);
+      buildEndpointStats(statsData.stats);
+      buildRulesTable(rulesData.rules);
+    }
+
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(t) { t.style.display = 'none'; });
+      el.classList.add('active');
+      document.getElementById('tab-' + el.dataset.tab).style.display = 'block';
+    }
+
+    async function clearAll() {
+      await fetchJson('/api/failures/clear', { method: 'POST' });
+      refresh();
+    }
+
+    async function runDemo() {
+      await fetchJson('/api/failures/clear', { method: 'POST' });
+
+      await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: 'Widget', qty: 3 }) });
+      await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 99.99, card: '****1234' }) });
+      await fetch('/api/users/1', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Alice Updated' }) });
+      await fetch('/api/users/1', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Alice Updated Again' }) });
+
+      setTimeout(refresh, 300);
+    }
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

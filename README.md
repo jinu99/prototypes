@@ -190,9 +190,10 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [proactive-alert-digest](./proactive-alert-digest) | YAML 설정만으로 멀티소스 모니터링 → "오늘 아침에 뭘 봐야 하는지" 한 장짜리 다이제스트 생성 | Python |
 | [rag-poison-defense](./rag-poison-defense) | Embedding-based trust scoring middleware that defends RAG systems against knowledge base poisoning attacks. | Python |
 | [selfhost-docker-audit](./selfhost-docker-audit) | Docker Compose + 방화벽 교차 분석으로 의도치 않은 포트 노출을 탐지하는 CLI 보안 감사 도구 | Python |
+| [silent-failure-detector](./silent-failure-detector) | HTTP 200인데 실제로는 실패한 요청을 선언적 규칙으로 잡아내는 경량 미들웨어 | Node.js |
 | [sql-query-perf-advisor](./sql-query-perf-advisor) | pg_stat_statements 스냅샷을 오프라인 분석하여 N+1 패턴, 비효율 쿼리 플랜을 감지하고 구체적 최적화 제안을 출력하는 CLI 도구 | Python |
 | [wasm-boundary-diagnostic](./wasm-boundary-diagnostic) | wasm-bindgen 글루 코드의 정적 분석으로 JS↔WASM 경계 함수의 직렬화 비용을 자동 식별하고 최적화를 추천하는 CLI 도구 | Python |
 
 ---
 
-**Total: 58 prototypes** | Auto-updated by prototype-pipeline
+**Total: 59 prototypes** | Auto-updated by prototype-pipeline

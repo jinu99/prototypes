@@ -1,0 +1,34 @@
+rules:
+  # Scenario 1: Order creation — responds 200 but DB has no record
+  - name: "order-db-write"
+    endpoint: "POST /api/orders"
+    assertions:
+      - type: body_contains
+        field: "id"
+        condition: exists
+      - type: body_check
+        field: "status"
+        condition: equals
+        value: "created"
+      - type: callback
+        fn: "verifyOrderInDb"
+
+  # Scenario 2: Payment — responds 200 with partial failure hidden in nested field
+  - name: "payment-processing"
+    endpoint: "POST /api/payments"
+    assertions:
+      - type: body_check
+        field: "result"
+        condition: equals
+        value: "success"
+      - type: body_check
+        field: "details.charged"
+        condition: equals
+        value: true
+
+  # Scenario 3: User profile update — sometimes silently drops fields
+  - name: "profile-update"
+    endpoint: "PUT /api/users/:id"
+    assertions:
+      - type: callback
+        fn: "verifyProfileUpdated"

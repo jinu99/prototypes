@@ -1,0 +1,5 @@
+James Rodriguez is a 28-year-old data analyst based in Austin, Texas. He joined
+Stripe last year after completing his Master's degree from Stanford University.
+At Stripe, he focuses on fraud detection systems and has helped reduce false
+positive rates by 15%. Before Stripe, he interned at Meta during the summer
+of 2021. He was awarded the Dean's Excellence Prize during his time at Stanford.

@@ -1,0 +1,12 @@
+[project]
+name = "llm-structured-output-verifier"
+version = "0.1.0"
+description = "2-pass LLM structured output verifier with evidence mapping"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.12.5",
+    "rich>=14.3.3",
+]
+
+[project.scripts]
+verify-output = "src.cli:main"

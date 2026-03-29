@@ -1,0 +1,6 @@
+Sarah Chen is a senior machine learning engineer who works at DeepMind in London.
+She graduated from MIT with a PhD in Computer Science in 2018. Before joining
+DeepMind, she spent three years at Google Brain working on natural language
+processing. She has published over 20 papers in top-tier conferences including
+NeurIPS and ICML. She is passionate about making AI more accessible and
+frequently speaks at industry conferences.

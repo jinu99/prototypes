@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Guard — Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
+    .container { max-width: 800px; margin: 0 auto; padding: 40px 20px 120px; }
+    h1 { font-size: 1.8rem; margin-bottom: 8px; color: #fff; }
+    .subtitle { color: #888; margin-bottom: 32px; font-size: 0.95rem; }
+    .card { background: #1a1a2e; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .card h2 { font-size: 1.1rem; margin-bottom: 12px; color: #ccc; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    button { padding: 8px 16px; border: 1px solid #444; border-radius: 6px; background: #16213e;
+             color: #e0e0e0; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+    button:hover { background: #1a365d; border-color: #4ecca3; }
+    button.danger { border-color: #e74c3c; }
+    button.danger:hover { background: #4a1a1a; }
+    button.active { background: #1a4a2e; border-color: #4ecca3; }
+    .stats { font-family: monospace; font-size: 0.85rem; color: #888; line-height: 1.8; }
+    .stats span { color: #4ecca3; }
+    .log { font-family: monospace; font-size: 0.8rem; max-height: 200px; overflow-y: auto;
+           background: #111; border-radius: 6px; padding: 12px; line-height: 1.6; }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #1a1a1a; }
+    .log-warn { color: #f0a500; }
+    .log-critical { color: #e74c3c; }
+    .log-recover { color: #9b59b6; }
+    .log-restored { color: #4ecca3; }
+    .leak-viz { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; max-height: 80px; overflow: hidden; }
+    .leak-block { width: 8px; height: 8px; border-radius: 2px; background: #e74c3c; opacity: 0.6; }
+    .restored-banner { background: #1a4a2e; border: 1px solid #4ecca3; border-radius: 8px;
+                       padding: 16px; margin-bottom: 20px; display: none; }
+    .restored-banner.show { display: block; }
+    .restored-banner h3 { color: #4ecca3; margin-bottom: 8px; }
+    .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .input-row label { font-size: 0.85rem; color: #888; min-width: 120px; }
+    .input-row input { background: #111; border: 1px solid #333; border-radius: 4px;
+                       color: #e0e0e0; padding: 4px 8px; width: 100px; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Session Guard Demo</h1>
+    <p class="subtitle">Long-running browser session OOM protection — drop-in JS library</p>
+
+    <div id="restored-banner" class="restored-banner">
+      <h3>Session Restored</h3>
+      <p id="restored-info" style="font-size:0.85rem; color:#ccc;"></p>
+    </div>
+
+    <div class="card">
+      <h2>Memory Leak Simulator</h2>
+      <div class="controls">
+        <button id="btn-leak-start">Start Leak</button>
+        <button id="btn-leak-stop" disabled>Stop Leak</button>
+        <button id="btn-leak-burst" class="danger">Burst (10x)</button>
+        <button id="btn-dom-flood">Flood DOM (+1000 nodes)</button>
+        <button id="btn-cleanup">Cleanup</button>
+      </div>
+      <div class="input-row">
+        <label>Leak rate (MB/tick):</label>
+        <input type="number" id="leak-rate" value="2" min="0.1" max="50" step="0.5">
+      </div>
+      <div class="input-row">
+        <label>Tick interval (ms):</label>
+        <input type="number" id="leak-interval" value="500" min="100" max="5000" step="100">
+      </div>
+      <div class="stats" id="leak-stats">
+        Leaked: <span>0 MB</span> | Arrays: <span>0</span> | DOM added: <span>0</span>
+      </div>
+      <div class="leak-viz" id="leak-viz"></div>
+    </div>
+
+    <div class="card">
+      <h2>Application State (survives recovery)</h2>
+      <div class="input-row">
+        <label>Your name:</label>
+        <input type="text" id="state-name" placeholder="Type something..." style="width:200px;">
+      </div>
+      <div class="input-row">
+        <label>Counter:</label>
+        <span id="state-counter" style="color:#4ecca3; font-family:monospace;">0</span>
+        <button id="btn-counter" style="padding:4px 12px;">+1</button>
+      </div>
+      <p style="font-size:0.8rem; color:#666; margin-top:8px;">
+        These values are saved to sessionStorage before auto-recovery and restored after reload.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Guard Settings</h2>
+      <div class="input-row">
+        <label>Poll interval (ms):</label>
+        <input type="number" id="cfg-poll" value="2000" min="500" max="30000" step="500">
+      </div>
+      <div class="input-row">
+        <label>Heap threshold:</label>
+        <input type="number" id="cfg-threshold" value="0.85" min="0.5" max="0.99" step="0.05">
+      </div>
+      <div class="controls">
+        <button id="btn-apply-cfg">Apply Settings</button>
+        <button id="btn-force-recover" class="danger">Force Recovery</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Event Log</h2>
+      <div class="log" id="event-log"></div>
+    </div>
+
+    <div id="dom-flood-container" style="display:none;"></div>
+  </div>
+
+  <script src="session-guard.js"></script>
+  <script>
+    (function () {
+      // --- App state ---
+      var appState = { name: '', counter: 0 };
+      var leakStore = [];
+      var leakTimer = null;
+      var totalLeaked = 0;
+      var domAdded = 0;
+
+      // --- Session Guard init ---
+      var guard = new SessionGuard({
+        pollInterval: 2000,
+        heapThreshold: 0.85,
+        autoRecover: true,
+        stateSelector: function () {
+          return {
+            name: document.getElementById('state-name').value,
+            counter: appState.counter,
+            totalLeaked: totalLeaked,
+            domAdded: domAdded
+          };
+        },
+        onWarning: function (level, data) {
+          addLog(level, data.reasons.join('; '));
+        },
+        onRecover: function (snapshot) {
+          if (snapshot && snapshot.state) {
+            restoreState(snapshot);
+          }
+        }
+      });
+
+      // --- Restore state on recovery ---
+      if (guard.recovered && guard.lastSnapshot) {
+        restoreState(guard.lastSnapshot);
+      }
+
+      function restoreState(snapshot) {
+        var s = snapshot.state;
+        if (!s) return;
+        document.getElementById('state-name').value = s.name || '';
+        appState.counter = s.counter || 0;
+        document.getElementById('state-counter').textContent = appState.counter;
+        totalLeaked = s.totalLeaked || 0;
+        domAdded = s.domAdded || 0;
+        updateLeakStats();
+
+        var banner = document.getElementById('restored-banner');
+        banner.classList.add('show');
+        var info = document.getElementById('restored-info');
+        info.textContent = 'Recovered at ' + new Date(snapshot.time).toLocaleTimeString() +
+          ' — Reason: ' + (snapshot.reason || 'manual') +
+          ' — Recovery #' + guard._getRecoveryCount();
+        addLog('restored', 'Session restored. State: name="' + s.name + '", counter=' + s.counter);
+      }
+
+      // --- Leak simulation ---
+      function startLeak() {
+        if (leakTimer) return;
+        var rate = parseFloat(document.getElementById('leak-rate').value) || 2;
+        var interval = parseInt(document.getElementById('leak-interval').value) || 500;
+        var chunkSize = Math.round(rate * 1024 * 1024 / 8); // approximate float64 count
+
+        document.getElementById('btn-leak-start').classList.add('active');
+        document.getElementById('btn-leak-start').disabled = true;
+        document.getElementById('btn-leak-stop').disabled = false;
+        addLog('ok', 'Leak started: ' + rate + ' MB every ' + interval + 'ms');
+
+        leakTimer = setInterval(function () {
+          var arr = new Array(chunkSize);
+          for (var i = 0; i < chunkSize; i++) arr[i] = Math.random();
+          leakStore.push(arr);
+          totalLeaked += rate;
+          updateLeakStats();
+          addLeakBlock();
+        }, interval);
+      }
+
+      function stopLeak() {
+        if (leakTimer) {
+          clearInterval(leakTimer);
+          leakTimer = null;
+        }
+        document.getElementById('btn-leak-start').classList.remove('active');
+        document.getElementById('btn-leak-start').disabled = false;
+        document.getElementById('btn-leak-stop').disabled = true;
+        addLog('ok', 'Leak stopped');
+      }
+
+      function burstLeak() {
+        var rate = parseFloat(document.getElementById('leak-rate').value) || 2;
+        var chunkSize = Math.round(rate * 1024 * 1024 / 8);
+        addLog('warn', 'Burst: allocating ' + (rate * 10).toFixed(0) + ' MB');
+        for (var b = 0; b < 10; b++) {
+          var arr = new Array(chunkSize);
+          for (var i = 0; i < chunkSize; i++) arr[i] = Math.random();
+          leakStore.push(arr);
+          totalLeaked += rate;
+          addLeakBlock();
+        }
+        updateLeakStats();
+      }
+
+      function floodDOM() {
+        var container = document.getElementById('dom-flood-container');
+        for (var i = 0; i < 1000; i++) {
+          var el = document.createElement('div');
+          el.textContent = 'node-' + domAdded;
+          container.appendChild(el);
+          domAdded++;
+        }
+        updateLeakStats();
+        addLog('warn', 'Added 1000 DOM nodes (total added: ' + domAdded + ')');
+      }
+
+      function cleanup() {
+        stopLeak();
+        leakStore.length = 0;
+        totalLeaked = 0;
+        domAdded = 0;
+        var container = document.getElementById('dom-flood-container');
+        while (container.firstChild) container.removeChild(container.firstChild);
+        var viz = document.getElementById('leak-viz');
+        while (viz.firstChild) viz.removeChild(viz.firstChild);
+        updateLeakStats();
+        addLog('ok', 'Cleaned up all leaked memory and DOM nodes');
+      }
+
+      function updateLeakStats() {
+        var el = document.getElementById('leak-stats');
+        el.textContent = '';
+        el.appendChild(document.createTextNode('Leaked: '));
+        var s1 = document.createElement('span'); s1.textContent = totalLeaked.toFixed(1) + ' MB';
+        el.appendChild(s1);
+        el.appendChild(document.createTextNode(' | Arrays: '));
+        var s2 = document.createElement('span'); s2.textContent = leakStore.length;
+        el.appendChild(s2);
+        el.appendChild(document.createTextNode(' | DOM added: '));
+        var s3 = document.createElement('span'); s3.textContent = domAdded;
+        el.appendChild(s3);
+      }
+
+      function addLeakBlock() {
+        var viz = document.getElementById('leak-viz');
+        var block = document.createElement('div');
+        block.className = 'leak-block';
+        viz.appendChild(block);
+      }
+
+      // --- Event log ---
+      function addLog(level, msg) {
+        var log = document.getElementById('event-log');
+        var entry = document.createElement('div');
+        entry.className = 'log-entry log-' + level;
+        entry.textContent = new Date().toLocaleTimeString() + ' [' + level + '] ' + msg;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      // --- Counter ---
+      document.getElementById('btn-counter').addEventListener('click', function () {
+        appState.counter++;
+        document.getElementById('state-counter').textContent = appState.counter;
+      });
+
+      // --- Button bindings ---
+      document.getElementById('btn-leak-start').addEventListener('click', startLeak);
+      document.getElementById('btn-leak-stop').addEventListener('click', stopLeak);
+      document.getElementById('btn-leak-burst').addEventListener('click', burstLeak);
+      document.getElementById('btn-dom-flood').addEventListener('click', floodDOM);
+      document.getElementById('btn-cleanup').addEventListener('click', cleanup);
+
+      document.getElementById('btn-apply-cfg').addEventListener('click', function () {
+        guard.destroy();
+        guard = new SessionGuard({
+          pollInterval: parseInt(document.getElementById('cfg-poll').value) || 2000,
+          heapThreshold: parseFloat(document.getElementById('cfg-threshold').value) || 0.85,
+          autoRecover: true,
+          stateSelector: function () {
+            return {
+              name: document.getElementById('state-name').value,
+              counter: appState.counter,
+              totalLeaked: totalLeaked,
+              domAdded: domAdded
+            };
+          },
+          onWarning: function (level, data) { addLog(level, data.reasons.join('; ')); }
+        });
+        addLog('ok', 'Guard settings applied');
+      });
+
+      document.getElementById('btn-force-recover').addEventListener('click', function () {
+        guard._recover({ reasons: ['Manual trigger'] });
+      });
+
+      addLog('ok', 'Session Guard initialized (poll: 2000ms)');
+    })();
+  </script>
+</body>
+</html>

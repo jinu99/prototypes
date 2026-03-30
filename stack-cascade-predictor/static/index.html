@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stack Cascade Predictor</title>
+<script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e4ed;
+    --text-muted: #8b8fa3;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+  header h1 span { color: var(--blue); }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .badge {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 500;
+  }
+  .badge-ok { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-warn { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge-err { background: rgba(239,68,68,0.15); color: var(--red); }
+  .main { display: flex; flex: 1; overflow: hidden; }
+  #cy { flex: 1; background: var(--bg); }
+  .sidebar {
+    width: 320px; background: var(--surface); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  }
+  .panel-section {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+  }
+  .panel-section h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); margin-bottom: 10px;
+  }
+  .sim-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  select, button {
+    font-family: inherit; font-size: 12px; padding: 6px 10px;
+    border-radius: 5px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); cursor: pointer;
+  }
+  select { flex: 1; }
+  button:hover { border-color: var(--blue); }
+  button.danger { border-color: var(--red); color: var(--red); }
+  button.danger:hover { background: rgba(239,68,68,0.1); }
+  button.warn { border-color: var(--yellow); color: var(--yellow); }
+  button.warn:hover { background: rgba(234,179,8,0.1); }
+  button.success { border-color: var(--green); color: var(--green); }
+  button.success:hover { background: rgba(34,197,94,0.1); }
+  button.primary { border-color: var(--blue); color: var(--blue); }
+  button.primary:hover { background: rgba(59,130,246,0.1); }
+  .event-log { flex: 1; overflow-y: auto; padding: 0 16px 14px; }
+  .event-log h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); margin: 14px 0 10px; position: sticky;
+    top: 0; background: var(--surface); padding: 4px 0;
+  }
+  .event-item {
+    font-size: 11px; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;
+    background: var(--bg); line-height: 1.5; border-left: 3px solid transparent;
+  }
+  .event-item.outage { border-left-color: var(--red); }
+  .event-item.degraded { border-left-color: var(--yellow); }
+  .event-item.operational { border-left-color: var(--green); }
+  .event-time { color: var(--text-muted); }
+  .event-svc { color: var(--blue); font-weight: 500; }
+  .cascade-info {
+    display: none; padding: 14px 16px; border-bottom: 1px solid var(--border);
+    background: rgba(239,68,68,0.05);
+  }
+  .cascade-info.active { display: block; }
+  .cascade-info h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--red); margin-bottom: 8px;
+  }
+  .cascade-path { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .cascade-path .arrow { color: var(--red); }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend-line { width: 20px; height: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>&#9670;</span> Stack Cascade Predictor</h1>
+  <div class="header-actions">
+    <span id="status-badge" class="badge badge-ok">ALL OPERATIONAL</span>
+    <button class="primary" onclick="pollNow()">Poll Feeds</button>
+  </div>
+</header>
+
+<div class="main">
+  <div id="cy"></div>
+  <div class="sidebar">
+    <div class="panel-section">
+      <h3>Simulation</h3>
+      <div class="sim-row">
+        <select id="sim-service"></select>
+      </div>
+      <div class="sim-row">
+        <button class="danger" onclick="simulate('outage')">Outage</button>
+        <button class="warn" onclick="simulate('degraded')">Degraded</button>
+        <button class="success" onclick="resetAll()">Reset All</button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <h3>Legend</h3>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Operational</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> Degraded</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Outage</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> External</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Internal</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--text-muted)"></div> Hard dep</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--text-muted);opacity:0.3"></div> Soft dep</div>
+      </div>
+    </div>
+    <div id="cascade-info" class="cascade-info">
+      <h3>Active Cascade</h3>
+      <div id="cascade-paths"></div>
+    </div>
+    <div class="event-log">
+      <h3>Event Log</h3>
+      <div id="events"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUS_COLORS = {
+  operational: '#22c55e',
+  degraded: '#eab308',
+  outage: '#ef4444',
+};
+
+let cy;
+let graphData = { nodes: [], edges: [] };
+
+function initCytoscape(data) {
+  graphData = data;
+  const elements = [];
+
+  data.nodes.forEach(function(n) {
+    elements.push({
+      data: { id: n.id, label: n.display_name, type: n.type, status: n.cascade_status },
+    });
+  });
+
+  data.edges.forEach(function(e) {
+    elements.push({
+      data: { id: e.source + '->' + e.target, source: e.source, target: e.target, strength: e.strength },
+    });
+  });
+
+  cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'text-valign': 'bottom',
+          'text-margin-y': 8,
+          'font-size': 11,
+          'font-family': "'SF Mono', monospace",
+          'color': '#e1e4ed',
+          'text-outline-color': '#0f1117',
+          'text-outline-width': 2,
+          'width': 40,
+          'height': 40,
+          'border-width': 3,
+          'background-color': function(ele) { return STATUS_COLORS[ele.data('status')] || '#22c55e'; },
+          'border-color': function(ele) { return ele.data('type') === 'external' ? '#a855f7' : '#3b82f6'; },
+          'shape': function(ele) { return ele.data('type') === 'external' ? 'diamond' : 'ellipse'; },
+          'transition-property': 'background-color',
+          'transition-duration': '0.4s',
+        },
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': function(ele) { return ele.data('strength') === 'hard' ? 2.5 : 1.2; },
+          'line-color': '#3a3d4a',
+          'target-arrow-color': '#3a3d4a',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'opacity': function(ele) { return ele.data('strength') === 'hard' ? 0.7 : 0.3; },
+          'line-style': function(ele) { return ele.data('strength') === 'soft' ? 'dashed' : 'solid'; },
+          'arrow-scale': 0.8,
+        },
+      },
+      {
+        selector: '.cascade-edge',
+        style: {
+          'line-color': '#ef4444',
+          'target-arrow-color': '#ef4444',
+          'opacity': 1,
+          'width': 3,
+        },
+      },
+      {
+        selector: 'node:selected',
+        style: { 'border-width': 4, 'border-color': '#fff' },
+      },
+    ],
+    layout: { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, padding: 40 },
+    userZoomingEnabled: true,
+    userPanningEnabled: true,
+    boxSelectionEnabled: false,
+  });
+
+  // Populate service selector
+  var select = document.getElementById('sim-service');
+  select.textContent = '';
+  data.nodes
+    .sort(function(a, b) { return a.display_name.localeCompare(b.display_name); })
+    .forEach(function(n) {
+      var opt = document.createElement('option');
+      opt.value = n.id;
+      opt.textContent = n.display_name + ' (' + n.type + ')';
+      select.appendChild(opt);
+    });
+}
+
+function updateGraph(data) {
+  graphData = data;
+  var hasIssue = false;
+
+  data.nodes.forEach(function(n) {
+    var ele = cy.getElementById(n.id);
+    if (ele.length) {
+      ele.data('status', n.cascade_status);
+      ele.style('background-color', STATUS_COLORS[n.cascade_status] || '#22c55e');
+    }
+    if (n.cascade_status !== 'operational') hasIssue = true;
+  });
+
+  var badge = document.getElementById('status-badge');
+  if (!hasIssue) {
+    badge.className = 'badge badge-ok';
+    badge.textContent = 'ALL OPERATIONAL';
+  } else {
+    var outageCount = data.nodes.filter(function(n) { return n.cascade_status === 'outage'; }).length;
+    var degradedCount = data.nodes.filter(function(n) { return n.cascade_status === 'degraded'; }).length;
+    if (outageCount > 0) {
+      badge.className = 'badge badge-err';
+      badge.textContent = outageCount + ' OUTAGE' + (degradedCount ? ' / ' + degradedCount + ' DEGRADED' : '');
+    } else {
+      badge.className = 'badge badge-warn';
+      badge.textContent = degradedCount + ' DEGRADED';
+    }
+  }
+}
+
+function showCascade(cascadeData) {
+  var info = document.getElementById('cascade-info');
+  var pathsDiv = document.getElementById('cascade-paths');
+
+  if (!cascadeData || !cascadeData.affected || Object.keys(cascadeData.affected).length <= 1) {
+    info.classList.remove('active');
+    cy.edges().removeClass('cascade-edge');
+    return;
+  }
+
+  info.classList.add('active');
+  pathsDiv.textContent = '';
+
+  cy.edges().removeClass('cascade-edge');
+  var affectedIds = new Set(Object.keys(cascadeData.affected));
+
+  cy.edges().forEach(function(edge) {
+    if (affectedIds.has(edge.data('source')) && affectedIds.has(edge.data('target'))) {
+      edge.addClass('cascade-edge');
+    }
+  });
+
+  var count = Object.keys(cascadeData.affected).length - 1;
+  var origin = cascadeData.origin;
+
+  var summaryEl = document.createElement('div');
+  summaryEl.className = 'cascade-path';
+  var strong = document.createElement('strong');
+  strong.textContent = origin;
+  var arrow = document.createElement('span');
+  arrow.className = 'arrow';
+  arrow.textContent = ' \u2192 ';
+  summaryEl.appendChild(strong);
+  summaryEl.appendChild(arrow);
+  summaryEl.appendChild(document.createTextNode(count + ' service' + (count !== 1 ? 's' : '') + ' affected'));
+  pathsDiv.appendChild(summaryEl);
+
+  Object.entries(cascadeData.affected).forEach(function(entry) {
+    var svc = entry[0], status = entry[1];
+    if (svc === origin) return;
+    var div = document.createElement('div');
+    div.className = 'cascade-path';
+    var svcSpan = document.createElement('span');
+    svcSpan.className = 'event-svc';
+    svcSpan.textContent = svc;
+    div.appendChild(document.createTextNode('  \u2022 '));
+    div.appendChild(svcSpan);
+    div.appendChild(document.createTextNode(': ' + status));
+    pathsDiv.appendChild(div);
+  });
+}
+
+function addEvent(message, level) {
+  var el = document.createElement('div');
+  el.className = 'event-item ' + level;
+  var timeSpan = document.createElement('span');
+  timeSpan.className = 'event-time';
+  timeSpan.textContent = new Date().toLocaleTimeString() + ' ';
+  el.appendChild(timeSpan);
+  el.appendChild(document.createTextNode(message));
+  var container = document.getElementById('events');
+  container.prepend(el);
+  while (container.children.length > 100) container.lastChild.remove();
+}
+
+function addEventRich(timePart, svcName, rest, level) {
+  var el = document.createElement('div');
+  el.className = 'event-item ' + level;
+  var timeSpan = document.createElement('span');
+  timeSpan.className = 'event-time';
+  timeSpan.textContent = timePart + ' ';
+  el.appendChild(timeSpan);
+  if (svcName) {
+    var svcSpan = document.createElement('span');
+    svcSpan.className = 'event-svc';
+    svcSpan.textContent = svcName;
+    el.appendChild(svcSpan);
+  }
+  el.appendChild(document.createTextNode(rest));
+  var container = document.getElementById('events');
+  container.prepend(el);
+  while (container.children.length > 100) container.lastChild.remove();
+}
+
+// --- SSE ---
+function connectSSE() {
+  var es = new EventSource('/api/events');
+
+  es.onmessage = function(event) {
+    var data = JSON.parse(event.data);
+
+    if (data.type === 'init') {
+      initCytoscape(data.graph);
+      addEvent('Connected \u2014 graph loaded', 'operational');
+    } else if (data.type === 'status_update') {
+      updateGraph(data.graph);
+      showCascade(data.cascade);
+
+      if (data.cascade && data.cascade.origin !== 'reset') {
+        var affected = Object.keys(data.cascade.affected || {});
+        var origin = data.cascade.origin;
+        var status = data.cascade.affected[origin] || 'unknown';
+        var time = new Date().toLocaleTimeString();
+        addEventRich(time, origin, ' \u2192 ' + status + ' (' + affected.length + ' affected)', status);
+      } else {
+        addEvent('All services reset to operational', 'operational');
+      }
+    }
+  };
+
+  es.onerror = function() {
+    addEvent('SSE disconnected \u2014 reconnecting...', 'degraded');
+  };
+}
+
+// --- Actions ---
+async function simulate(status) {
+  var serviceId = document.getElementById('sim-service').value;
+  var res = await fetch('/api/simulate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ service_id: serviceId, status: status }),
+  });
+  var data = await res.json();
+  console.log('Simulate result:', data);
+}
+
+async function resetAll() {
+  await fetch('/api/reset', { method: 'POST' });
+  document.getElementById('cascade-info').classList.remove('active');
+  cy.edges().removeClass('cascade-edge');
+}
+
+async function pollNow() {
+  addEvent('Polling feeds...', 'operational');
+  var res = await fetch('/api/poll-now', { method: 'POST' });
+  var data = await res.json();
+  data.results.forEach(function(r) {
+    if (r.status !== 'operational') {
+      var time = new Date().toLocaleTimeString();
+      addEventRich(time, r.service_id, ' \u2192 ' + r.status + ' (' + (r.title || 'no title') + ')', r.status === 'outage' ? 'outage' : 'degraded');
+    }
+  });
+}
+
+connectSSE();
+</script>
+</body>
+</html>

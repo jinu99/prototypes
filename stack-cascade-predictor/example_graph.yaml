@@ -1,0 +1,106 @@
+# Stack Cascade Predictor — 의존성 그래프 예시
+# 각 서비스의 의존 관계를 정의합니다.
+
+services:
+  # 외부 클라우드 서비스 (RSS 상태 피드 존재)
+  aws-us-east-1:
+    display_name: "AWS US-East-1"
+    type: external
+    status_feed: "https://status.aws.amazon.com/rss/ec2-us-east-1.rss"
+
+  github:
+    display_name: "GitHub"
+    type: external
+    status_feed: "https://www.githubstatus.com/history.atom"
+
+  cloudflare:
+    display_name: "Cloudflare"
+    type: external
+    status_feed: "https://www.cloudflarestatus.com/history.atom"
+
+  vercel:
+    display_name: "Vercel"
+    type: external
+    status_feed: "https://www.vercel-status.com/history.atom"
+
+  stripe:
+    display_name: "Stripe"
+    type: external
+    status_feed: "https://status.stripe.com/history.atom"
+
+  # 내부 인프라
+  cdn:
+    display_name: "CDN Layer"
+    type: internal
+    depends_on:
+      - service: cloudflare
+        strength: hard
+
+  api-gateway:
+    display_name: "API Gateway"
+    type: internal
+    depends_on:
+      - service: aws-us-east-1
+        strength: hard
+      - service: cloudflare
+        strength: soft
+
+  # 내부 서비스
+  auth-service:
+    display_name: "Auth Service"
+    type: internal
+    depends_on:
+      - service: api-gateway
+        strength: hard
+
+  user-service:
+    display_name: "User Service"
+    type: internal
+    depends_on:
+      - service: api-gateway
+        strength: hard
+      - service: auth-service
+        strength: hard
+
+  payment-service:
+    display_name: "Payment Service"
+    type: internal
+    depends_on:
+      - service: api-gateway
+        strength: hard
+      - service: stripe
+        strength: hard
+      - service: auth-service
+        strength: hard
+
+  deploy-pipeline:
+    display_name: "Deploy Pipeline"
+    type: internal
+    depends_on:
+      - service: github
+        strength: hard
+      - service: vercel
+        strength: hard
+
+  # 사용자 대면 앱
+  web-frontend:
+    display_name: "Web Frontend"
+    type: internal
+    depends_on:
+      - service: cdn
+        strength: hard
+      - service: api-gateway
+        strength: hard
+      - service: deploy-pipeline
+        strength: soft
+
+  mobile-app:
+    display_name: "Mobile App"
+    type: internal
+    depends_on:
+      - service: api-gateway
+        strength: hard
+      - service: auth-service
+        strength: hard
+      - service: payment-service
+        strength: soft

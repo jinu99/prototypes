@@ -196,8 +196,9 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [selfhost-docker-audit](./selfhost-docker-audit) | Docker Compose + 방화벽 교차 분석으로 의도치 않은 포트 노출을 탐지하는 CLI 보안 감사 도구 | Python |
 | [silent-failure-detector](./silent-failure-detector) | HTTP 200인데 실제로는 실패한 요청을 선언적 규칙으로 잡아내는 경량 미들웨어 | Node.js |
 | [sql-query-perf-advisor](./sql-query-perf-advisor) | pg_stat_statements 스냅샷을 오프라인 분석하여 N+1 패턴, 비효율 쿼리 플랜을 감지하고 구체적 최적화 제안을 출력하는 CLI 도구 | Python |
+| [stack-cascade-predictor](./stack-cascade-predictor) | YAML 의존성 그래프 기반으로 클라우드 서비스 장애의 영향 범위를 즉시 파악하고 시각화하는 도구 | Python |
 | [wasm-boundary-diagnostic](./wasm-boundary-diagnostic) | wasm-bindgen 글루 코드의 정적 분석으로 JS↔WASM 경계 함수의 직렬화 비용을 자동 식별하고 최적화를 추천하는 CLI 도구 | Python |
 
 ---
 
-**Total: 63 prototypes** | Auto-updated by prototype-pipeline
+**Total: 64 prototypes** | Auto-updated by prototype-pipeline

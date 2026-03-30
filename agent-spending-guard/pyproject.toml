@@ -1,0 +1,10 @@
+[project]
+name = "agent-spending-guard"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "mitmproxy>=12.2.1",
+    "pyyaml>=6.0.3",
+    "requests>=2.33.0",
+]

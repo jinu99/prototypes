@@ -98,6 +98,7 @@ Community Sources                 Pipeline (cron-automated)                    O
 | [agentic-coding-workspace](./agentic-coding-workspace) | 셀 기반 인터페이스에서 AI 에이전트 플랜을 사전 검토·수정하고 셀 단위로 재실행하는 코딩 워크스페이스 프로토타입 | Node.js |
 | [agent-knowledge-loop](./agent-knowledge-loop) | 에이전트 세션 로그에서 실패-해결 패턴을 자동 추출하여 에이전트-독립적 규칙 파일로 동기화하는 CLI 파이프라인 | Python |
 | [agent-platformization-control-plane-and-tool-composition-infra](./agent-platformization-control-plane-and-tool-composition-infra) | (설명 없음) | Python |
+| [agent-spending-guard](./agent-spending-guard) | AI 에이전트의 결제 API 호출을 네트워크 레벨 프록시에서 가로채어 YAML 정책 기반으로 지출 한도를 강제하는 투명 프록시 | Python |
 | [agent-token-waste-analyzer](./agent-token-waste-analyzer) | Claude Code 세션 로그를 분석하여 토큰 낭비 패턴을 식별하고 최적화 제안을 제공하는 터미널 대시보드 CLI | Python |
 | [ai-code-context-bridge](./ai-code-context-bridge) | Mermaid 아키텍처 다이어그램을 파싱하여 AI 코딩 에이전트에게 파일별 구조화된 컨텍스트를 제공하는 MCP 서버 & CLI | Python |
 | [local-agent-mesh](./local-agent-mesh) | 소형/대형 LLM 간 복잡도 기반 스마트 라우팅 + self-delegation CLI 도구 | Python |
@@ -198,4 +199,4 @@ Community Sources                 Pipeline (cron-automated)                    O
 
 ---
 
-**Total: 61 prototypes** | Auto-updated by prototype-pipeline
+**Total: 62 prototypes** | Auto-updated by prototype-pipeline

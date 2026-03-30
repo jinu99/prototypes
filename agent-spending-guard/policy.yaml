@@ -1,0 +1,53 @@
+# Agent Spending Guard — Policy Configuration
+
+limits:
+  # Per-transaction limit (USD)
+  per_transaction: 50.00
+
+  # Daily cumulative limit (USD)
+  daily: 500.00
+
+  # Monthly cumulative limit (USD)
+  monthly: 5000.00
+
+  # Category-specific limits (USD per transaction)
+  categories:
+    subscription: 30.00
+    one_time: 100.00
+    refund: 200.00
+
+# Payment API patterns to intercept
+patterns:
+  - name: stripe_charges
+    method: POST
+    url_pattern: "/v1/charges"
+    amount_field: "amount"
+    currency_field: "currency"
+    # Stripe amounts are in cents
+    amount_unit: cents
+
+  - name: stripe_payment_intents
+    method: POST
+    url_pattern: "/v1/payment_intents"
+    amount_field: "amount"
+    currency_field: "currency"
+    amount_unit: cents
+
+  - name: paypal_orders
+    method: POST
+    url_pattern: "/v2/checkout/orders"
+    amount_field: "purchase_units.0.amount.value"
+    currency_field: "purchase_units.0.amount.currency_code"
+    amount_unit: dollars
+
+# PII detection rules
+pii:
+  enabled: true
+  action: warn  # warn or block
+  patterns:
+    - name: email
+      regex: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    - name: phone
+      regex: '\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+    - name: card_number
+      regex: '\b(?:\d{4}[-\s]?){3}\d{4}\b'
